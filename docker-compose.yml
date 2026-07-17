@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg15
+    container_name: 3dverse_db
+    environment:
+      POSTGRES_USER: 3dverse_user
+      POSTGRES_PASSWORD: 3dverse_password
+      POSTGRES_DB: 3dverse
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: 3dverse_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
