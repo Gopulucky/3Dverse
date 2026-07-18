@@ -107,5 +107,11 @@ class Product(ProductBase):
     versions: List[ProductVersionResponse] = []
     media: List[ProductMedia] = []
 
+    # Marketplace enrichment (populated by marketplace endpoints)
+    avg_rating: Optional[float] = None
+    review_count: int = 0
+    creator_name: Optional[str] = None
+    creator_avatar: Optional[str] = None
+
     class Config:
         from_attributes = True

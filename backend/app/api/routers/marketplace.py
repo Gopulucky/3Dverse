@@ -5,10 +5,34 @@ from sqlalchemy import or_, desc, func
 
 from app.api import deps
 from app.models.product import Product, ProductStatus
+from app.models.review import Review
 from app.models.user import User
 from app.schemas.product import Product as ProductSchema
 
 router = APIRouter()
+
+
+def enrich_products(db: Session, products: List[Product]) -> List[Product]:
+    """Attach avg_rating, review_count and creator identity to ORM products
+    so the ProductSchema enrichment fields serialize with real values."""
+    if not products:
+        return products
+    ids = [p.id for p in products]
+    rating_rows = (
+        db.query(Review.product_id, func.avg(Review.rating), func.count(Review.id))
+        .filter(Review.product_id.in_(ids))
+        .group_by(Review.product_id)
+        .all()
+    )
+    ratings = {pid: (round(float(avg), 1), count) for pid, avg, count in rating_rows}
+    for p in products:
+        avg, count = ratings.get(p.id, (None, 0))
+        p.avg_rating = avg
+        p.review_count = count
+        if p.creator:
+            p.creator_name = p.creator.full_name or p.creator.company_name or p.creator.email.split("@")[0]
+            p.creator_avatar = p.creator.avatar_url
+    return products
 
 @router.get("/homepage")
 def get_homepage(db: Session = Depends(deps.get_db)) -> Any:
@@ -21,9 +45,9 @@ def get_homepage(db: Session = Depends(deps.get_db)) -> Any:
     # Pydantic v2 requires explicit serialization if no response_model is provided
     return {
         "categories": categories,
-        "featured": [ProductSchema.model_validate(p).model_dump() for p in featured],
-        "trending": [ProductSchema.model_validate(p).model_dump() for p in trending],
-        "new_arrivals": [ProductSchema.model_validate(p).model_dump() for p in new_arrivals]
+        "featured": [ProductSchema.model_validate(p).model_dump() for p in enrich_products(db, featured)],
+        "trending": [ProductSchema.model_validate(p).model_dump() for p in enrich_products(db, trending)],
+        "new_arrivals": [ProductSchema.model_validate(p).model_dump() for p in enrich_products(db, new_arrivals)]
     }
 
 @router.get("/products", response_model=List[ProductSchema])
@@ -60,7 +84,7 @@ def get_products(
     if max_price is not None:
         query = query.filter(Product.price <= max_price)
 
-    return query.offset(skip).limit(limit).all()
+    return enrich_products(db, query.offset(skip).limit(limit).all())
 
 @router.get("/products/{id}", response_model=ProductSchema)
 def get_product(
@@ -70,8 +94,8 @@ def get_product(
     product = db.query(Product).filter(Product.id == id, Product.status == ProductStatus.published).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
-    return product
+
+    return enrich_products(db, [product])[0]
 
 @router.get("/products/{id}/similar", response_model=List[ProductSchema])
 def get_similar_products(
@@ -88,5 +112,5 @@ def get_similar_products(
         Product.status == ProductStatus.published,
         Product.embedding != None
     ).order_by(Product.embedding.cosine_distance(product.embedding)).limit(limit).all()
-    
-    return similar
+
+    return enrich_products(db, similar)

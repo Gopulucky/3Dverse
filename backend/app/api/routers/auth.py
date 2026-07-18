@@ -27,6 +27,7 @@ def register(*, db: Session = Depends(get_db), user_in: UserCreate) -> Any:
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
         role=user_in.role,
+        pincode=user_in.pincode,
     )
     db.add(user)
     db.commit()
@@ -51,4 +52,5 @@ def login_access_token(
             user.id, expires_delta=access_token_expires
         ),
         "token_type": "bearer",
+        "user": user
     }

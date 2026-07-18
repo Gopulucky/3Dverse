@@ -1,26 +1,381 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ================================================================
+   3DVerse Design Token System
+   Based on FRONTEND_DESIGN.md v1 — Section 7
+   
+   Named palette:
+   - graphite   #15161A  → dark base (Studio/Console default)
+   - surface    #1D1F24  → card/panel on dark
+   - paper      #F3F1EC  → light base (Marketplace default)
+   - ink        #1B1B1D  → primary text on light
+   - cure-violet     #6E5BFF  → primary accent (marketplace/creator)
+   - nozzle-orange   #FF5A36  → secondary accent (warm highlights)
+   - calibration-cyan #2FD3C2  → tertiary accent (partner/data/success)
+   ================================================================ */
 
+/* ===== Dark Theme (Creator Studio / Partner Console default) ===== */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Brand palette — raw values */
+  --color-graphite: #15161A;
+  --color-surface: #1D1F24;
+  --color-surface-raised: #252830;
+  --color-paper: #F3F1EC;
+  --color-ink: #1B1B1D;
+  --color-cure-violet: #6E5BFF;
+  --color-cure-violet-light: #8B7CFF;
+  --color-nozzle-orange: #FF5A36;
+  --color-calibration-cyan: #2FD3C2;
+  --color-danger-red: #E5484D;
+
+  /* Semantic tokens — dark mode (default) */
+  --color-background: #15161A;
+  --color-foreground: #F3F1EC;
+  --color-card: #1D1F24;
+  --color-card-foreground: #F3F1EC;
+  --color-popover: #1D1F24;
+  --color-popover-foreground: #F3F1EC;
+  --color-primary: #6E5BFF;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #252830;
+  --color-secondary-foreground: #F3F1EC;
+  --color-muted: #252830;
+  --color-muted-foreground: #8B8D98;
+  --color-accent: #252830;
+  --color-accent-foreground: #F3F1EC;
+  --color-destructive: #E5484D;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: #2E3039;
+  --color-input: #2E3039;
+  --color-ring: #6E5BFF;
+  --color-success: #2FD3C2;
+  --color-warning: #E5954B;
+
+  /* Radius — per spec: 6px inputs, 12px cards, 20px modals */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-full: 9999px;
+
+  /* Fonts */
+  --font-display: var(--font-space-grotesk), "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-ibm-plex-sans), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Motion — animations */
+  --animate-in: enter 0.2s ease-out;
+  --animate-out: exit 0.15s ease-in;
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-in;
+  --animate-slide-in-from-top: slide-in-from-top 0.3s ease-out;
+  --animate-slide-in-from-bottom: slide-in-from-bottom 0.3s ease-out;
+  --animate-slide-in-from-left: slide-in-from-left 0.3s ease-out;
+  --animate-slide-in-from-right: slide-in-from-right 0.3s ease-out;
+  --animate-fade-in: fade-in 0.12s ease-out;
+  --animate-scale-in: scale-in 0.2s ease-out;
+  --animate-layer-line: layer-line-fill 1.8s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ===== Light Theme (Marketplace default) ===== */
+.light,
+[data-theme="light"] {
+  --color-background: #F3F1EC;
+  --color-foreground: #1B1B1D;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #1B1B1D;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #1B1B1D;
+  --color-primary: #6E5BFF;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #E8E6E1;
+  --color-secondary-foreground: #1B1B1D;
+  --color-muted: #E8E6E1;
+  --color-muted-foreground: #64656A;
+  --color-accent: #E8E6E1;
+  --color-accent-foreground: #1B1B1D;
+  --color-destructive: #E5484D;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: #D5D3CE;
+  --color-input: #D5D3CE;
+  --color-ring: #6E5BFF;
+  --color-success: #2FD3C2;
+  --color-warning: #E5954B;
+}
+
+/* ===== Partner Console accent override ===== */
+[data-portal="partner"] {
+  --color-primary: #2FD3C2;
+  --color-primary-foreground: #15161A;
+  --color-ring: #2FD3C2;
+}
+
+
+/* ================================================================
+   Keyframes
+   ================================================================ */
+
+/* Layer-line build — the signature 3DVerse progress motif */
+@keyframes layer-line-fill {
+  0% {
+    background-size: 100% 0%;
+  }
+  50% {
+    background-size: 100% 100%;
+  }
+  100% {
+    background-size: 100% 0%;
   }
 }
 
+@keyframes layer-line-progress {
+  0% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(0%);
+  }
+}
+
+@keyframes enter {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes exit {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.97); }
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+@keyframes slide-in-from-top {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-from-bottom {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-from-left {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-from-right {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(110, 91, 255, 0.15); }
+  50% { box-shadow: 0 0 40px rgba(110, 91, 255, 0.3); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes countdown-bar {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+
+/* ================================================================
+   Base styles
+   ================================================================ */
+* {
+  border-color: var(--color-border);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* ================================================================
+   Typography utilities
+   ================================================================ */
+
+/* Display headings — Space Grotesk */
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Monospace for data values — IBM Plex Mono */
+.font-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ================================================================
+   Layer-line pattern & surface utilities
+   ================================================================ */
+
+/* Subtle layer-line hairline background — for dividers & backgrounds */
+.layer-lines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    var(--color-border) 3px,
+    var(--color-border) 4px
+  );
+}
+
+/* Glass morphism — dark variant */
+.glass {
+  background: color-mix(in srgb, var(--color-card) 80%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.glass-strong {
+  background: color-mix(in srgb, var(--color-background) 90%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+/* Dark surface card — hairline border, no shadow (Studio/Console) */
+.surface-dark {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+}
+
+/* Light surface card — shadow (Marketplace) */
+.surface-light {
+  background: var(--color-card);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+}
+
+
+/* ================================================================
+   Gradient text utilities
+   ================================================================ */
+.text-gradient-primary {
+  background: linear-gradient(135deg, #8B7CFF, #6E5BFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-accent {
+  background: linear-gradient(135deg, #2FD3C2, #6E5BFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-warm {
+  background: linear-gradient(135deg, #FF5A36, #6E5BFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+
+/* ================================================================
+   Scrollbar
+   ================================================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-muted);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-foreground);
+}
+
+
+/* ================================================================
+   Selection
+   ================================================================ */
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  color: var(--color-foreground);
+}
+
+
+/* ================================================================
+   Skeleton shimmer
+   ================================================================ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-muted) 25%,
+    var(--color-border) 50%,
+    var(--color-muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+
+/* ================================================================
+   Focus ring
+   ================================================================ */
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+
+/* ================================================================
+   Reduced motion
+   ================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

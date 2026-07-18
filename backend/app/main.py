@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.api.routers import auth, products, marketplace, wishlist, reviews, cart, checkout, orders, partner, analytics
+from app.api.routers import auth, products, marketplace, wishlist, reviews, cart, checkout, orders, partner, analytics, notifications, creator, creator_printers, creator_materials
 from app.core.config import settings
 from app.core.database import Base, engine
 import os
@@ -11,8 +11,22 @@ import os
 import traceback
 from fastapi.responses import PlainTextResponse
 
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    from app.core.redis import redis_client
+    await redis_client.connect()
+    yield
+    # Shutdown
+    await redis_client.disconnect()
+
 app = FastAPI(
-    title=settings.PROJECT_NAME, version=settings.VERSION, openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    title=settings.PROJECT_NAME, 
+    version=settings.VERSION, 
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    lifespan=lifespan
 )
 
 @app.exception_handler(Exception)
@@ -23,13 +37,14 @@ async def global_exception_handler(request, exc):
     return PlainTextResponse(str(traceback.format_exc()), status_code=500)
 
 # Set all CORS enabled origins
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+if settings.BACKEND_CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Serve static files from 'uploads' directory
 uploads_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
@@ -46,6 +61,10 @@ app.include_router(checkout.router, prefix=f"{settings.API_V1_STR}/checkout", ta
 app.include_router(orders.router, prefix=f"{settings.API_V1_STR}/orders", tags=["orders"])
 app.include_router(partner.router, prefix=f"{settings.API_V1_STR}/partner", tags=["partner"])
 app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/analytics", tags=["analytics"])
+app.include_router(notifications.router, prefix=f"{settings.API_V1_STR}/notifications", tags=["notifications"])
+app.include_router(creator.router, prefix=f"{settings.API_V1_STR}/creator", tags=["creator"])
+app.include_router(creator_printers.router, prefix=f"{settings.API_V1_STR}/creator/printers", tags=["creator-printers"])
+app.include_router(creator_materials.router, prefix=f"{settings.API_V1_STR}/creator/materials", tags=["creator-materials"])
 
 @app.get("/")
 def read_root():

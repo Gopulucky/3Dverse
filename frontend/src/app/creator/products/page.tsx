@@ -1,108 +1,124 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Plus, Package, Edit, Loader2 } from 'lucide-react';
-
-interface Product {
-  id: number;
-  title: string;
-  status: string;
-  price: number;
-  created_at: string;
-}
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Plus, Package, Edit } from "lucide-react";
+import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRequireAuth } from "@/stores/auth-store";
+import { StudioShell } from "@/components/layout/studio-shell";
 
 export default function CreatorProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const router = useRouter();
+  const { ready: isAuthenticated } = useRequireAuth();
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  const {
+    data: products = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["creator-products"],
+    queryFn: () => api.get<any[]>("/api/products/creator"),
+    enabled: isAuthenticated,
+  });
 
-  const fetchProducts = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        window.location.href = '/login';
-        return;
-      }
 
-      const res = await fetch('http://127.0.0.1:8000/api/products/creator', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+  if (!isAuthenticated) return null;
 
-      if (!res.ok) {
-        if (res.status === 403) {
-          throw new Error('Access denied: You must be a Creator to view this page. If you recently registered, please sign up again and select the Creator role.');
-        }
-        throw new Error('Failed to fetch products');
-      }
-
-      const data = await res.json();
-      setProducts(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-blue-500 w-8 h-8" /></div>;
-  }
-
-  return (
-    <div className="max-w-6xl mx-auto p-8">
+  const content = (
+    <div className="max-w-6xl mx-auto px-6 pt-24 pb-20">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white flex items-center">
-          <Package className="mr-3 text-blue-500" />
+        <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
+          <Package className="text-primary" />
           My Products
         </h1>
-        <Link href="/creator/products/new" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded flex items-center transition-colors">
-          <Plus size={20} className="mr-1" />
-          New Product
-        </Link>
+        <Button asChild>
+          <Link href="/creator/products/new">
+            <Plus size={18} />
+            New Product
+          </Link>
+        </Button>
       </div>
 
-      {error && <div className="bg-red-500/10 text-red-500 p-4 rounded mb-6 border border-red-500/20">{error}</div>}
+      {error && (
+        <Card className="p-4 mb-6 border-destructive/30 bg-destructive/5">
+          <p className="text-destructive text-sm">
+            {(error as any)?.detail || "Failed to load products"}
+          </p>
+        </Card>
+      )}
 
       {products.length === 0 ? (
-        <div className="bg-slate-900 rounded-lg p-12 text-center border border-slate-800">
-          <Package size={48} className="mx-auto text-slate-500 mb-4" />
-          <h2 className="text-xl font-medium text-white mb-2">No products yet</h2>
-          <p className="text-slate-400 mb-6">Start building your portfolio by creating your first 3D model product.</p>
-          <Link href="/creator/products/new" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded inline-flex items-center transition-colors">
-            <Plus size={20} className="mr-1" />
-            Create Product
-          </Link>
-        </div>
+        <Card className="p-12 text-center border-border">
+          <Package size={48} className="mx-auto text-muted-foreground mb-4" />
+          <h2 className="text-xl font-medium mb-2 font-display">No products yet</h2>
+          <p className="text-muted-foreground mb-6">
+            Start building your portfolio by creating your first 3D model
+            product.
+          </p>
+          <Button asChild>
+            <Link href="/creator/products/new">
+              <Plus size={18} />
+              Create Product
+            </Link>
+          </Button>
+        </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {products.map(product => (
-            <div key={product.id} className="bg-slate-900 border border-slate-800 rounded-lg p-6 hover:border-slate-600 transition-all flex flex-col h-full">
+          {products.map((product: any) => (
+            <Card
+              key={product.id}
+              className="p-6 hover:border-primary/30 transition-all flex flex-col h-full border-border bg-card"
+            >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-bold text-white line-clamp-1">{product.title}</h3>
-                <span className={`px-2 py-1 text-xs rounded font-medium uppercase tracking-wider ${
-                  product.status === 'published' ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-300'
-                }`}>
+                <h3 className="text-lg font-bold truncate flex-1 mr-2 font-display">
+                  {product.title}
+                </h3>
+                <Badge
+                  variant={
+                    product.status === "published" ? "success" : "secondary"
+                  }
+                >
                   {product.status}
+                </Badge>
+              </div>
+              <div className="mt-auto pt-4 flex justify-between items-center border-t border-border">
+                <span className="text-lg font-bold text-primary font-data">
+                  ${product.price?.toFixed(2)}
                 </span>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href={`/creator/products/${product.id}`}>
+                    <Edit size={14} />
+                    Edit
+                  </Link>
+                </Button>
               </div>
-              <div className="mt-auto pt-4 flex justify-between items-center border-t border-slate-800">
-                <span className="text-lg font-semibold text-blue-400">${product.price.toFixed(2)}</span>
-                <Link href={`/creator/products/${product.id}`} className="text-slate-400 hover:text-white transition-colors flex items-center text-sm font-medium">
-                  <Edit size={16} className="mr-1" />
-                  Edit Details
-                </Link>
-              </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
     </div>
+  );
+
+  return (
+    <StudioShell>
+      {isLoading ? (
+        <div className="max-w-6xl mx-auto px-6 pt-24 pb-20 space-y-4">
+          <Skeleton className="h-10 w-48" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-40" />
+            ))}
+          </div>
+        </div>
+      ) : (
+        content
+      )}
+    </StudioShell>
   );
 }

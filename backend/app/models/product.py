@@ -25,6 +25,11 @@ class Product(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     published_at = Column(DateTime, nullable=True)
 
+    # 3D Printing Specifics
+    print_settings = Column(JSON, default=dict)
+    hardware_required = Column(Boolean, default=False)
+    assembly_instructions = Column(String, nullable=True)
+
     # Marketplace Flags
     is_featured = Column(Boolean, default=False)
     mock_order_count = Column(Integer, default=0)

@@ -1,161 +1,244 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Settings, CheckCircle, PackageSearch, PackageCheck, Truck } from 'lucide-react';
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { Settings, Truck, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
+import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRequireAuth } from "@/stores/auth-store";
+import { cn, formatDate } from "@/lib/utils";
+import { ConsoleShell } from "@/components/layout/console-shell";
+import { StatusChip } from "@/components/ui/status-chip";
+
+const STATUS_FLOW = ["queued", "printing", "qc", "packed", "shipped", "delivered"];
 
 export default function PartnerDashboard() {
   const router = useRouter();
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { ready: isAuthenticated } = useRequireAuth();
 
-  const fetchJobs = async () => {
+  const { data: jobs = [], isLoading } = useQuery({
+    queryKey: ["partner-jobs"],
+    queryFn: () => api.get<any[]>("/api/partner/jobs"),
+    enabled: isAuthenticated,
+  });
+
+
+  if (!isAuthenticated) return null;
+
+  const updateStatus = async (orderId: number, status: string) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return router.push('/login');
-
-      const res = await fetch('http://127.0.0.1:8000/api/partner/jobs', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (res.ok) {
-        setJobs(await res.json());
-      } else {
-        router.push('/');
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchJobs();
-  }, []);
-
-  const updateStatus = async (orderId: int, status: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      await fetch(`http://127.0.0.1:8000/api/partner/jobs/${orderId}/status`, {
-        method: 'PUT',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status })
-      });
-      fetchJobs();
-    } catch (e) {
-      console.error(e);
+      await api.put(`/api/partner/jobs/${orderId}/status`, { status });
+      toast.success(`Status updated to ${status.toUpperCase()}`);
+      queryClient.invalidateQueries({ queryKey: ["partner-jobs"] });
+    } catch {
+      toast.error("Failed to update status");
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-slate-950 text-white flex justify-center pt-24">Loading jobs...</div>;
+  const getStatusType = (status: string) => {
+    if (status === "delivered") return "success";
+    if (status === "queued" || status === "warning") return "warning";
+    if (status === "printing" || status === "qc") return "in-progress";
+    return "neutral";
+  };
 
-  const STATUS_FLOW = ["queued", "printing", "qc", "packed", "shipped", "delivered"];
+  const content = (
+    <div className="max-w-6xl mx-auto px-6 pt-24 pb-20">
+      <h1 className="text-3xl font-bold mb-8 flex items-center gap-3 font-display">
+        <Settings className="text-primary" />
+        Print Partner Dashboard
+      </h1>
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-white pt-24 pb-20">
-      <div className="max-w-6xl mx-auto px-6">
-        <h1 className="text-3xl font-bold mb-8 flex items-center">
-          <Settings className="mr-3 text-purple-500" /> Print Partner Dashboard
-        </h1>
-
-        {jobs.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-slate-400">
+      {jobs.length === 0 ? (
+        <Card className="p-12 text-center border-border">
+          <p className="text-muted-foreground">
             You currently have no print jobs assigned.
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {jobs.map(job => {
-              const currentStepIndex = STATUS_FLOW.indexOf(job.status);
-              
-              return (
-                <div key={job.id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                  <div className="bg-slate-800/50 p-4 border-b border-slate-800 flex justify-between items-center">
-                    <div>
-                      <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Job ID</p>
-                      <p className="text-sm font-mono text-slate-300">#{job.id}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Date Assigned</p>
-                      <p className="text-sm">{new Date(job.created_at).toLocaleDateString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Status</p>
-                      <span className="px-3 py-1 bg-purple-500/20 text-purple-400 text-xs font-bold uppercase rounded-full border border-purple-500/30">
-                        {job.status}
-                      </span>
+          </p>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {jobs.map((job: any) => {
+            const currentStepIndex = STATUS_FLOW.indexOf(job.status);
+
+            return (
+              <Card key={job.id} className="overflow-hidden border-border bg-card">
+                {/* Header */}
+                <div className="bg-muted/30 p-4 border-b border-border flex flex-wrap justify-between items-center gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">
+                      Job ID
+                    </p>
+                    <p className="text-sm font-data font-semibold">#{job.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">
+                      Date Assigned
+                    </p>
+                    <p className="text-sm font-data">{formatDate(job.created_at)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">
+                      Status
+                    </p>
+                    <StatusChip
+                      status={getStatusType(job.status)}
+                      label={job.status?.toUpperCase()}
+                    />
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  {/* Status Pipeline */}
+                  <div className="mb-8">
+                    <div className="flex items-center gap-1 overflow-x-auto pb-2">
+                      {STATUS_FLOW.map((status, idx) => {
+                        const isPast = idx < currentStepIndex;
+                        const isCurrent = idx === currentStepIndex;
+
+                        return (
+                          <div key={status} className="flex items-center">
+                            <div
+                              className={cn(
+                                "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap",
+                                isPast
+                                  ? "bg-success/15 text-success"
+                                  : isCurrent
+                                  ? "bg-primary/15 text-primary ring-2 ring-primary/30"
+                                  : "bg-muted text-muted-foreground"
+                              )}
+                            >
+                              {isPast && <CheckCircle2 size={12} />}
+                              {status.toUpperCase()}
+                            </div>
+                            {idx < STATUS_FLOW.length - 1 && (
+                              <div
+                                className={cn(
+                                  "w-6 h-px mx-1",
+                                  isPast ? "bg-success" : "bg-border"
+                                )}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div className="p-6">
-                    <div className="grid md:grid-cols-2 gap-8">
-                      {/* Job Details */}
-                      <div>
-                        <h3 className="font-semibold mb-4 text-slate-300">Items to Print</h3>
-                        <div className="space-y-3">
-                          {job.items?.map((item: any) => (
-                            <div key={item.id} className="flex gap-4 border border-slate-800 p-3 rounded">
-                              <div className="flex-1">
-                                <p className="font-bold">{item.product?.title || `Product #${item.product_id}`}</p>
-                                {item.selected_config && (
-                                  <p className="text-xs text-slate-500 font-mono mt-1">{JSON.stringify(item.selected_config)}</p>
-                                )}
-                              </div>
-                              <div className="text-right">
-                                <p className="text-xs text-slate-400">Qty: {item.quantity}</p>
-                              </div>
+                  <div className="grid md:grid-cols-2 gap-8">
+                    {/* Job Details */}
+                    <div>
+                      <h3 className="font-bold mb-4 text-muted-foreground font-display">
+                        Items to Print
+                      </h3>
+                      <div className="space-y-3">
+                        {job.items?.map((item: any) => (
+                          <Card key={item.id} className="p-3 flex gap-4 border-border/60">
+                            <div className="flex-1">
+                              <p className="font-semibold text-sm">
+                                {item.product?.title ||
+                                  `Product #${item.product_id}`}
+                              </p>
+                              {item.selected_config && Object.keys(item.selected_config).length > 0 && (
+                                <p className="text-xs text-muted-foreground font-data mt-1">
+                                  {JSON.stringify(item.selected_config)}
+                                </p>
+                              )}
                             </div>
-                          ))}
-                        </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-xs text-muted-foreground font-data">
+                                Qty: {item.quantity}
+                              </p>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Panel */}
+                    <div>
+                      <h3 className="font-bold mb-4 text-muted-foreground font-display">
+                        Update Status
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {STATUS_FLOW.map((status, idx) => {
+                          const isPast = idx < currentStepIndex;
+                          const isCurrent = idx === currentStepIndex;
+                          const isNext = idx === currentStepIndex + 1;
+
+                          return (
+                            <Button
+                              key={status}
+                              disabled={!isNext}
+                              onClick={() => updateStatus(job.id, status)}
+                              variant={
+                                isPast
+                                  ? "secondary"
+                                  : isCurrent
+                                  ? "console"
+                                  : isNext
+                                  ? "outline"
+                                  : "ghost"
+                              }
+                              size="sm"
+                              className={cn(
+                                isPast && "opacity-50",
+                                isCurrent && "ring-2 ring-primary/30"
+                              )}
+                            >
+                              {status.toUpperCase()}
+                            </Button>
+                          );
+                        })}
                       </div>
 
-                      {/* Action Panel */}
-                      <div>
-                        <h3 className="font-semibold mb-4 text-slate-300">Update Status</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {STATUS_FLOW.map((status, idx) => {
-                            const isPast = idx < currentStepIndex;
-                            const isCurrent = idx === currentStepIndex;
-                            const isNext = idx === currentStepIndex + 1;
-                            
-                            return (
-                              <button
-                                key={status}
-                                disabled={!isNext}
-                                onClick={() => updateStatus(job.id, status)}
-                                className={`px-4 py-2 rounded text-sm font-medium border transition-colors ${
-                                  isPast ? "bg-green-500/20 border-green-500/50 text-green-400 opacity-50 cursor-not-allowed" :
-                                  isCurrent ? "bg-purple-600 border-purple-500 text-white cursor-default" :
-                                  isNext ? "bg-slate-800 border-slate-700 hover:bg-slate-700 text-white" :
-                                  "bg-slate-950 border-slate-900 text-slate-600 cursor-not-allowed"
-                                }`}
-                              >
-                                {status.toUpperCase()}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        
-                        {job.tracking_url && (
-                          <div className="mt-6 p-4 bg-slate-950 border border-slate-800 rounded">
-                            <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">Shiprocket Info</p>
-                            <a href={job.tracking_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center text-sm">
-                              <Truck size={14} className="mr-2" /> Track Shipment
-                            </a>
-                            <p className="text-xs text-slate-500 mt-2 font-mono">AWB / Order: {job.shiprocket_order_id}</p>
-                          </div>
-                        )}
-                      </div>
+                      {job.tracking_url && (
+                        <Card className="mt-6 p-4 border-border">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 font-bold font-display">
+                            Shiprocket Info
+                          </p>
+                          <a
+                            href={job.tracking_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline flex items-center text-sm gap-2 font-semibold"
+                          >
+                            <Truck size={14} />
+                            Track Shipment
+                          </a>
+                          <p className="text-xs text-muted-foreground mt-2 font-data">
+                            AWB / Order: {job.shiprocket_order_id}
+                          </p>
+                        </Card>
+                      )}
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
+  );
+
+  return (
+    <ConsoleShell>
+      {isLoading ? (
+        <div className="max-w-6xl mx-auto px-6 pt-24 pb-20 space-y-6">
+          <Skeleton className="h-10 w-64" />
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-48 w-full" />
+          ))}
+        </div>
+      ) : (
+        content
+      )}
+    </ConsoleShell>
   );
 }

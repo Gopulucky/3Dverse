@@ -7,9 +7,12 @@ from datetime import datetime, timedelta
 from app.api import deps
 from app.models.user import User, UserRole
 from app.models.order import Order, OrderItem
-from app.models.product import Product
+from app.models.product import Product, ProductStatus
+from app.models.review import Review
 
 router = APIRouter()
+
+CREATOR_PAYOUT_SHARE = 0.85  # creator keeps 85%, platform takes 15%
 
 @router.get("/creator")
 def get_creator_analytics(
@@ -55,9 +58,82 @@ def get_creator_analytics(
 
     chart_data = list(chart_data_dict.values())
 
+    # Previous period comparison for real trend deltas
+    prev_start = threshold_date - timedelta(days=days)
+    prev_items = (
+        db.query(OrderItem, Order)
+        .join(Order, OrderItem.order_id == Order.id)
+        .join(Product, OrderItem.product_id == Product.id)
+        .filter(
+            Product.creator_id == current_user.id,
+            Order.status != "pending",
+            Order.created_at >= prev_start,
+            Order.created_at < threshold_date,
+        )
+        .all()
+    )
+    prev_revenue = sum(item.price_at_purchase * item.quantity for item, order in prev_items)
+    prev_sales = sum(item.quantity for item, order in prev_items)
+
+    def pct_change(current: float, previous: float):
+        if previous <= 0:
+            return None
+        return round((current - previous) / previous * 100, 1)
+
+    # Product catalog stats
+    products = db.query(Product).filter(Product.creator_id == current_user.id).all()
+    published_count = sum(1 for p in products if p.status == ProductStatus.published)
+
+    # Rating stats across this creator's products
+    rating_row = (
+        db.query(func.avg(Review.rating), func.count(Review.id))
+        .join(Product, Review.product_id == Product.id)
+        .filter(Product.creator_id == current_user.id)
+        .first()
+    )
+    avg_rating = round(float(rating_row[0]), 2) if rating_row and rating_row[0] is not None else None
+    review_count = rating_row[1] if rating_row else 0
+
+    # Top products by revenue in period
+    product_totals: Dict[int, Dict] = {}
+    for item, order in items_and_orders:
+        entry = product_totals.setdefault(
+            item.product_id,
+            {"product_id": item.product_id, "title": item.product.title if item.product else "Deleted product",
+             "units": 0, "revenue": 0.0},
+        )
+        entry["units"] += item.quantity
+        entry["revenue"] += item.price_at_purchase * item.quantity
+    top_products = sorted(product_totals.values(), key=lambda e: e["revenue"], reverse=True)[:5]
+
+    # Recent orders containing this creator's products
+    recent = sorted(items_and_orders, key=lambda pair: pair[1].created_at, reverse=True)[:8]
+    recent_orders = [
+        {
+            "order_id": order.id,
+            "product_title": item.product.title if item.product else "Deleted product",
+            "quantity": item.quantity,
+            "amount": item.price_at_purchase * item.quantity,
+            "status": order.status,
+            "created_at": order.created_at.isoformat(),
+        }
+        for item, order in recent
+    ]
+
     return {
         "total_revenue": total_revenue,
         "total_sales": total_sales,
+        "revenue_change_pct": pct_change(total_revenue, prev_revenue),
+        "sales_change_pct": pct_change(total_sales, prev_sales),
+        "estimated_payout": round(total_revenue * CREATOR_PAYOUT_SHARE, 2),
+        "payout_share": CREATOR_PAYOUT_SHARE,
+        "product_count": len(products),
+        "published_count": published_count,
+        "draft_count": len(products) - published_count,
+        "avg_rating": avg_rating,
+        "review_count": review_count,
+        "top_products": top_products,
+        "recent_orders": recent_orders,
         "chart_data": chart_data
     }
 

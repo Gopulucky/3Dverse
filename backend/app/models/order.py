@@ -16,12 +16,14 @@ class Order(Base):
     total = Column(Float, nullable=False, default=0.0)
     
     status = Column(String, default="pending", nullable=False) # pending, paid, queued, printing, qc, packed, shipped, delivered
+    status_history = Column(JSON, nullable=True, default=list) # [{"status": "paid", "timestamp": "...", "note": "..."}]
     invoice_url = Column(String, nullable=True)
     
     print_partner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     shiprocket_order_id = Column(String, nullable=True)
     shiprocket_shipment_id = Column(String, nullable=True)
     tracking_url = Column(String, nullable=True)
+    estimated_delivery = Column(DateTime, nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
 

@@ -18,6 +18,8 @@ from app.models.review import Review
 from app.models.cart import Cart, CartItem
 from app.models.coupon import Coupon
 from app.models.order import Order, OrderItem
+from app.models.printer import Printer
+from app.models.material import Material, CreatorMaterial, FinishOption, PostProcessCapability
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

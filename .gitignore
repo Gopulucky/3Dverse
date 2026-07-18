@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Celery / local artifacts
+backend/celery_broker.sqlite
+backend/celery_results.sqlite
+backend/error_log.txt
+
+# User-generated content
+backend/uploads/
+
+# Node / Next.js
+node_modules/
+frontend/.next/
+frontend/next-env.d.ts
+
+# OS
+.DS_Store
+Thumbs.db
