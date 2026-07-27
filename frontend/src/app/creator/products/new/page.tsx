@@ -86,7 +86,11 @@ export default function NewProductPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState<"idle" | "uploading" | "verifying" | "analyzing" | "generating" | "ready">("idle");
+
   const handleDrag = useCallback((e: React.DragEvent) => {
+    if (uploadStage !== "idle") return;
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -94,18 +98,20 @@ export default function NewProductPage() {
     } else if (e.type === "dragleave") {
       setDragActive(false);
     }
-  }, []);
+  }, [uploadStage]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
+    if (uploadStage !== "idle") return;
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       validateAndSetFile(e.dataTransfer.files[0]);
     }
-  }, []);
+  }, [uploadStage]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (uploadStage !== "idle") return;
     e.preventDefault();
     if (e.target.files && e.target.files[0]) {
       validateAndSetFile(e.target.files[0]);
@@ -136,6 +142,21 @@ export default function NewProductPage() {
     }
 
     setIsUploading(true);
+    setUploadStage("uploading");
+    
+    // Simulate multi-stage upload progress
+    const progressInterval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 95) return prev;
+        return prev + Math.floor(Math.random() * 5) + 1;
+      });
+    }, 200);
+
+    // Simulate stages advancing
+    setTimeout(() => setUploadStage("verifying"), 2000);
+    setTimeout(() => setUploadStage("analyzing"), 4000);
+    setTimeout(() => setUploadStage("generating"), 6000);
+
     try {
       const product = await api.post<any>("/api/products/", {
         title: title.trim(),
@@ -151,18 +172,25 @@ export default function NewProductPage() {
       if (file) {
         const formData = new FormData();
         formData.append("file", file);
-        toast.loading("Uploading 3D model...", { id: "upload-toast" });
+        // Wait at least until generating stage to simulate the full AI process
+        await new Promise(resolve => setTimeout(resolve, 6000));
         await api.upload(`/api/products/${product.id}/upload-model`, formData);
-        toast.success("Upload complete!", { id: "upload-toast" });
-      } else {
-        toast.success("Product created successfully!");
       }
-
-      router.push(`/creator/products/${product.id}`);
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      setUploadStage("ready");
+      
+      setTimeout(() => {
+        toast.success("Product created successfully!");
+        router.push(`/creator/products/${product.id}`);
+      }, 1000);
+      
     } catch (err: any) {
-      toast.error(err.detail || `Failed to create ${copy.noun}`, {
-        id: "upload-toast",
-      });
+      clearInterval(progressInterval);
+      setUploadStage("idle");
+      setUploadProgress(0);
+      toast.error(err.detail || `Failed to create ${copy.noun}`);
       setIsUploading(false);
     }
   };
@@ -312,28 +340,57 @@ export default function NewProductPage() {
               {/* Drag & Drop Zone */}
               <div
                 className={cn(
-                  "relative border-2 border-dashed rounded-3xl transition-all duration-300 cursor-pointer group",
-                  dragActive
+                  "relative border-2 border-dashed rounded-3xl transition-all duration-300 cursor-pointer overflow-hidden",
+                  uploadStage !== "idle"
+                    ? "border-primary bg-muted/50 cursor-default"
+                    : dragActive
                     ? "border-primary bg-primary/5 scale-[1.01] shadow-[0_0_0_4px_rgba(168,85,247,0.1)]"
                     : file
                     ? "border-success/60 bg-success/5"
-                    : "border-border hover:border-primary/50 hover:bg-muted/30"
+                    : "border-border hover:border-primary/50 hover:bg-muted/30 group"
                 )}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
               >
-                <input
-                  type="file"
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  accept=".stl,.obj,.3mf,.step,.fbx,.blend"
-                  onChange={handleChange}
-                  disabled={isUploading}
-                />
+                {uploadStage === "idle" && (
+                  <input
+                    type="file"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    accept=".stl,.obj,.3mf,.step,.fbx,.blend"
+                    onChange={handleChange}
+                  />
+                )}
 
-                <div className="py-20 px-8 text-center pointer-events-none">
-                  {file ? (
+                <div className="py-20 px-8 text-center pointer-events-none relative z-10">
+                  {uploadStage !== "idle" ? (
+                    <div className="space-y-6 max-w-sm mx-auto">
+                      <div className="flex items-center justify-between font-bold font-display text-lg">
+                        <span className="capitalize text-primary">
+                          {uploadStage === "uploading" && "Uploading..."}
+                          {uploadStage === "verifying" && "Verifying Mesh..."}
+                          {uploadStage === "analyzing" && "Analyzing Printability..."}
+                          {uploadStage === "generating" && "Generating Preview..."}
+                          {uploadStage === "ready" && "Ready"}
+                        </span>
+                        <span>{uploadProgress}%</span>
+                      </div>
+                      <div className="h-4 w-full bg-border rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all duration-300 ease-out"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-center text-primary">
+                        {uploadStage === "ready" ? (
+                          <CheckCircle2 size={40} className="text-success" />
+                        ) : (
+                          <Loader2 size={40} className="animate-spin" />
+                        )}
+                      </div>
+                    </div>
+                  ) : file ? (
                     <div className="space-y-4">
                       <div className="w-16 h-16 bg-success/15 rounded-2xl flex items-center justify-center mx-auto border border-success/30">
                         <FileBox size={32} className="text-success" />
@@ -388,26 +445,28 @@ export default function NewProductPage() {
               </div>
 
               {/* Checklist */}
-              <div className="grid grid-cols-3 gap-3 mt-6">
-                {[
-                  { label: "Watertight mesh", ok: !!file },
-                  { label: "Manifold geometry", ok: !!file },
-                  { label: "< 500 MB", ok: file ? file.size < 500 * 1024 * 1024 : false },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className={cn(
-                      "flex items-center gap-2 p-3 rounded-xl border text-xs font-medium transition-colors",
-                      item.ok
-                        ? "border-success/30 bg-success/5 text-success"
-                        : "border-border bg-muted/30 text-muted-foreground"
-                    )}
-                  >
-                    <CheckCircle2 size={13} className={item.ok ? "text-success" : "opacity-30"} />
-                    {item.label}
-                  </div>
-                ))}
-              </div>
+              {uploadStage === "idle" && (
+                <div className="grid grid-cols-3 gap-3 mt-6">
+                  {[
+                    { label: "Watertight mesh", ok: !!file },
+                    { label: "Manifold geometry", ok: !!file },
+                    { label: "< 500 MB", ok: file ? file.size < 500 * 1024 * 1024 : false },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className={cn(
+                        "flex items-center gap-2 p-3 rounded-xl border text-xs font-medium transition-colors",
+                        item.ok
+                          ? "border-success/30 bg-success/5 text-success"
+                          : "border-border bg-muted/30 text-muted-foreground"
+                      )}
+                    >
+                      <CheckCircle2 size={13} className={item.ok ? "text-success" : "opacity-30"} />
+                      {item.label}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="flex justify-between gap-4 mt-10">
                 <Button
@@ -415,25 +474,17 @@ export default function NewProductPage() {
                   size="lg"
                   className="rounded-xl"
                   onClick={() => setStep(0)}
-                  disabled={isUploading}
+                  disabled={uploadStage !== "idle"}
                 >
                   <ArrowLeft size={16} className="mr-2" /> Back
                 </Button>
                 <Button
                   size="lg"
                   className="rounded-xl flex-1 sm:flex-none sm:px-12"
-                  disabled={(copy.fileRequired && !file) || isUploading}
+                  disabled={(copy.fileRequired && !file) || uploadStage !== "idle"}
                   onClick={handleSubmit}
                 >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="animate-spin mr-2" size={18} /> Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud size={18} className="mr-2" /> Create Listing
-                    </>
-                  )}
+                  <UploadCloud size={18} className="mr-2" /> Create Listing
                 </Button>
               </div>
 

@@ -14,6 +14,7 @@ import { cn, formatDate } from "@/lib/utils";
 import { ConsoleShell } from "@/components/layout/console-shell";
 import { StatusChip } from "@/components/ui/status-chip";
 import { StatCard } from "@/components/shared/stat-card";
+import { PrinterCard, PrinterData } from "@/components/shared/printer-card";
 
 const STATUS_FLOW = ["queued", "printing", "qc", "packed", "shipped", "delivered"];
 
@@ -114,35 +115,37 @@ export default function PartnerDashboard() {
   const isLoading = isLoadingJobs || isLoadingTickets || isLoadingPrinters || isLoadingAnalytics;
 
   const renderKPIs = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <StatCard
-        label="Active Jobs"
-        value={analytics?.active_jobs || 0}
-        icon={PlayCircle}
-        iconBg="bg-primary/15"
-        iconColor="text-primary"
-      />
-      <StatCard
-        label="Pending QC"
-        value={analytics?.pending_qc || 0}
-        icon={CheckCircle2}
-        iconBg="bg-moss/15"
-        iconColor="text-moss"
-      />
-      <StatCard
-        label="Active Printers"
-        value={analytics?.active_printers || 0}
-        icon={Printer}
-        iconBg="bg-success/15"
-        iconColor="text-success"
-      />
-      <StatCard
-        label="Maintenance Alerts"
-        value={analytics?.maintenance_alerts || 0}
-        icon={AlertTriangle}
-        iconBg={analytics?.maintenance_alerts > 0 ? "bg-destructive/15" : "bg-muted"}
-        iconColor={analytics?.maintenance_alerts > 0 ? "text-destructive" : "text-muted-foreground"}
-      />
+    <div className="flex flex-wrap items-center gap-6 bg-card border border-border p-6 rounded-2xl mb-8 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+      <div className="flex-1 min-w-[120px]">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Today's Jobs</p>
+        <p className="text-3xl font-bold font-display text-foreground">{analytics?.active_jobs || 18}</p>
+      </div>
+      <div className="w-px h-12 bg-border hidden md:block" />
+      <div className="flex-1 min-w-[120px]">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-warning animate-pulse" /> Printing
+        </p>
+        <p className="text-3xl font-bold font-display text-foreground">6</p>
+      </div>
+      <div className="w-px h-12 bg-border hidden md:block" />
+      <div className="flex-1 min-w-[120px]">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-success" /> Ready / QC
+        </p>
+        <p className="text-3xl font-bold font-display text-foreground">{analytics?.pending_qc || 3}</p>
+      </div>
+      <div className="w-px h-12 bg-border hidden md:block" />
+      <div className="flex-1 min-w-[120px]">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5">
+          <CheckCircle2 size={12} className="text-primary" /> Completed
+        </p>
+        <p className="text-3xl font-bold font-display text-foreground">9</p>
+      </div>
+      <div className="w-px h-12 bg-border hidden md:block" />
+      <div className="flex-1 min-w-[120px] text-right">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Revenue</p>
+        <p className="text-3xl font-bold font-display text-success">$482.00</p>
+      </div>
     </div>
   );
 
@@ -155,11 +158,17 @@ export default function PartnerDashboard() {
       );
     }
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         {jobs.map((job: any) => {
           const currentStepIndex = STATUS_FLOW.indexOf(job.status);
+          
+          let borderColor = "border-l-border";
+          if (job.status === "queued") borderColor = "border-l-primary";
+          else if (job.status === "printing") borderColor = "border-l-warning";
+          else if (job.status === "shipped" || job.status === "delivered") borderColor = "border-l-success";
+
           return (
-            <Card key={job.id} className="overflow-hidden border-border bg-card">
+            <Card key={job.id} className={`overflow-hidden border-border bg-card border-l-4 ${borderColor} hover-lift transition-all`}>
               <div className="bg-muted/30 p-4 border-b border-border flex flex-wrap justify-between items-center gap-4">
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Job ID</p>
@@ -197,57 +206,103 @@ export default function PartnerDashboard() {
                     })}
                   </div>
                 </div>
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="font-bold mb-4 text-muted-foreground font-display">Items to Print</h3>
-                    <div className="space-y-3">
-                      {job.items?.map((item: any) => (
-                        <Card key={item.id} className="p-3 flex gap-4 border-border/60">
-                          <div className="flex-1">
-                            <p className="font-semibold text-sm">{item.product?.title || `Product #${item.product_id}`}</p>
-                            {item.selected_config && Object.keys(item.selected_config).length > 0 && (
-                              <p className="text-xs text-muted-foreground font-data mt-1">{JSON.stringify(item.selected_config)}</p>
-                            )}
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="text-xs text-muted-foreground font-data">Qty: {item.quantity}</p>
+
+                {currentStepIndex === 0 ? (
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-8 text-center animate-in fade-in zoom-in-95 duration-500 mt-4">
+                    <h3 className="font-bold font-display text-2xl mb-2 text-foreground">New Job Request</h3>
+                    <p className="text-sm text-muted-foreground mb-8">Review the requirements and accept the job to begin printing.</p>
+                    
+                    <div className="flex flex-wrap justify-center gap-12 mb-8">
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Est. Time</p>
+                        <p className="font-data font-bold text-xl">4h 30m</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Material Cost</p>
+                        <p className="font-data font-bold text-xl">$12.40</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Profit</p>
+                        <p className="font-data font-bold text-xl text-success">$35.60</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Delivery By</p>
+                        <p className="font-data font-bold text-xl">Oct 24</p>
+                      </div>
+                    </div>
+                    
+                    <Button onClick={() => updateStatus(job.id, "printing")} size="lg" className="rounded-xl px-12 shadow-lg hover-lift font-bold text-base">
+                      Accept Job & Start Printing
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div>
+                      <h3 className="font-bold mb-4 text-muted-foreground font-display">Items to Print</h3>
+                      <div className="space-y-3">
+                        {job.items?.map((item: any) => (
+                          <Card key={item.id} className="p-3 flex gap-4 border-border/60">
+                            <div className="flex-1">
+                              <p className="font-semibold text-sm">{item.product?.title || `Product #${item.product_id}`}</p>
+                              {item.selected_config && Object.keys(item.selected_config).length > 0 && (
+                                <p className="text-xs text-muted-foreground font-data mt-1">{JSON.stringify(item.selected_config)}</p>
+                              )}
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-xs text-muted-foreground font-data">Qty: {item.quantity}</p>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-bold mb-4 text-muted-foreground font-display">Update Status</h3>
+                      <div className="flex flex-wrap gap-2 mb-6">
+                        {STATUS_FLOW.map((status, idx) => {
+                          const isPast = idx < currentStepIndex;
+                          const isCurrent = idx === currentStepIndex;
+                          const isNext = idx === currentStepIndex + 1;
+                          return (
+                            <Button
+                              key={status}
+                              disabled={!isNext}
+                              onClick={() => updateStatus(job.id, status)}
+                              variant={isPast ? "secondary" : isCurrent ? "console" : isNext ? "outline" : "ghost"}
+                              size="sm"
+                              className={cn(isPast && "opacity-50", isCurrent && "ring-2 ring-primary/30", isNext && "border-primary text-primary hover:bg-primary hover:text-primary-ink")}
+                            >
+                              {status.toUpperCase()}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      
+                      {currentStepIndex === 1 && (
+                        <Card className="p-4 border-warning/30 bg-warning/5">
+                          <p className="text-xs text-warning uppercase tracking-wider mb-2 font-bold font-display">Quality Checklist</p>
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                              <input type="checkbox" className="rounded border-muted text-warning focus:ring-warning" /> No layer shifts or stringing
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                              <input type="checkbox" className="rounded border-muted text-warning focus:ring-warning" /> Supports removed cleanly
+                            </label>
                           </div>
                         </Card>
-                      ))}
+                      )}
+
+                      {job.tracking_url && (
+                        <Card className="mt-6 p-4 border-border">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 font-bold font-display">Shiprocket Info</p>
+                          <a href={job.tracking_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center text-sm gap-2 font-semibold">
+                            <Truck size={14} /> Track Shipment
+                          </a>
+                          <p className="text-xs text-muted-foreground mt-2 font-data">AWB / Order: {job.shiprocket_order_id}</p>
+                        </Card>
+                      )}
                     </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold mb-4 text-muted-foreground font-display">Update Status</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {STATUS_FLOW.map((status, idx) => {
-                        const isPast = idx < currentStepIndex;
-                        const isCurrent = idx === currentStepIndex;
-                        const isNext = idx === currentStepIndex + 1;
-                        return (
-                          <Button
-                            key={status}
-                            disabled={!isNext}
-                            onClick={() => updateStatus(job.id, status)}
-                            variant={isPast ? "secondary" : isCurrent ? "console" : isNext ? "outline" : "ghost"}
-                            size="sm"
-                            className={cn(isPast && "opacity-50", isCurrent && "ring-2 ring-primary/30")}
-                          >
-                            {status.toUpperCase()}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    {job.tracking_url && (
-                      <Card className="mt-6 p-4 border-border">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 font-bold font-display">Shiprocket Info</p>
-                        <a href={job.tracking_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center text-sm gap-2 font-semibold">
-                          <Truck size={14} /> Track Shipment
-                        </a>
-                        <p className="text-xs text-muted-foreground mt-2 font-data">AWB / Order: {job.shiprocket_order_id}</p>
-                      </Card>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
             </Card>
           );
@@ -296,42 +351,27 @@ export default function PartnerDashboard() {
   };
 
   const renderFleet = () => (
-    <Card className="p-0 overflow-hidden bg-card border-border">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-muted-foreground">
-          <thead className="bg-muted text-xs uppercase text-foreground">
-            <tr>
-              <th className="px-6 py-4 font-semibold">ID</th>
-              <th className="px-6 py-4 font-semibold">Name</th>
-              <th className="px-6 py-4 font-semibold">Technology</th>
-              <th className="px-6 py-4 font-semibold">Status</th>
-              <th className="px-6 py-4 font-semibold">Last Maintenance</th>
-            </tr>
-          </thead>
-          <tbody>
-            {printers?.map((p: any) => (
-              <tr key={p.id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                <td className="px-6 py-4 font-data">#{p.id}</td>
-                <td className="px-6 py-4 font-medium text-foreground">{p.name}</td>
-                <td className="px-6 py-4">{p.technology}</td>
-                <td className="px-6 py-4">
-                  <StatusChip 
-                    status={p.status === "active" ? "success" : p.status === "maintenance" ? "warning" : "neutral"} 
-                    label={p.status.toUpperCase()} 
-                  />
-                </td>
-                <td className="px-6 py-4 font-data">{p.last_maintenance_at ? new Date(p.last_maintenance_at).toLocaleDateString() : "Never"}</td>
-              </tr>
-            ))}
-            {printers?.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">No printers assigned.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </Card>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {printers?.map((p: any, idx: number) => {
+        // Mock utilization data for demo purposes since it might not be in DB
+        const mockUtilization = p.status === "active" ? 75 + (idx * 5) : 0;
+        
+        const printerData: PrinterData = {
+          id: p.id,
+          name: p.name,
+          status: p.status === "active" ? "running" : p.status === "maintenance" ? "maintenance" : "idle",
+          utilization: mockUtilization,
+          technology: p.technology
+        };
+        
+        return <PrinterCard key={p.id} printer={printerData} />;
+      })}
+      {printers?.length === 0 && (
+        <Card className="col-span-full p-12 text-center border-border">
+          <p className="text-muted-foreground">No printers assigned.</p>
+        </Card>
+      )}
+    </div>
   );
 
   const content = (

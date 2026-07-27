@@ -70,7 +70,7 @@ export function ProductCard({
     <Link 
       href={`/marketplace/${p.id}`}
       className={cn(
-        "group flex flex-col bg-card rounded-2xl border border-border overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/30",
+        "group flex flex-col bg-card rounded-2xl border border-border overflow-hidden transition-all duration-300 hover-lift hover-tilt",
         className
       )}
     >
@@ -80,7 +80,7 @@ export function ProductCard({
           <img 
             src={api.mediaUrl(mainImg)} 
             alt={p.title} 
-            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105" 
+            className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-110" 
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm font-medium">
@@ -91,7 +91,7 @@ export function ProductCard({
         {/* Top Badges */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
           {p.is_featured ? (
-             <Badge variant="default" className="bg-ember-surface text-ember-ink shadow-sm border-transparent font-bold px-2.5 py-0.5">
+             <Badge variant="default" className="bg-primary/90 text-primary-foreground shadow-lg border-transparent font-bold px-2.5 py-0.5 backdrop-blur-sm">
                Featured
              </Badge>
           ) : <div />}
@@ -100,17 +100,17 @@ export function ProductCard({
         {/* Capability Indicators */}
         <div className="absolute bottom-3 left-3 flex gap-1.5 z-10 translate-y-1 opacity-90 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
           {p.is_mode_2_active && (
-            <div className="bg-background/90 backdrop-blur-md p-1.5 rounded-full shadow-sm text-primary" title="Digital Download">
+            <div className="bg-background/80 backdrop-blur-md p-1.5 rounded-full shadow-lg border border-border/50 text-primary" title="Digital Download">
               <Download size={14} />
             </div>
           )}
           {p.is_mode_3_active && (
-            <div className="bg-background/90 backdrop-blur-md p-1.5 rounded-full shadow-sm text-moss" title="Physical Print">
+            <div className="bg-background/80 backdrop-blur-md p-1.5 rounded-full shadow-lg border border-border/50 text-success" title="Physical Print">
               <Printer size={14} />
             </div>
           )}
           {p.is_mode_4_active && (
-            <div className="bg-background/90 backdrop-blur-md p-1.5 rounded-full shadow-sm text-ember" title="Customizable">
+            <div className="bg-background/80 backdrop-blur-md p-1.5 rounded-full shadow-lg border border-border/50 text-warning" title="Customizable">
               <Wand2 size={14} />
             </div>
           )}
@@ -119,42 +119,45 @@ export function ProductCard({
 
       {/* Info Container */}
       <div className="flex flex-col flex-1 p-5 relative z-20">
-        <div className="flex justify-between items-start gap-4 mb-2">
-          <h3 className="text-foreground text-lg leading-tight line-clamp-2 font-display font-semibold group-hover:text-primary transition-colors">
-            {p.title}
-          </h3>
+        <h3 className="text-foreground text-lg leading-tight line-clamp-1 font-display font-bold group-hover:text-primary transition-colors mb-2">
+          {p.title}
+        </h3>
+        
+        {/* Rich Metadata Section */}
+        <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
+          <div className="flex items-center gap-1 text-warning font-bold">
+            <Star size={14} className="fill-current" />
+            <span>{p.avg_rating ? p.avg_rating.toFixed(1) : "New"}</span>
+          </div>
+          <span className="text-border text-xs">•</span>
+          <span className="font-data">{p.review_count || 0} Downloads</span>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-4">
+          <span className="flex items-center gap-1 text-success bg-success/10 px-2 py-0.5 rounded-sm">
+            Printable ✓
+          </span>
+          <span className="truncate">Creator: <span className="text-foreground">{p.creator_name || "Unknown"}</span></span>
+        </div>
+
+        {/* Price & Action Row */}
+        <div className="mt-auto pt-4 flex items-center justify-between border-t border-border/50">
           <span className="text-xl font-bold text-foreground font-data whitespace-nowrap">
             ${priceStr}
           </span>
-        </div>
-        
-        {/* Rating */}
-        <div className="flex items-center gap-2 mb-4">
-          {p.avg_rating != null ? (
-            <div className="flex items-center gap-1.5">
-              <div className="flex items-center text-warning">
-                <Star size={14} className="fill-current" />
-              </div>
-              <span className="text-sm font-bold text-foreground">{p.avg_rating.toFixed(1)}</span>
-              <span className="text-xs text-muted-foreground">({p.review_count} reviews)</span>
-            </div>
-          ) : (
-            <span className="text-xs text-muted-foreground font-medium">New Arrival</span>
-          )}
-        </div>
-
-        {/* Action Button */}
-        <div className="mt-auto pt-4">
+          
           <Button 
             onClick={handleAddToCart}
             disabled={isAdding}
-            className="w-full justify-between group/btn"
+            variant="ghost"
+            size="sm"
+            className="group/btn text-primary hover:text-primary hover:bg-primary/10"
           >
-            <span>{isAdding ? "Adding..." : "Add to Cart"}</span>
+            <span>{isAdding ? "Adding..." : "View Model"}</span>
             {isAdding ? (
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 size={14} className="animate-spin ml-2" />
             ) : (
-              <ArrowRight size={16} className="opacity-70 group-hover/btn:translate-x-1 transition-transform" />
+              <ArrowRight size={14} className="ml-1 opacity-70 group-hover/btn:translate-x-1 transition-transform" />
             )}
           </Button>
         </div>

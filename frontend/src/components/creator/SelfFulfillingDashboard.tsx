@@ -37,6 +37,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRequireAuth } from "@/stores/auth-store";
 import { StudioShell } from "@/components/layout/studio-shell";
 import { formatDate } from "@/lib/utils";
+import { AIInsightsPanel } from "@/components/shared/ai-insights-panel";
+import { FunnelChart } from "@/components/shared/funnel-chart";
 
 const statusVariant: Record<string, string> = {
   paid: "bg-success-surface text-success-ink",
@@ -62,13 +64,13 @@ export default function SelfFulfillingDashboard() {
   const content = (
     <div className="w-full px-6 pt-6 pb-12">
       {/* ── Top Bar: Title + Date Range ── */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
         <div>
-          <h1 className="text-2xl font-bold font-display flex items-center gap-2">
-            Overview
+          <h1 className="text-3xl font-bold font-display flex items-center gap-2">
+            Good Morning, Creator 👋
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            Financial performance and sales activity.
+          <p className="text-sm text-muted-foreground mt-1">
+            Here's what's happening with your studio today.
           </p>
         </div>
         <select
@@ -82,159 +84,123 @@ export default function SelfFulfillingDashboard() {
         </select>
       </div>
 
-      {/* ── Financial Summary Bar (Stripe-style) ── */}
+      {/* ── KPI Cards (Revenue, Orders, Models, Views) ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="p-4 border border-border rounded-sm bg-card hover:bg-accent/5 transition-colors">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1 flex items-center justify-between">
-            Gross Volume
-            <span className="text-success flex items-center"><TrendingUp size={10} className="mr-0.5" /> +12.4%</span>
-          </p>
-          <p className="text-3xl font-bold font-data text-foreground">${data?.total_revenue ? (data.total_revenue / (data.payout_share || 0.85)).toFixed(2) : "0.00"}</p>
-        </div>
-        <div className="p-4 border border-border rounded-sm bg-card hover:bg-accent/5 transition-colors">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1 flex items-center justify-between">
-            Net Revenue
-            <span className="text-success flex items-center"><TrendingUp size={10} className="mr-0.5" /> +14.2%</span>
-          </p>
-          <p className="text-3xl font-bold font-data text-foreground">${data?.total_revenue?.toFixed(2) || "0.00"}</p>
-        </div>
-        <div className="p-4 border border-border rounded-sm bg-card hover:bg-accent/5 transition-colors">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-            Platform Fees
-          </p>
-          <p className="text-3xl font-bold font-data text-muted-foreground">
-            ${data?.total_revenue ? (data.total_revenue / (data.payout_share || 0.85) - data.total_revenue).toFixed(2) : "0.00"}
-          </p>
-        </div>
-        <div className="p-4 border border-border rounded-sm bg-card hover:bg-accent/5 transition-colors">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-            Est. Payout
-          </p>
-          <p className="text-3xl font-bold font-data text-moss">${data?.estimated_payout?.toFixed(2) || "0.00"}</p>
-        </div>
-      </div>
-
-      {/* ── Main Chart Area ── */}
-      <div className="border border-border rounded-sm bg-card mb-6">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-            <BarChart3 size={14} className="text-primary" /> Net Revenue Over Time
-          </h2>
-        </div>
-        <div className="px-4 py-6">
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data?.chart_data || []}>
-                <defs>
-                  <linearGradient id="colorRevenueFin" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-                <XAxis dataKey="date" stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} axisLine={false} className="font-data" />
-                <YAxis stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} axisLine={false} className="font-data" tickFormatter={(v) => `$${v}`} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--color-card)",
-                    borderColor: "var(--color-border)",
-                    color: "var(--color-foreground)",
-                    borderRadius: "4px",
-                    fontSize: "12px",
-                    fontFamily: "var(--font-sans)",
-                  }}
-                  formatter={(value: any) => [`$${Number(value).toFixed(2)}`, "Net Revenue"]}
-                />
-                <Area type="monotone" dataKey="revenue" stroke="var(--color-primary)" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenueFin)" />
-              </AreaChart>
-            </ResponsiveContainer>
+        <div className="p-5 border border-border rounded-2xl bg-card hover-lift transition-all group">
+          <div className="text-sm font-semibold text-muted-foreground mb-2 flex items-center justify-between">
+            Revenue
+            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+              <DollarSign size={16} className="text-primary" />
+            </div>
           </div>
+          <p className="text-3xl font-bold font-display text-foreground">
+            ${data?.total_revenue?.toFixed(2) || "0.00"}
+          </p>
+          <p className="text-xs text-success flex items-center mt-2 font-medium">
+            <TrendingUp size={12} className="mr-1" /> +14.2% from last month
+          </p>
+        </div>
+
+        <div className="p-5 border border-border rounded-2xl bg-card hover-lift transition-all group">
+          <div className="text-sm font-semibold text-muted-foreground mb-2 flex items-center justify-between">
+            Orders
+            <div className="p-2 bg-success/10 rounded-lg group-hover:bg-success/20 transition-colors">
+              <ShoppingCart size={16} className="text-success" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold font-display text-foreground">
+            {data?.total_sales || 0}
+          </p>
+          <p className="text-xs text-muted-foreground flex items-center mt-2 font-medium">
+            <span className="text-success mr-1">+5</span> new this week
+          </p>
+        </div>
+
+        <div className="p-5 border border-border rounded-2xl bg-card hover-lift transition-all group">
+          <div className="text-sm font-semibold text-muted-foreground mb-2 flex items-center justify-between">
+            Models
+            <div className="p-2 bg-warning/10 rounded-lg group-hover:bg-warning/20 transition-colors">
+              <Package size={16} className="text-warning" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold font-display text-foreground">
+            {data?.published_count || 0}
+          </p>
+          <p className="text-xs text-muted-foreground flex items-center mt-2 font-medium">
+            <span className="text-warning mr-1">{data?.draft_count || 0}</span> in drafts
+          </p>
+        </div>
+
+        <div className="p-5 border border-border rounded-2xl bg-card hover-lift transition-all group">
+          <div className="text-sm font-semibold text-muted-foreground mb-2 flex items-center justify-between">
+            Views
+            <div className="p-2 bg-ember/10 rounded-lg group-hover:bg-ember/20 transition-colors">
+              <Eye size={16} className="text-ember" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold font-display text-foreground">
+            9,210
+          </p>
+          <p className="text-xs text-success flex items-center mt-2 font-medium">
+            <TrendingUp size={12} className="mr-1" /> +22.4% traffic
+          </p>
         </div>
       </div>
-
-      {/* ── Split: Inventory Status & Top Products ── */}
+      {/* ── Main: Revenue Chart + Funnel ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="border border-border rounded-sm bg-card">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <div className="lg:col-span-2 border border-border rounded-2xl bg-card hover-lift transition-all flex flex-col">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
             <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-              <Package size={14} className="text-success" /> Inventory Status
+              <BarChart3 size={14} className="text-primary" /> Net Revenue Over Time
             </h2>
-            <Link href="/creator/products" className="text-xs text-primary font-semibold hover:underline">Manage</Link>
           </div>
-          <div className="px-4 py-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-success" />
-                <span className="text-sm text-foreground">Published Products</span>
-              </div>
-              <span className="text-sm font-bold font-data">{data?.published_count ?? 0}</span>
+          <div className="px-5 py-6 flex-1">
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data?.chart_data || []}>
+                  <defs>
+                    <linearGradient id="colorRevenueFin" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.15}/>
+                      <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+                  <XAxis dataKey="date" stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} axisLine={false} className="font-data" />
+                  <YAxis stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} axisLine={false} className="font-data" tickFormatter={(v) => `$${v}`} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "var(--color-card)",
+                      borderColor: "var(--color-border)",
+                      color: "var(--color-foreground)",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                      fontFamily: "var(--font-sans)",
+                      border: "1px solid var(--color-border)",
+                    }}
+                    formatter={(value: any) => [`$${Number(value).toFixed(2)}`, "Net Revenue"]}
+                  />
+                  <Area type="monotone" dataKey="revenue" stroke="var(--color-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenueFin)" />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock size={14} className="text-warning" />
-                <span className="text-sm text-foreground">Drafts</span>
-              </div>
-              <span className="text-sm font-bold font-data">{data?.draft_count ?? 0}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShoppingCart size={14} className="text-ember" />
-                <span className="text-sm text-foreground">Total Units Sold</span>
-              </div>
-              <span className="text-sm font-bold font-data">{data?.total_sales ?? 0}</span>
-            </div>
-            <Button size="sm" variant="outline" className="w-full text-xs rounded-sm mt-2" onClick={() => router.push("/creator/products/new")}>
-              <Upload size={12} className="mr-1" /> Add New Product
-            </Button>
           </div>
         </div>
 
-        <div className="lg:col-span-2 border border-border rounded-sm bg-card">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-              <TrendingUp size={14} className="text-moss" /> Top Performing Products
-            </h2>
-          </div>
-          {data?.top_products?.length ? (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/30">
-                  <th className="px-4 py-2 font-semibold">Product Title</th>
-                  <th className="px-4 py-2 font-semibold text-center">Units</th>
-                  <th className="px-4 py-2 font-semibold text-right">Net Revenue</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
-                {data.top_products.map((tp: any) => (
-                  <tr key={tp.product_id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-2.5">
-                      <Link href={`/creator/products/${tp.product_id}`} className="font-semibold text-xs text-foreground hover:text-primary transition-colors">
-                        {tp.title}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-2.5 text-center font-data text-xs">{tp.units}</td>
-                    <td className="px-4 py-2.5 text-right font-data font-bold text-xs">${tp.revenue.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="px-4 py-8 text-center">
-              <p className="text-xs text-muted-foreground">No sales data yet.</p>
-            </div>
-          )}
+        <div className="lg:col-span-1">
+          <FunnelChart />
         </div>
       </div>
 
-      {/* ── Recent Transactions (Full Width Table) ── */}
-      <div className="border border-border rounded-sm bg-card">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-            <ClipboardList size={14} className="text-muted-foreground" /> Recent Transactions
-          </h2>
-          <Link href="/creator/orders" className="text-xs text-primary font-semibold hover:underline">View All Orders</Link>
-        </div>
-        <div className="overflow-x-auto">
+      {/* ── Split: Recent Transactions & AI Insights ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2 border border-border rounded-2xl bg-card hover-lift transition-all flex flex-col">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+              <ClipboardList size={14} className="text-muted-foreground" /> Recent Transactions
+            </h2>
+            <Link href="/creator/orders" className="text-xs text-primary font-semibold hover:underline">View All</Link>
+          </div>
+          <div className="overflow-x-auto flex-1">
           {data?.recent_orders?.length ? (
             <table className="w-full text-sm">
               <thead>
@@ -277,6 +243,11 @@ export default function SelfFulfillingDashboard() {
               <p className="text-xs text-muted-foreground mb-2">No recent transactions.</p>
             </div>
           )}
+          </div>
+        </div>
+
+        <div className="lg:col-span-1">
+          <AIInsightsPanel />
         </div>
       </div>
     </div>

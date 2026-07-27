@@ -107,12 +107,18 @@ export default function CartPage() {
       </h1>
 
       {!cart || !cart.items || cart.items.length === 0 ? (
-        <Card className="p-12 text-center border-border bg-card">
-          <p className="text-muted-foreground mb-6 font-display">Your cart is empty.</p>
-          <Button asChild>
-            <Link href="/marketplace">Browse Marketplace</Link>
+        <div className="flex flex-col items-center justify-center py-32 px-4 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="text-[80px] mb-6 leading-none">🛒</div>
+          <h2 className="text-2xl font-bold font-display mb-2 text-foreground">Your cart is empty.</h2>
+          <p className="text-muted-foreground mb-8 text-lg max-w-sm mx-auto">
+            Explore thousands of 3D models.
+          </p>
+          <Button asChild size="lg" className="rounded-xl px-12 shadow-lg hover-lift group">
+            <Link href="/marketplace">
+              Explore Marketplace <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
+            </Link>
           </Button>
-        </Card>
+        </div>
       ) : (
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-4">

@@ -14,88 +14,80 @@
    - calibration-cyan #2FD3C2  → tertiary accent (partner/data/success)
    ================================================================ */
 
-/* ===== Molten Workshop Theme (Light base) ===== */
+/* ===== Premium Light Theme ===== */
 @theme inline {
   /* Brand palette */
-  --color-ink: #241E1A;
-  --color-ink-muted: #6B625A;
-  --color-primary: #C2431F;
-  --color-ember: #E4572E;
-  --color-clay: #A85B32;
-  --color-kiln: #E39B2C;
-  --color-moss: #487444;
-  --color-rust: #B3402F;
-  --color-edge: #D2C3AB;
+  --color-primary: #6366F1;
+  --color-success: #16A34A;
+  --color-warning: #D97706;
+  --color-destructive: #DC2626;
+  --color-moss: #059669;
+  --color-ember: #EA580C;
 
-  /* Semantic surface/ink pairs for chips/badges */
-  --color-primary-surface: #FBEAE4;
-  --color-primary-ink: #A83A1A;
-  --color-success-surface: #E9F1E7;
-  --color-success-ink: #3D6639;
-  --color-warning-surface: #FDF0DC;
-  --color-warning-ink: #7A5210;
-  --color-danger-surface: #FBE9E6;
-  --color-danger-ink: #9A3527;
-  --color-info-surface: #F3EDE6;
-  --color-info-ink: #6B625A;
+  /* Semantic surface/ink pairs */
+  --color-primary-surface: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  --color-primary-ink: #4338CA;
+  --color-success-surface: color-mix(in srgb, var(--color-success) 12%, transparent);
+  --color-success-ink: #15803D;
+  --color-warning-surface: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  --color-warning-ink: #B45309;
+  --color-danger-surface: color-mix(in srgb, var(--color-destructive) 12%, transparent);
+  --color-danger-ink: #B91C1C;
 
-  /* Deprecated aliases (swept) */
-  --color-danger-red: var(--color-rust);
-  --color-graphite: var(--color-ink);
-  --color-paper: var(--color-card);
-  --color-surface: var(--color-card);
-  --color-surface-raised: var(--color-card);
-
-  /* Semantic tokens — Light mode as base */
-  --color-background: #FAF7F2;
-  --color-foreground: #241E1A;
+  /* Semantic tokens — Light mode */
+  --color-background: #F8F9FC;
+  --color-foreground: #0F172A;
   --color-card: #FFFFFF;
-  --color-card-foreground: #241E1A;
+  --color-card-foreground: #0F172A;
   --color-popover: #FFFFFF;
-  --color-popover-foreground: #241E1A;
+  --color-popover-foreground: #0F172A;
   --color-primary-foreground: #FFFFFF;
-  --color-secondary: #F1ECE3;
-  --color-secondary-foreground: #241E1A;
-  --color-muted: #F1ECE3;
-  --color-muted-foreground: #6B625A;
-  --color-accent: #F1ECE3;
-  --color-accent-foreground: #241E1A;
-  --color-destructive: #B3402F;
+  --color-secondary: #F1F5F9;
+  --color-secondary-foreground: #0F172A;
+  --color-muted: #F1F5F9;
+  --color-muted-foreground: #64748B;
+  --color-accent: #F1F5F9;
+  --color-accent-foreground: #0F172A;
   --color-destructive-foreground: #FFFFFF;
-  --color-border: #D2C3AB;
-  --color-input: #D2C3AB;
-  --color-ring: #C2431F;
-  --color-success: #487444;
-  --color-warning: #E39B2C;
+  --color-border: #E2E8F0;
+  --color-input: #E2E8F0;
+  --color-ring: #6366F1;
 
-  /* Radius — per spec: 6px inputs, 12px cards, 20px modals */
+  /* Radius */
   --radius-xs: 0.25rem;
   --radius-sm: 0.375rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1.25rem;
-  --radius-xl: 1.5rem;
-  --radius-2xl: 2rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
   --radius-full: 9999px;
 
   /* Fonts */
-  --font-display: var(--font-space-grotesk), "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-ibm-plex-sans), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+  --font-display: var(--font-space-grotesk), "Inter", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-ibm-plex-sans), "Inter", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
 
-  /* Motion — animations */
+  /* Motion */
   --animate-in: enter 0.2s ease-out;
   --animate-out: exit 0.15s ease-in;
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-in;
-  --animate-slide-in-from-top: slide-in-from-top 0.3s ease-out;
   --animate-slide-in-from-bottom: slide-in-from-bottom 0.3s ease-out;
-  --animate-slide-in-from-left: slide-in-from-left 0.3s ease-out;
-  --animate-slide-in-from-right: slide-in-from-right 0.3s ease-out;
   --animate-fade-in: fade-in 0.12s ease-out;
   --animate-scale-in: scale-in 0.2s ease-out;
   --animate-layer-line: layer-line-fill 1.8s ease-in-out infinite;
-  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
   --animate-shimmer: shimmer 2s linear infinite;
+}
+
+/* Micro-interaction utility classes */
+@layer utilities {
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/8;
+  }
+  .hover-tilt {
+    @apply transition-transform duration-300;
+  }
+  .hover-tilt:hover {
+    transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) scale(1.02);
+  }
 }
 
 
@@ -190,6 +182,33 @@
   to { width: 0%; }
 }
 
+@keyframes word-reveal {
+  0% { opacity: 0; transform: translateY(30px) rotateX(-20deg); filter: blur(8px); }
+  100% { opacity: 1; transform: translateY(0) rotateX(0deg); filter: blur(0); }
+}
+
+@keyframes float-up {
+  0% { opacity: 0; transform: translateY(40px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes counter-up {
+  0% { opacity: 0; transform: scale(0.8); }
+  50% { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes orbit-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 30%, transparent); }
+  50% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--color-primary) 0%, transparent); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 
 /* ================================================================
    Base styles
@@ -240,17 +259,17 @@ body {
 
 /* Glass morphism — light variant */
 .glass {
-  background: color-mix(in srgb, var(--color-card) 92%, transparent);
+  background: color-mix(in srgb, #FFFFFF 88%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
 }
 
 .glass-strong {
-  background: color-mix(in srgb, var(--color-background) 92%, transparent);
+  background: color-mix(in srgb, #FFFFFF 95%, transparent);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
 }
 
 /* Light surface card — hairline border (for modals/dialogs) */

@@ -44,63 +44,7 @@ import { cn, formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { MarketplaceShell } from "@/components/layout/marketplace-shell";
 
-// --- 3D Model Components ---
-function Model({ url }: { url: string }) {
-  const [geometry, setGeometry] = useState<THREE.BufferGeometry | THREE.Group | null>(null);
-
-  useEffect(() => {
-    if (!url) return;
-    const extension = url.split(".").pop()?.toLowerCase();
-
-    if (extension === "stl") {
-      const loader = new STLLoader();
-      loader.load(url, (geo) => {
-        geo.center();
-        setGeometry(geo);
-      });
-    } else if (extension === "obj") {
-      const loader = new OBJLoader();
-      loader.load(url, (group) => {
-        setGeometry(group);
-      });
-    }
-  }, [url]);
-
-  if (!geometry) return null;
-
-  if (geometry instanceof THREE.BufferGeometry) {
-    return (
-      <mesh geometry={geometry}>
-        <meshStandardMaterial color="#94a3b8" metalness={0.3} roughness={0.7} />
-      </mesh>
-    );
-  }
-  return <primitive object={geometry} />;
-}
-
-function ModelViewer({ url }: { url: string }) {
-  const [loaded, setLoaded] = useState(false);
-
-  return (
-    <div className="w-full h-full min-h-[400px] rounded-xl overflow-hidden border border-border bg-muted relative shadow-sm">
-      {!loaded && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-muted/80 backdrop-blur-xs">
-          <Loader2 className="animate-spin text-primary" size={32} />
-        </div>
-      )}
-      <Canvas
-        camera={{ position: [0, 0, 150], fov: 50 }}
-        onCreated={() => setLoaded(true)}
-      >
-        <Stage environment="city" intensity={0.5}>
-          <Model url={url} />
-        </Stage>
-        <OrbitControls makeDefault autoRotate autoRotateSpeed={2} />
-      </Canvas>
-    </div>
-  );
-}
-
+import { Advanced3DViewer } from "@/components/shared/advanced-3d-viewer";
 // --- Review Schema ---
 const reviewSchema = z.object({
   rating: z.number().min(1).max(5),
@@ -316,7 +260,7 @@ export default function ProductDetailPage() {
           <div className="lg:col-span-5 space-y-4">
             {modelUrl ? (
               <div className="h-[450px] lg:h-[500px]">
-                <ModelViewer url={modelUrl} />
+                <Advanced3DViewer url={modelUrl} />
               </div>
             ) : (
               <div className="h-[450px] lg:h-[500px] rounded-xl border border-border bg-muted flex items-center justify-center text-muted-foreground">

@@ -13,15 +13,18 @@ export function Footer() {
               <span className="text-foreground">Verse</span>
             </Link>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-              The premium marketplace for 3D-printed goods. Connecting creators,
-              customers, and print partners.
+              The infrastructure connecting digital creators, AI validation,
+              distributed manufacturing, and global fulfillment.
+            </p>
+            <p className="mt-2 text-xs text-primary font-semibold">
+              Upload Once. Sell Forever. Print Anywhere.
             </p>
           </div>
 
           {/* Marketplace */}
           <div>
             <h4 className="text-sm font-semibold text-foreground mb-4 font-display">
-              Marketplace
+              For Customers
             </h4>
             <ul className="space-y-2.5">
               {[
@@ -68,7 +71,7 @@ export function Footer() {
           {/* For Partners */}
           <div>
             <h4 className="text-sm font-semibold text-foreground mb-4 font-display">
-              Print Partners
+              For Print Partners
             </h4>
             <ul className="space-y-2.5">
               {[

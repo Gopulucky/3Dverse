@@ -86,6 +86,49 @@ def get_products(
 
     return enrich_products(db, query.offset(skip).limit(limit).all())
 
+@router.get("/suggestions")
+def get_suggestions(
+    db: Session = Depends(deps.get_db),
+    q: Optional[str] = Query(None, min_length=1),
+) -> Any:
+    """
+    Fast autocomplete suggestions for the search bar.
+    Returns product title matches + matching categories.
+    Lightweight — no AI embedding, just ilike prefix match.
+    """
+    if not q or not q.strip():
+        return {"products": [], "categories": []}
+
+    term = q.strip()
+    pattern = f"%{term}%"
+
+    # Product title suggestions (fast ilike — no FTS, no embedding)
+    product_rows = (
+        db.query(Product.id, Product.title, Product.category, Product.price)
+        .filter(
+            Product.status == ProductStatus.published,
+            Product.title.ilike(pattern),
+        )
+        .order_by(Product.title)
+        .limit(6)
+        .all()
+    )
+
+    # Category suggestions
+    CATEGORIES = [
+        "Tabletop", "Jewelry", "Cosplay", "Miniatures",
+        "Home Decor", "Gadgets", "Architecture", "Engineering", "Medical", "Gaming",
+    ]
+    matching_categories = [c for c in CATEGORIES if term.lower() in c.lower()]
+
+    return {
+        "products": [
+            {"id": r.id, "title": r.title, "category": r.category, "price": float(r.price)}
+            for r in product_rows
+        ],
+        "categories": matching_categories[:3],
+    }
+
 @router.get("/products/{id}", response_model=ProductSchema)
 def get_product(
     id: int,

@@ -13,6 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRequireRole } from "@/stores/auth-store";
 import { StudioShell } from "@/components/layout/studio-shell";
 
+import { CreatorProductCard } from "@/components/shared/creator-product-card";
+
 export default function CreatorProductsPage() {
   const router = useRouter();
   const { ready: isAuthenticated } = useRequireRole(["creator", "admin"]);
@@ -27,17 +29,19 @@ export default function CreatorProductsPage() {
     enabled: isAuthenticated,
   });
 
-
   if (!isAuthenticated) return null;
 
   const content = (
     <div className="w-full px-6 pt-8 pb-12">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-          <Package className="text-primary" />
-          My Products
-        </h1>
-        <Button asChild className="rounded-sm font-semibold">
+      <div className="flex justify-between items-center mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
+            <Package className="text-primary" />
+            My Products
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage your models, pricing, and inventory.</p>
+        </div>
+        <Button asChild className="rounded-xl px-6 font-semibold shadow-lg hover-lift">
           <Link href="/creator/products/new">
             <Plus size={18} className="mr-2" />
             New Product
@@ -46,7 +50,7 @@ export default function CreatorProductsPage() {
       </div>
 
       {error && (
-        <div className="p-4 mb-6 border border-destructive/30 bg-destructive/5 rounded-sm">
+        <div className="p-4 mb-6 border border-destructive/30 bg-destructive/5 rounded-xl">
           <p className="text-destructive text-sm font-medium">
             {(error as any)?.detail || "Failed to load products"}
           </p>
@@ -54,58 +58,24 @@ export default function CreatorProductsPage() {
       )}
 
       {products.length === 0 ? (
-        <div className="p-12 text-center border border-border rounded-sm bg-card">
-          <Package size={48} className="mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-medium mb-2 font-display">No products yet</h2>
-          <p className="text-muted-foreground mb-6">
-            Start building your portfolio by creating your first 3D model product.
+        <div className="flex flex-col items-center justify-center py-32 px-4 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="text-[80px] mb-6 leading-none">📦</div>
+          <h2 className="text-2xl font-bold font-display mb-2 text-foreground">No products yet.</h2>
+          <p className="text-muted-foreground mb-8 text-lg max-w-sm mx-auto">
+            Start building your portfolio by creating your first printable model.
           </p>
-          <Button asChild className="rounded-sm">
+          <Button asChild size="lg" className="rounded-xl px-12 shadow-lg hover-lift group">
             <Link href="/creator/products/new">
-              <Plus size={18} className="mr-2" />
-              Create Product
+              <Plus size={18} className="mr-2 group-hover:rotate-90 transition-transform" />
+              Upload Model
             </Link>
           </Button>
         </div>
       ) : (
-        <div className="border border-border rounded-sm bg-card overflow-hidden">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-muted text-muted-foreground uppercase text-[10px] font-semibold border-b border-border">
-              <tr>
-                <th className="px-4 py-3">Product Name</th>
-                <th className="px-4 py-3 text-center">Status</th>
-                <th className="px-4 py-3 text-right">Price</th>
-                <th className="px-4 py-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product: any) => (
-                <tr key={product.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors last:border-0">
-                  <td className="px-4 py-3 font-semibold text-foreground max-w-[300px] truncate">
-                    {product.title}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Badge
-                      variant={product.status === "published" ? "success" : "secondary"}
-                      className="rounded-sm text-[10px] uppercase font-bold tracking-wider px-2 py-0.5"
-                    >
-                      {product.status}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right font-data font-bold text-[15px]">
-                    ${product.price?.toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Button variant="ghost" size="sm" className="h-8 text-xs font-bold px-3 rounded-sm" asChild>
-                      <Link href={`/creator/products/${product.id}`}>
-                        <Edit size={14} className="mr-1.5" /> Edit
-                      </Link>
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          {products.map((product: any) => (
+            <CreatorProductCard key={product.id} product={product} />
+          ))}
         </div>
       )}
     </div>

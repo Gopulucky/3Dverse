@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   ShoppingCart,
   Menu,
@@ -25,6 +25,8 @@ import {
   Settings,
   Users,
   Upload,
+  Tag,
+  Clock,
   Wand2,
 } from "lucide-react";
 
@@ -54,12 +56,57 @@ export function Navbar() {
   const { user, isAuthenticated, logout, hydrate } = useAuthStore();
   const { itemCount, setItemCount } = useCartStore();
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchCategory, setSearchCategory] = useState("");
+  const [suggestions, setSuggestions] = useState<{ products: any[]; categories: string[] }>({ products: [], categories: [] });
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(-1);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      router.push(`/marketplace?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
+  const handleSearch = (overrideQuery?: string) => {
+    const q = (overrideQuery ?? searchQuery).trim();
+    setShowSuggestions(false);
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (searchCategory) params.set("category", searchCategory);
+    router.push(`/marketplace?${params.toString()}`);
   };
+
+  // Fetch suggestions with debounce
+  const fetchSuggestions = useCallback((value: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!value.trim() || value.length < 2) {
+      setSuggestions({ products: [], categories: [] });
+      setShowSuggestions(false);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const data = await api.get<any>("/api/marketplace/suggestions", { q: value.trim() });
+        setSuggestions(data);
+        setShowSuggestions(true);
+        setActiveIdx(-1);
+      } catch {
+        // silently fail
+      }
+    }, 220);
+  }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const allSuggestions = [
+    ...suggestions.categories.map((c) => ({ type: "category", label: c })),
+    ...suggestions.products.map((p) => ({ type: "product", label: p.title, sub: p.category, price: p.price, id: p.id })),
+  ];
 
   // Determine portal context — /collaboration is a Creator Studio surface
   const isCreator = pathname.startsWith("/creator") || pathname.startsWith("/collaboration");
@@ -152,7 +199,7 @@ export function Navbar() {
       key: "admin",
       href: "/admin/dashboard",
       label: "Admin Console",
-      description: "Platform operations",
+      description: "Platform management",
       icon: Shield,
       iconClass: "text-destructive",
       active: isAdmin,
@@ -226,26 +273,124 @@ export function Navbar() {
 
             {/* Central Search Bar (Marketplace only) */}
             {isMarketplace && (
-              <div className="hidden md:flex flex-1 max-w-4xl px-4 lg:px-8">
+              <div ref={searchRef} className="hidden md:flex flex-1 max-w-4xl px-4 lg:px-8 relative">
                 <div className="relative w-full shadow-sm rounded-md flex focus-within:ring-2 focus-within:ring-primary/80 transition-shadow bg-card overflow-hidden h-10">
-                  <div className="hidden sm:flex items-center gap-1 px-3 bg-muted border-r border-border hover:bg-muted/80 cursor-pointer transition-colors text-[13px] font-medium text-foreground">
-                    All <ChevronDown size={12} className="text-muted-foreground ml-1" />
-                  </div>
+                  <select
+                    value={searchCategory}
+                    onChange={(e) => setSearchCategory(e.target.value)}
+                    className="hidden sm:flex items-center h-full px-3 bg-muted border-r border-border hover:bg-muted/80 cursor-pointer transition-colors text-[13px] font-medium text-foreground appearance-none pr-6 focus:outline-none"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
+                  >
+                    <option value="">All</option>
+                    <option value="Tabletop">Tabletop</option>
+                    <option value="Jewelry">Jewelry</option>
+                    <option value="Cosplay">Cosplay</option>
+                    <option value="Miniatures">Miniatures</option>
+                    <option value="Home Decor">Home Decor</option>
+                    <option value="Gadgets">Gadgets</option>
+                    <option value="Architecture">Architecture</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Medical">Medical</option>
+                    <option value="Gaming">Gaming</option>
+                  </select>
                   <input
                     type="text"
                     placeholder="Search 3DVerse"
                     className="flex-1 h-full pl-4 pr-4 bg-transparent text-[15px] focus:outline-none focus:ring-0"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      fetchSuggestions(e.target.value);
+                    }}
+                    onFocus={() => { if (searchQuery.length >= 2) setShowSuggestions(true); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setActiveIdx((i) => Math.min(i + 1, allSuggestions.length - 1));
+                      } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setActiveIdx((i) => Math.max(i - 1, -1));
+                      } else if (e.key === "Escape") {
+                        setShowSuggestions(false);
+                      } else if (e.key === "Enter") {
+                        if (activeIdx >= 0 && allSuggestions[activeIdx]) {
+                          const s = allSuggestions[activeIdx];
+                          if (s.type === "category") {
+                            setSearchCategory(s.label);
+                            handleSearch("");
+                          } else {
+                            handleSearch(s.label);
+                          }
+                        } else {
+                          handleSearch();
+                        }
+                      }
+                    }}
                   />
-                  <div 
-                    onClick={handleSearch}
+                  <div
+                    onClick={() => handleSearch()}
                     className="w-12 h-full flex items-center justify-center bg-[#febd69] cursor-pointer hover:bg-[#f3a847] text-foreground transition-colors"
                   >
                     <Search size={20} />
                   </div>
                 </div>
+
+                {/* Suggestions Dropdown */}
+                {showSuggestions && allSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+                    {suggestions.categories.length > 0 && (
+                      <div>
+                        <div className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Categories</div>
+                        {suggestions.categories.map((cat, i) => {
+                          const idx = i;
+                          return (
+                            <button
+                              key={cat}
+                              onMouseDown={() => { setSearchCategory(cat); setSearchQuery(""); setSuggestions({ products: [], categories: [] }); setShowSuggestions(false); router.push(`/marketplace?category=${encodeURIComponent(cat)}`); }}
+                              className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted/60 transition-colors", activeIdx === idx && "bg-muted")} 
+                            >
+                              <Tag size={13} className="text-primary shrink-0" />
+                              <span className="font-medium">{cat}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {suggestions.products.length > 0 && (
+                      <div>
+                        <div className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Products</div>
+                        {suggestions.products.map((p, i) => {
+                          const idx = suggestions.categories.length + i;
+                          return (
+                            <button
+                              key={p.id}
+                              onMouseDown={() => { setShowSuggestions(false); router.push(`/marketplace/products/${p.id}`); }}
+                              className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/60 transition-colors", activeIdx === idx && "bg-muted")}
+                            >
+                              <Search size={13} className="text-muted-foreground shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <span className="text-sm font-medium text-foreground truncate block">{p.title}</span>
+                                <span className="text-[11px] text-muted-foreground">{p.category}</span>
+                              </div>
+                              <span className="text-sm font-bold text-primary shrink-0">${p.price.toFixed(2)}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <div className="border-t border-border px-4 py-2.5">
+                      <button
+                        onMouseDown={() => handleSearch()}
+                        className="w-full flex items-center gap-2 text-[13px] text-primary font-semibold hover:underline"
+                      >
+                        <Search size={13} />
+                        Search for &ldquo;{searchQuery}&rdquo;
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -362,6 +507,13 @@ export function Navbar() {
                     </>
                     )}
                     
+                    {!isCreator && (
+                      <DropdownMenuItem onClick={() => router.push("/creator")} className="rounded-lg cursor-pointer py-2 text-ember focus:text-ember bg-ember/5 focus:bg-ember/10 mb-1 font-medium">
+                        <Store size={16} className="mr-3" />
+                        Sell with 3DVerse
+                      </DropdownMenuItem>
+                    )}
+
                     <DropdownMenuItem onClick={() => router.push(settingsHref)} className="rounded-lg cursor-pointer py-2">
                       <Settings size={16} className="mr-3" />
                       Settings

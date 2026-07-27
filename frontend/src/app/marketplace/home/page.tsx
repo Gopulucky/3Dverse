@@ -3,12 +3,31 @@
 import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Star, Tag, Clock, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, Tag, Clock, Search, ChevronLeft, ChevronRight, Users, LayoutGrid } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { MarketplaceShell } from "@/components/layout/marketplace-shell";
 import { ProductCard } from "@/components/shared/product-card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
+
+const POPULAR_CREATORS = [
+  { name: "VertexStudio", followers: "12k", role: "Architecture", initials: "VS", image: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150" },
+  { name: "MechMaster", followers: "8.5k", role: "Engineering", initials: "MM", image: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150" },
+  { name: "BioPrint", followers: "5.2k", role: "Medical", initials: "BP", image: "https://images.unsplash.com/photo-1594824436998-058b2315530d?auto=format&fit=crop&q=80&w=150" },
+  { name: "MiniatureHeroes", followers: "21k", role: "Gaming", initials: "MH", image: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=150" },
+  { name: "Artisan3D", followers: "15k", role: "Decor", initials: "A3", image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=150" },
+];
+
+const CATEGORY_BANNERS = [
+  { name: "Architecture", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=500" },
+  { name: "Miniatures", image: "https://images.unsplash.com/photo-1590483736622-398541ce0ce6?auto=format&fit=crop&q=80&w=500" },
+  { name: "Engineering", image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=500" },
+  { name: "Medical", image: "https://images.unsplash.com/photo-1559757175-5700dde675bc?auto=format&fit=crop&q=80&w=500" },
+  { name: "Gaming", image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=500" },
+  { name: "Mechanical Parts", image: "https://images.unsplash.com/photo-1622322305545-a4613b5a1532?auto=format&fit=crop&q=80&w=500" },
+];
 
 function ProductSection({
   title,
@@ -40,9 +59,10 @@ function ProductSection({
     <section className="mb-20">
       <div className="flex justify-between items-end mb-8">
         <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-3 font-display">
-          <Icon className={iconColor} size={24} />
+          <Icon className={iconColor} size={28} />
           {title}
         </h2>
+        <Button variant="ghost" className="text-muted-foreground hover:text-foreground">View All</Button>
       </div>
       <div className="relative group">
         <button
@@ -81,9 +101,9 @@ export default function MarketplaceHome() {
 
   return (
     <MarketplaceShell>
-      <div className="min-h-screen">
+      <div className="min-h-screen pb-20">
         {/* Hero Section (Carousel) */}
-        <section className="relative w-full h-[400px] md:h-[500px] overflow-hidden bg-muted group">
+        <section className="relative w-full h-[400px] md:h-[500px] overflow-hidden bg-muted group mb-12">
           <div className="absolute inset-0 flex transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-0%)` }}>
             <div className="w-full h-full flex-shrink-0 relative bg-gradient-to-r from-primary/90 to-primary/80 text-primary-foreground flex items-center">
               <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-30"></div>
@@ -94,45 +114,39 @@ export default function MarketplaceHome() {
                 <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 max-w-lg">
                   Explore thousands of premium, ready-to-print models from world-class creators.
                 </p>
-                <Button size="lg" className="bg-card text-primary hover:bg-card/90 font-bold rounded-full px-8">
+                <Button size="lg" className="bg-card text-primary hover:bg-card/90 font-bold rounded-full px-8 shadow-lg hover:scale-105 transition-transform">
                   Shop Now
                 </Button>
               </div>
             </div>
           </div>
-          {/* Carousel Controls (Mock) */}
-          <button className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-16 bg-ink/20 hover:bg-card/20 backdrop-blur flex items-center justify-center rounded transition-colors opacity-0 group-hover:opacity-100 text-primary-foreground">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-          </button>
-          <button className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-16 bg-ink/20 hover:bg-card/20 backdrop-blur flex items-center justify-center rounded transition-colors opacity-0 group-hover:opacity-100 text-primary-foreground">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-          </button>
         </section>
 
         {/* Content */}
-        <div className="max-w-7xl mx-auto px-6 py-16">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           {isLoading ? (
             <div className="space-y-16">
               <div>
                 <div className="h-8 w-48 skeleton rounded mb-8" />
-                <ProductGridSkeleton count={4} />
+                <ProductGridSkeleton count={5} />
               </div>
               <div>
                 <div className="h-8 w-48 skeleton rounded mb-8" />
-                <ProductGridSkeleton count={4} />
+                <ProductGridSkeleton count={5} />
               </div>
             </div>
           ) : (
             <>
+              {/* Main Product Rows */}
               <ProductSection
-                title="Featured Products"
+                title="Featured Models"
                 icon={Star}
-                iconColor="text-ember"
+                iconColor="text-amber-500"
                 products={data?.featured || []}
               />
 
               <ProductSection
-                title="Trending Now"
+                title="Trending"
                 icon={Tag}
                 iconColor="text-primary"
                 products={data?.trending || []}
@@ -141,30 +155,62 @@ export default function MarketplaceHome() {
               <ProductSection
                 title="New Arrivals"
                 icon={Clock}
-                iconColor="text-primary"
+                iconColor="text-emerald-500"
                 products={data?.new_arrivals || []}
               />
 
-              {/* Categories */}
-              {data?.categories && data.categories.length > 0 && (
-                <section className="mt-16">
-                  <h2 className="text-2xl sm:text-3xl font-bold mb-8 text-center font-display">
-                    Shop by Category
+              {/* Popular Creators */}
+              <section className="mb-20">
+                <div className="flex justify-between items-end mb-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-3 font-display">
+                    <Users className="text-blue-500" size={28} />
+                    Popular Creators
                   </h2>
-                  <div className="flex flex-wrap justify-center gap-3">
-                    {data.categories.map((c: string) => (
-                      <Link
-                        key={c}
-                        href={`/marketplace?category=${encodeURIComponent(c)}`}
-                      >
-                        <Button variant="outline" className="rounded-full px-6">
-                          {c}
-                        </Button>
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+                  {POPULAR_CREATORS.map((creator, i) => (
+                    <Card key={i} className="p-6 text-center hover:shadow-md transition-all group hover:-translate-y-1 bg-card/50 backdrop-blur">
+                      <Avatar className="w-24 h-24 mx-auto mb-4 border-2 border-primary/20 group-hover:border-primary transition-colors">
+                        <AvatarImage src={creator.image} />
+                        <AvatarFallback>{creator.initials}</AvatarFallback>
+                      </Avatar>
+                      <h3 className="font-bold font-display text-lg mb-1">{creator.name}</h3>
+                      <p className="text-muted-foreground text-sm font-medium mb-3">{creator.role}</p>
+                      <Button variant="outline" size="sm" className="w-full rounded-full">Follow</Button>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+
+              {/* Categories Banner Grid */}
+              <section className="mb-20">
+                <div className="flex justify-between items-end mb-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-3 font-display">
+                    <LayoutGrid className="text-purple-500" size={28} />
+                    Explore Categories
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {CATEGORY_BANNERS.map((category, i) => (
+                    <Link key={i} href={`/marketplace?category=${encodeURIComponent(category.name)}`}>
+                      <div className="group relative h-48 rounded-2xl overflow-hidden cursor-pointer">
+                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors z-10" />
+                        <img 
+                          src={category.image} 
+                          alt={category.name} 
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center z-20">
+                          <h3 className="text-2xl font-bold text-white font-display drop-shadow-md">
+                            {category.name}
+                          </h3>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+
             </>
           )}
         </div>
