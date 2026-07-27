@@ -1,4 +1,4 @@
-import { Sparkles, Check, TrendingUp, Tag, ArrowDownCircle, ArrowRight } from "lucide-react";
+import { Sparkles, Check, TrendingUp, Tag, ArrowDownCircle, ArrowRight, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -6,7 +6,7 @@ interface Insight {
   id: string;
   type: "positive" | "action" | "warning";
   text: string;
-  icon?: React.ElementType;
+  icon?: LucideIcon;
 }
 
 const mockInsights: Insight[] = [

@@ -267,7 +267,7 @@ export default function PartnerDashboard() {
                               key={status}
                               disabled={!isNext}
                               onClick={() => updateStatus(job.id, status)}
-                              variant={isPast ? "secondary" : isCurrent ? "console" : isNext ? "outline" : "ghost"}
+                              variant={isPast ? "secondary" : isCurrent ? "glow" : isNext ? "outline" : "ghost"}
                               size="sm"
                               className={cn(isPast && "opacity-50", isCurrent && "ring-2 ring-primary/30", isNext && "border-primary text-primary hover:bg-primary hover:text-primary-ink")}
                             >
