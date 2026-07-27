@@ -1,4 +1,6 @@
+import json
 import urllib.parse
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 
@@ -16,25 +18,38 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days
 
-    # CORS
-    BACKEND_CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000"
-    ]
-    
+    # CORS. Plain string field (not List[str]) so it can be set from a
+    # Render/Vercel env var box as either a comma-separated list or a JSON
+    # array -- pydantic-settings would otherwise require strict JSON for a
+    # List[str] env var, which is easy to get wrong when pasting by hand.
+    BACKEND_CORS_ORIGINS_RAW: str = Field(
+        default="http://localhost:3000,http://127.0.0.1:3000",
+        validation_alias="BACKEND_CORS_ORIGINS",
+    )
+
     # Database
     POSTGRES_SERVER: str = "localhost:5433"
     POSTGRES_USER: str = "3dverse_user"
     POSTGRES_PASSWORD: str = "3dverse_password"
     POSTGRES_DB: str = "3dverse"
-    
-    # Redis
+
+    # Redis. REDIS_URL, if set, wins over the individual host/port/password
+    # fields -- hosted Redis (Render, Upstash, etc.) hands out a single
+    # connection string rather than discrete host/port/password values.
+    REDIS_URL_OVERRIDE: str | None = Field(default=None, validation_alias="REDIS_URL")
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
     REDIS_PASSWORD: str | None = None
-    
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @property
+    def BACKEND_CORS_ORIGINS(self) -> List[str]:
+        raw = self.BACKEND_CORS_ORIGINS_RAW.strip()
+        if raw.startswith("["):
+            return [str(origin) for origin in json.loads(raw)]
+        return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
     @property
     def is_production(self) -> bool:
@@ -44,9 +59,11 @@ class Settings(BaseSettings):
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         encoded_password = urllib.parse.quote_plus(self.POSTGRES_PASSWORD)
         return f"postgresql+psycopg://{self.POSTGRES_USER}:{encoded_password}@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
-        
+
     @property
     def REDIS_URL(self) -> str:
+        if self.REDIS_URL_OVERRIDE:
+            return self.REDIS_URL_OVERRIDE
         auth = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
         return f"redis://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
