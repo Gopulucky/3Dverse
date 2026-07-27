@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional, Any
 from datetime import datetime
-from app.models.product import ProductStatus
+from app.models.product import ProductStatus, FulfillmentStatus, SafetyReviewStatus
 
 # Product Version Schemas
 class ProductVersionBase(BaseModel):
@@ -33,7 +33,23 @@ class ProductVersionResponse(ProductVersionBase):
     id: int
     product_id: int
     is_latest: bool
+    preview_url: Optional[str] = None
     created_at: datetime
+    printability_report: Optional[PrintabilityReportResponse] = None
+
+    class Config:
+        from_attributes = True
+
+
+class PublicProductVersion(BaseModel):
+    """Marketplace-facing version info. Deliberately omits file_url and
+    file_size -- the source model is only reachable through /api/downloads,
+    and shoppers get the decimated preview mesh instead."""
+    id: int
+    product_id: int
+    version_number: int
+    is_latest: bool
+    preview_url: Optional[str] = None
     printability_report: Optional[PrintabilityReportResponse] = None
 
     class Config:
@@ -65,6 +81,7 @@ class ProductBase(BaseModel):
     price: float = 0.0
     license_type: Optional[str] = None
     status: ProductStatus = ProductStatus.draft
+    fulfillment_status: Optional[FulfillmentStatus] = FulfillmentStatus.PENDING_PARTNER
 
     is_mode_2_active: Optional[bool] = False
     is_mode_3_active: Optional[bool] = False
@@ -113,5 +130,15 @@ class Product(ProductBase):
     creator_name: Optional[str] = None
     creator_avatar: Optional[str] = None
 
+    # Admin-set, read-only from the creator's side
+    safety_review_status: SafetyReviewStatus = SafetyReviewStatus.pending
+    safety_review_note: Optional[str] = None
+
     class Config:
         from_attributes = True
+
+
+class PublicProduct(Product):
+    """What anonymous marketplace traffic sees: everything except the paths to
+    the paid source files."""
+    versions: List[PublicProductVersion] = []

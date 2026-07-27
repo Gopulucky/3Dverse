@@ -20,13 +20,13 @@ import { StudioShell } from "@/components/layout/studio-shell";
 import { cn, formatDate } from "@/lib/utils";
 
 const STATUS_STYLES: Record<string, string> = {
-  paid: "bg-success/15 text-success",
-  queued: "bg-primary/15 text-primary",
-  printing: "bg-nozzle-orange/15 text-nozzle-orange",
-  qc: "bg-warning/15 text-warning",
-  packed: "bg-warning/15 text-warning",
-  shipped: "bg-calibration-cyan/15 text-calibration-cyan",
-  delivered: "bg-success/15 text-success",
+  paid: "bg-success-surface text-success-ink",
+  queued: "bg-primary-surface text-primary-ink",
+  printing: "bg-warning-surface text-warning-ink",
+  qc: "bg-warning-surface text-warning-ink",
+  packed: "bg-warning-surface text-warning-ink",
+  shipped: "bg-success-surface text-success-ink",
+  delivered: "bg-success-surface text-success-ink",
 };
 
 const FILTERS = [
@@ -79,7 +79,7 @@ export default function CreatorOrdersPage() {
               className={cn(
                 "px-4 py-1.5 rounded-full text-sm font-semibold border transition-all",
                 status === f.value
-                  ? "bg-primary text-white border-primary"
+                  ? "bg-primary text-primary-foreground border-primary"
                   : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-primary/40"
               )}
             >

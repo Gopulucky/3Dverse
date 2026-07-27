@@ -11,11 +11,11 @@ const statusChipVariants = cva(
     variants: {
       status: {
         neutral: "bg-secondary text-secondary-foreground",
-        success: "bg-calibration-cyan/15 text-calibration-cyan",
-        warning: "bg-nozzle-orange/15 text-nozzle-orange",
-        danger: "bg-danger-red/15 text-danger-red",
-        "in-progress": "bg-primary/15 text-primary",
-        pending: "bg-muted text-muted-foreground",
+        success: "bg-success-surface text-success-ink",
+        warning: "bg-warning-surface text-warning-ink",
+        danger: "bg-danger-surface text-danger-ink",
+        "in-progress": "bg-primary-surface text-primary-ink",
+        pending: "bg-info-surface text-info-ink",
       },
     },
     defaultVariants: {

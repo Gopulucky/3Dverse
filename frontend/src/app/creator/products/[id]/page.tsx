@@ -11,6 +11,7 @@ import {
   Loader2,
   Image as ImageIcon,
   Settings2,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -20,6 +21,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { useRequireAuth } from "@/stores/auth-store";
 import ModelViewer from "@/components/ModelViewer";
 import { cn } from "@/lib/utils";
@@ -115,6 +117,14 @@ export default function ProductDetailPage({
   };
 
   const handlePublishToggle = () => {
+    if (product.status !== "published") {
+      const latestVersion = product.versions?.find((v: any) => v.is_latest);
+      if (latestVersion?.printability_report?.status === "fail") {
+        toast.error("Cannot publish: Printability check failed. Please resolve the geometry issues first.");
+        return;
+      }
+    }
+
     if (product.status === "published") {
       handleUpdate(undefined, "draft");
     } else {
@@ -194,30 +204,30 @@ export default function ProductDetailPage({
           <ArrowLeft size={16} /> Back to Library
         </Link>
 
-        <div className="flex justify-between items-end mb-8">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center font-display mb-2">
-              {product.title}
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold flex items-center font-display">
+              {product.title || "Untitled Product"}
             </h1>
-            <p className="text-muted-foreground text-sm flex gap-3 items-center">
-              <span>{latestVersion?.file_name || "No model file"}</span>
-              <Badge
-                variant={product.status === "published" ? "success" : "secondary"}
-                className="text-xs"
-              >
-                {product.status?.toUpperCase()}
-              </Badge>
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={handlePublishToggle}
-              disabled={saving}
-              variant={product.status === "published" ? "secondary" : "default"}
+            <Badge
+              variant={product.status === "published" ? "success" : "secondary"}
+              className="capitalize shadow-sm"
             >
-              {saving && <Loader2 size={16} className="animate-spin mr-2" />}
-              {product.status === "published" ? "Unpublish" : "Publish Design"}
-            </Button>
+              {product.status}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-3">
+            {product.status === "published" ? (
+              <Button onClick={handlePublishToggle} variant="outline" disabled={saving}>
+                {saving && <Loader2 size={16} className="animate-spin mr-2" />}
+                Unpublish
+              </Button>
+            ) : (
+              <Button onClick={handlePublishToggle} variant="secondary" className="bg-primary-surface text-primary-ink hover:bg-primary/20" disabled={saving}>
+                {saving && <Loader2 size={16} className="animate-spin mr-2" />}
+                Publish
+              </Button>
+            )}
             <Button onClick={(e) => handleUpdate(e)} disabled={saving}>
               {saving ? (
                 <Loader2 size={16} className="animate-spin mr-2" />
@@ -229,36 +239,52 @@ export default function ProductDetailPage({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* LEFT COLUMN: Viewer & Details */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* 3D VIEWER */}
-            <Card className="p-1 overflow-hidden bg-card border-border">
-              {latestVersion ? (
-                <div className="h-[400px] w-full bg-muted/30 rounded-lg overflow-hidden relative">
-                  <ModelViewer
-                    url={api.mediaUrl(latestVersion.file_url)}
-                    extension={latestVersion.file_name?.split('.').pop() || ""}
-                  />
-                  <div className="absolute top-4 left-4 bg-background/80 backdrop-blur px-3 py-1.5 rounded-lg text-xs font-mono border shadow-sm">
-                    Vol: {latestVersion.printability_report?.volume_mm3 ? (latestVersion.printability_report.volume_mm3 / 1000).toFixed(2) + " cm³" : "Calculating..."}
-                  </div>
-                </div>
-              ) : (
-                <div className="h-[400px] bg-muted rounded-lg flex flex-col items-center justify-center text-muted-foreground border border-dashed">
-                  <FileBox size={48} className="mb-4 opacity-50" />
-                  <p>No 3D model uploaded yet.</p>
-                </div>
-              )}
-            </Card>
+        {latestVersion?.printability_report?.status === "fail" && product.status !== "published" && (
+          <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
+            <AlertTriangle className="text-destructive mt-0.5" size={20} />
+            <div>
+              <h3 className="font-semibold text-destructive">Printability Check Failed</h3>
+              <p className="text-sm text-destructive/80 mt-1">
+                Your model failed the automated printability analysis. Please check the Geometry section for details and upload a fixed version. You cannot publish until these issues are resolved.
+              </p>
+            </div>
+          </div>
+        )}
 
-            {/* PRODUCT DETAILS */}
-            <Card className="p-6 border-border bg-card">
-              <h2 className="text-xl font-bold mb-6 font-display">General Details</h2>
-              <form className="space-y-4">
+        {product.safety_review_status === "pending" && product.status !== "published" && (
+          <div className="mb-8 p-4 bg-ember/10 border border-ember/20 rounded-xl flex items-start gap-3">
+            <AlertTriangle className="text-ember mt-0.5" size={20} />
+            <div>
+              <h3 className="font-semibold text-ember">Awaiting Safety Review</h3>
+              <p className="text-sm text-ember/80 mt-1">
+                Every new listing is screened for restricted or dangerous printable items before it can go
+                live. This is usually quick — you&apos;ll be able to publish as soon as it clears.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {product.safety_review_status === "rejected" && (
+          <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
+            <AlertTriangle className="text-destructive mt-0.5" size={20} />
+            <div>
+              <h3 className="font-semibold text-destructive">Failed Safety Review</h3>
+              <p className="text-sm text-destructive/80 mt-1">
+                {product.safety_review_note || "This design cannot be published. Contact support for details."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8 items-start">
+          {/* LEFT COLUMN: Main Editor */}
+          <div className="space-y-6">
+            
+            {/* OVERVIEW */}
+            <Card className="p-6 border-border bg-card shadow-sm">
+              <form className="space-y-5">
                 <div>
-                  <Label className="mb-2 block">Title</Label>
+                  <Label className="mb-1.5 block">Title</Label>
                   <Input
                     value={product.title}
                     onChange={(e) =>
@@ -267,9 +293,9 @@ export default function ProductDetailPage({
                   />
                 </div>
                 <div>
-                  <Label className="mb-2 block">Description</Label>
+                  <Label className="mb-1.5 block">Description</Label>
                   <Textarea
-                    rows={4}
+                    rows={6}
                     value={product.description || ""}
                     onChange={(e) =>
                       setProduct({ ...product, description: e.target.value })
@@ -277,33 +303,80 @@ export default function ProductDetailPage({
                     placeholder="Describe your design, instructions, story, etc."
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="mb-2 block">Category</Label>
-                    <Input
-                      value={product.category || ""}
-                      onChange={(e) =>
-                        setProduct({ ...product, category: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
               </form>
             </Card>
 
-            {/* 3D PRINT SETTINGS */}
-            <Card className="p-6 border-border bg-card">
-              <h2 className="text-xl font-bold mb-2 font-display flex items-center gap-2">
-                <Settings2 size={20} className="text-primary" />
-                3D Print Settings
+            {/* MEDIA HUB */}
+            <Card className="p-6 border-border bg-card shadow-sm">
+              <div className="flex justify-between items-center mb-5">
+                <h2 className="text-lg font-bold font-display">Media Hub</h2>
+                <label className="cursor-pointer text-sm font-semibold text-primary hover:underline flex items-center gap-1.5">
+                  <ImageIcon size={16} />
+                  Add Images
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleFileUpload(e, "media")}
+                    disabled={uploading}
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                {/* 3D Viewer takes 2 spans if it exists */}
+                <div className="col-span-3 lg:col-span-2 h-[350px] bg-muted/30 rounded-xl overflow-hidden relative border border-border">
+                  {latestVersion?.preview_url ? (
+                    <>
+                      <ModelViewer
+                        url={api.mediaUrl(latestVersion.preview_url)}
+                        extension="glb"
+                      />
+                      <div className="absolute top-3 left-3 bg-background/80 backdrop-blur px-2.5 py-1.5 rounded-lg text-xs font-mono border shadow-sm flex items-center gap-2">
+                        <FileBox size={14} className="text-primary"/> 3D Model
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-xl">
+                      <FileBox size={32} className="mb-3 opacity-50" />
+                      <span className="text-sm font-medium">No 3D Model Uploaded</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Images Gallery */}
+                <div className="col-span-3 lg:col-span-1 grid grid-cols-3 lg:grid-cols-1 gap-4 overflow-y-auto lg:max-h-[350px] no-scrollbar pr-1">
+                  {product.media?.filter((m: any) => m.media_type === "image").length > 0 ? (
+                    product.media.filter((m: any) => m.media_type === "image").map((m: any) => (
+                      <div key={m.id} className="relative rounded-xl overflow-hidden border border-border aspect-square bg-muted">
+                        <img src={api.mediaUrl(m.media_url)} className="w-full h-full object-cover" alt="Product preview" />
+                        {m.is_primary && (
+                          <Badge variant="default" className="absolute top-2 right-2 text-[10px] px-2 py-0.5 shadow-sm">Main</Badge>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="w-full aspect-square border-2 border-dashed border-border rounded-xl flex items-center justify-center text-muted-foreground/40 bg-muted/20">
+                       <ImageIcon size={24} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+
+            {/* PRINT SETTINGS */}
+            <Card className="p-6 border-border bg-card shadow-sm">
+              <h2 className="text-lg font-bold mb-1 font-display flex items-center gap-2">
+                <Settings2 size={18} className="text-primary" />
+                Manufacturing & Print Settings
               </h2>
               <p className="text-muted-foreground text-sm mb-6">
-                Provide slicer settings to help others successfully print this model.
+                Provide slicer settings and assembly instructions to help others successfully print this model.
               </p>
               
               <div className="space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <label className="flex flex-col gap-2 p-3 border rounded-lg bg-card/50 cursor-pointer hover:border-primary/50 transition-colors">
+                  <label className="flex flex-col gap-2 p-3 border rounded-xl bg-card/50 cursor-pointer hover:border-primary/50 transition-colors">
                     <span className="text-sm font-semibold">Requires Supports?</span>
                     <input
                       type="checkbox"
@@ -317,11 +390,11 @@ export default function ProductDetailPage({
                           },
                         })
                       }
-                      className="accent-primary"
+                      className="accent-primary w-4 h-4"
                     />
                   </label>
                   
-                  <label className="flex flex-col gap-2 p-3 border rounded-lg bg-card/50 cursor-pointer hover:border-primary/50 transition-colors">
+                  <label className="flex flex-col gap-2 p-3 border rounded-xl bg-card/50 cursor-pointer hover:border-primary/50 transition-colors">
                     <span className="text-sm font-semibold">Raft / Brim?</span>
                     <input
                       type="checkbox"
@@ -335,12 +408,12 @@ export default function ProductDetailPage({
                           },
                         })
                       }
-                      className="accent-primary"
+                      className="accent-primary w-4 h-4"
                     />
                   </label>
 
                   <div className="space-y-2">
-                    <Label className="text-xs">Infill (%)</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase">Infill (%)</Label>
                     <Input
                       type="number"
                       value={product.print_settings?.infill_percentage || ""}
@@ -358,7 +431,7 @@ export default function ProductDetailPage({
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs">Layer Height (mm)</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase">Layer Height (mm)</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -417,7 +490,7 @@ export default function ProductDetailPage({
                   <div>
                     <Label className="mb-2 block">Assembly Instructions / Hardware List</Label>
                     <Textarea
-                      rows={3}
+                      rows={4}
                       value={product.assembly_instructions || ""}
                       onChange={(e) =>
                         setProduct({ ...product, assembly_instructions: e.target.value })
@@ -431,187 +504,100 @@ export default function ProductDetailPage({
 
           </div>
 
-          {/* RIGHT COLUMN: Files, Media, Sales Modes */}
+          {/* RIGHT SIDEBAR: Settings & Organization */}
           <div className="space-y-6">
             
-            <Card className="p-6">
-              <h2 className="text-lg font-bold mb-4">Product Images</h2>
-              <div className="space-y-4">
-                {product.media
-                  ?.filter((m: any) => m.media_type === "image")
-                  .map((m: any) => (
-                    <div
-                      key={m.id}
-                      className="relative rounded-xl overflow-hidden border border-border bg-muted"
-                    >
-                      <img
-                        src={api.mediaUrl(m.media_url)}
-                        alt="Product preview"
-                        className="w-full h-auto object-cover"
-                      />
-                      {m.is_primary && (
-                        <Badge
-                          variant="default"
-                          className="absolute top-2 right-2"
-                        >
-                          Primary
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-
-                <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-primary/50 cursor-pointer transition-colors">
-                  <ImageIcon size={24} className="mb-2" />
-                  <span className="text-sm font-medium">Upload Image</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleFileUpload(e, "media")}
-                    disabled={uploading}
-                  />
-                </label>
+            {/* ORGANIZATION */}
+            <Card className="p-5 border-border bg-card shadow-sm">
+              <h2 className="text-xs font-bold mb-4 uppercase tracking-wider text-muted-foreground">Product Organization</h2>
+              <div>
+                <Label className="mb-1.5 block">Category</Label>
+                <Input
+                  value={product.category || ""}
+                  onChange={(e) =>
+                    setProduct({ ...product, category: e.target.value })
+                  }
+                  placeholder="e.g. Tabletop, Gadgets"
+                />
               </div>
             </Card>
 
-            <Card className="p-6">
-              <h2 className="text-lg font-bold mb-4">3D Model Versions</h2>
-
-              <div className="border-2 border-dashed border-border rounded-xl p-4 text-center mb-4 hover:border-primary/50 transition-colors">
-                <label className="cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium w-full h-10 px-4 bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                  {uploading ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <Upload size={16} />
+            {/* PRICING & MODES */}
+            <Card className="p-5 border-border bg-card shadow-sm">
+              <h2 className="text-xs font-bold mb-4 uppercase tracking-wider text-muted-foreground">Pricing & Fulfillment</h2>
+              <div className="space-y-5">
+                {/* Mode 2 */}
+                <div className="space-y-3">
+                  <label className="flex items-center justify-between cursor-pointer group">
+                    <span className="font-semibold text-sm group-hover:text-primary transition-colors">Digital Download</span>
+                    <input type="checkbox" checked={product.is_mode_2_active} onChange={(e) => setProduct({ ...product, is_mode_2_active: e.target.checked })} className="accent-primary w-4 h-4 cursor-pointer" />
+                  </label>
+                  {product.is_mode_2_active && (
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-data">$</span>
+                      <Input type="number" step="0.01" value={product.price} onChange={(e) => setProduct({ ...product, price: parseFloat(e.target.value) })} className="pl-7 font-data" />
+                    </div>
                   )}
-                  {uploading ? "Uploading..." : "Upload New Version"}
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".stl,.obj,.3mf,.step,.fbx,.blend"
-                    onChange={(e) => handleFileUpload(e, "model")}
-                    disabled={uploading}
-                  />
-                </label>
+                </div>
+                
+                <Separator />
+
+                {/* Mode 3 */}
+                <div className="space-y-3">
+                  <label className="flex items-center justify-between cursor-pointer group">
+                    <span className="font-semibold text-sm group-hover:text-primary transition-colors">Physical Print</span>
+                    <input type="checkbox" checked={product.is_mode_3_active} onChange={(e) => setProduct({ ...product, is_mode_3_active: e.target.checked })} className="accent-primary w-4 h-4 cursor-pointer" />
+                  </label>
+                  {product.is_mode_3_active && (
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-data">$</span>
+                      <Input type="number" step="0.01" value={product.base_print_price} onChange={(e) => setProduct({ ...product, base_print_price: parseFloat(e.target.value) })} className="pl-7 font-data" />
+                    </div>
+                  )}
+                </div>
               </div>
+            </Card>
+
+            {/* GEOMETRY & VERSIONS */}
+            <Card className="p-5 border-border bg-card shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Geometry Files</h2>
+              </div>
+              
+              <label className="cursor-pointer flex items-center justify-center gap-2 rounded-lg text-sm font-semibold w-full py-2.5 bg-primary/5 text-primary border border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/10 transition-all mb-4">
+                {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                {uploading ? "Uploading..." : "Upload New STL"}
+                <input type="file" className="hidden" accept=".stl,.obj,.3mf,.step,.fbx,.blend" onChange={(e) => handleFileUpload(e, "model")} disabled={uploading} />
+              </label>
 
               {product.versions && product.versions.length > 0 && (
                 <div className="space-y-3">
-                  {product.versions
-                    .sort((a: any, b: any) => b.version_number - a.version_number)
-                    .map((v: any) => {
-                      const report = v.printability_report;
-                      return (
-                        <div
-                          key={v.id}
-                          className={cn(
-                            "flex flex-col p-3 rounded-lg border text-sm",
-                            v.is_latest
-                              ? "bg-primary/5 border-primary/30"
-                              : "bg-card border-border"
-                          )}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-bold flex gap-2 items-center">
-                              V{v.version_number}
-                              {v.is_latest && (
-                                <Badge variant="default" className="text-[9px] px-1 py-0 h-4">
-                                  LATEST
-                                </Badge>
-                              )}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {new Date(v.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-muted-foreground font-mono truncate mb-2">
-                            {v.file_name} ({(v.file_size / 1024 / 1024).toFixed(1)} MB)
+                  {product.versions.sort((a: any, b: any) => b.version_number - a.version_number).map((v: any) => {
+                    const report = v.printability_report;
+                    return (
+                      <div key={v.id} className={cn("p-3 rounded-xl border text-sm", v.is_latest ? "bg-card border-border shadow-sm" : "bg-muted/30 border-transparent")}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="font-bold font-data text-foreground flex items-center gap-2">
+                            V{v.version_number}
+                            {v.is_latest && <Badge variant="default" className="text-[9px] px-1.5 py-0 h-4">LATEST</Badge>}
                           </span>
-                          
-                          {report && (
-                            <div className="flex items-center justify-between border-t pt-2 mt-1">
-                              <span className="text-[10px] font-medium text-muted-foreground">Checks:</span>
-                              <Badge
-                                variant={
-                                  report.status === "pass" ? "success"
-                                    : report.status === "warning" ? "warning"
-                                    : report.status === "fail" ? "destructive"
-                                    : "outline"
-                                }
-                                className="text-[9px]"
-                              >
-                                {report.status}
-                              </Badge>
-                            </div>
-                          )}
+                          <span className="text-muted-foreground text-[11px] font-data">{new Date(v.created_at).toLocaleDateString()}</span>
                         </div>
-                      );
-                    })}
+                        <div className="text-muted-foreground truncate mb-3 text-xs" title={v.file_name}>{v.file_name}</div>
+                        
+                        {report && (
+                          <div className="flex items-center justify-between border-t border-border/60 pt-2 mt-2">
+                            <span className="text-xs font-medium text-muted-foreground">Printability</span>
+                            <Badge variant={report.status === "pass" ? "success" : report.status === "warning" ? "warning" : "destructive"} className="text-[10px] uppercase">
+                              {report.status}
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-            </Card>
-
-            <Card className="p-6">
-              <h2 className="text-lg font-bold mb-4">Sales & Modes</h2>
-              <div className="space-y-4">
-                {/* Mode 2 */}
-                <div className="border border-border rounded-xl p-4 bg-card/50">
-                  <label className="flex items-center gap-3 cursor-pointer mb-3">
-                    <input
-                      type="checkbox"
-                      checked={product.is_mode_2_active}
-                      onChange={(e) =>
-                        setProduct({ ...product, is_mode_2_active: e.target.checked })
-                      }
-                      className="accent-primary w-4 h-4"
-                    />
-                    <span className="font-semibold text-sm">Mode 2: Digital Asset</span>
-                  </label>
-                  {product.is_mode_2_active && (
-                    <div className="pl-7 space-y-2">
-                      <Label className="text-xs">Download Price ($)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={product.price}
-                        onChange={(e) =>
-                          setProduct({ ...product, price: parseFloat(e.target.value) })
-                        }
-                        className="h-8"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Mode 3 */}
-                <div className="border border-border rounded-xl p-4 bg-card/50">
-                  <label className="flex items-center gap-3 cursor-pointer mb-3">
-                    <input
-                      type="checkbox"
-                      checked={product.is_mode_3_active}
-                      onChange={(e) =>
-                        setProduct({ ...product, is_mode_3_active: e.target.checked })
-                      }
-                      className="accent-primary w-4 h-4"
-                    />
-                    <span className="font-semibold text-sm">Mode 3: Physical Prints</span>
-                  </label>
-                  {product.is_mode_3_active && (
-                    <div className="pl-7 space-y-2">
-                      <Label className="text-xs">Base Print Price ($)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={product.base_print_price}
-                        onChange={(e) =>
-                          setProduct({ ...product, base_print_price: parseFloat(e.target.value) })
-                        }
-                        className="h-8"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
             </Card>
 
           </div>

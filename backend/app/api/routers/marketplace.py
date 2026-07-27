@@ -7,7 +7,7 @@ from app.api import deps
 from app.models.product import Product, ProductStatus
 from app.models.review import Review
 from app.models.user import User
-from app.schemas.product import Product as ProductSchema
+from app.schemas.product import PublicProduct as ProductSchema
 
 router = APIRouter()
 

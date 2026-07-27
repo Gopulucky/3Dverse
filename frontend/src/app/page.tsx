@@ -2,244 +2,171 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import {
-  ShoppingBag,
-  Palette,
-  Printer,
-  Shield,
-  ArrowRight,
-  Sparkles,
-  Zap,
-  Globe,
-  Star,
-  Layers,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Navbar } from "@/components/layout/navbar";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/auth-store";
+import { ArrowRight, Download, Printer, Palette, Sparkles, Box, Settings } from "lucide-react";
 import { Footer } from "@/components/layout/footer";
 import { cn } from "@/lib/utils";
-
-const portals = [
-  {
-    href: "/marketplace/home",
-    title: "Marketplace",
-    desc: "Discover, download, and purchase stunning 3D-printed goods from creators worldwide.",
-    icon: ShoppingBag,
-    accentColor: "text-cure-violet",
-    accentBg: "bg-cure-violet/10",
-    borderHover: "hover:border-cure-violet/30",
-    glowShadow: "hover:shadow-[0_20px_60px_-15px_rgba(110,91,255,0.2)]",
-    delay: "0ms",
-  },
-  {
-    href: "/creator/products",
-    title: "Creator Studio",
-    desc: "Upload your designs, set pricing, and earn royalties on every sale and print.",
-    icon: Palette,
-    accentColor: "text-nozzle-orange",
-    accentBg: "bg-nozzle-orange/10",
-    borderHover: "hover:border-nozzle-orange/30",
-    glowShadow: "hover:shadow-[0_20px_60px_-15px_rgba(255,90,54,0.2)]",
-    delay: "100ms",
-  },
-  {
-    href: "/partner",
-    title: "Print Partner",
-    desc: "Manage your print facility, accept jobs, and fulfill orders with quality precision.",
-    icon: Printer,
-    accentColor: "text-calibration-cyan",
-    accentBg: "bg-calibration-cyan/10",
-    borderHover: "hover:border-calibration-cyan/30",
-    glowShadow: "hover:shadow-[0_20px_60px_-15px_rgba(47,211,194,0.2)]",
-    delay: "200ms",
-  },
-];
-
-const stats = [
-  { value: "10K+", label: "3D Models", icon: Sparkles },
-  { value: "500+", label: "Creators", icon: Palette },
-  { value: "99%", label: "Quality Rate", icon: Star },
-  { value: "50+", label: "Print Partners", icon: Globe },
-];
+import { Navbar } from "@/components/layout/navbar";
+import { Button } from "@/components/ui/button";
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false);
+  const [email, setEmail] = useState("");
+  const { isAuthenticated } = useAuthStore();
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Layer-line grid pattern background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-[radial-gradient(ellipse_at_center,rgba(110,91,255,0.08),transparent_70%)]" />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-[radial-gradient(ellipse_at_center,rgba(47,211,194,0.05),transparent_70%)]" />
-        {/* Layer-line hairline grid */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(0deg, var(--color-foreground) 0px, var(--color-foreground) 1px, transparent 1px, transparent 4px)",
-          }}
-        />
-      </div>
+  useEffect(() => {
+    if (isAuthenticated && mounted) {
+      router.replace("/marketplace/home");
+    }
+  }, [isAuthenticated, mounted, router]);
 
-      {/* Hero */}
-      <section className="relative pt-32 pb-24 px-6">
-        <div className="max-w-5xl mx-auto text-center">
-          {/* Pre-headline badge */}
-          <div
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  const handleGetStarted = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email) {
+      router.push(`/register?email=${encodeURIComponent(email)}`);
+    } else {
+      router.push("/register");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col font-sans overflow-x-hidden">
+      <Navbar />
+
+      {/* Modern, Vibrant Hero Section */}
+      <section className="relative pt-32 pb-24 px-6 overflow-hidden">
+        {/* Abstract Background Orbs */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-full pointer-events-none z-0">
+          <div className="absolute -top-[20%] -left-[10%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px] mix-blend-multiply" />
+          <div className="absolute top-[10%] -right-[10%] w-[600px] h-[600px] rounded-full bg-ember/15 blur-[120px] mix-blend-multiply" />
+        </div>
+
+        <div className="relative z-10 max-w-5xl mx-auto text-center">
+          <div 
             className={cn(
-              "inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/50 text-sm text-muted-foreground mb-8 transition-all duration-700",
-              mounted
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              "inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-surface text-primary-ink text-sm font-semibold mb-8 transition-all duration-700",
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             )}
           >
-            <Layers size={14} className="text-primary" />
-            <span>Built layer by layer</span>
+            <Sparkles size={16} /> Welcome to the future of fabrication
           </div>
-
-          {/* Headline — Space Grotesk */}
+          
           <h1
             className={cn(
-              "text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.05] mb-8 font-display transition-all duration-700 delay-100",
-              mounted
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              "text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-foreground font-display leading-[1.1] mb-8 transition-all duration-700 delay-100",
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             )}
           >
-            Where{" "}
-            <span className="text-gradient-primary">Imagination</span>
-            <br />
-            Becomes{" "}
-            <span className="text-gradient-warm">Reality</span>
+            Digital designs.<br />
+            <span className="text-gradient-primary">Physical reality.</span>
           </h1>
-
-          {/* Subheadline */}
+          
           <p
             className={cn(
-              "text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed transition-all duration-700 delay-200",
-              mounted
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              "text-xl sm:text-2xl text-muted-foreground font-medium mb-12 max-w-2xl mx-auto transition-all duration-700 delay-200",
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             )}
           >
-            The premium marketplace connecting 3D creators, customers, and print
-            partners. Discover extraordinary designs, order custom prints, and
-            bring digital art to life.
+            Discover, customize, and print premium 3D models from world-class creators. Delivered straight to your door or downloaded instantly.
           </p>
 
-          {/* CTA */}
-          <div
+          <form 
+            onSubmit={handleGetStarted}
             className={cn(
-              "flex flex-col sm:flex-row gap-4 justify-center transition-all duration-700 delay-300",
-              mounted
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              "flex flex-col sm:flex-row items-center justify-center max-w-xl mx-auto gap-3 transition-all duration-700 delay-300",
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             )}
           >
-            <Button size="xl" variant="glow" asChild>
-              <Link href="/marketplace/home">
-                Explore Marketplace
-                <ArrowRight size={20} />
-              </Link>
-            </Button>
-            <Button size="xl" variant="outline" asChild>
-              <Link href="/register">Start Creating</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats bar */}
-      <section className="relative py-8 border-y border-border/50 bg-card/30">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="flex items-center gap-3 justify-center"
-              >
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <stat.icon size={18} className="text-primary" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-foreground font-data">
-                    {stat.value}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Portal cards */}
-      <section className="relative py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4 font-display">
-            Choose Your Portal
-          </h2>
-          <p className="text-muted-foreground text-center mb-16 max-w-xl mx-auto">
-            Whether you&apos;re shopping, creating, or printing — 3DVerse has a
-            dedicated experience built for you.
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {portals.map((portal) => (
-              <Link
-                key={portal.href}
-                href={portal.href}
-                className={cn(
-                  "group relative rounded-xl border border-border bg-card/50 p-8 transition-all duration-300 hover:-translate-y-1 overflow-hidden",
-                  portal.borderHover,
-                  portal.glowShadow
-                )}
-              >
-                <div className="relative">
-                  <div
-                    className={cn(
-                      "w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110",
-                      portal.accentBg
-                    )}
-                  >
-                    <portal.icon size={24} className={portal.accentColor} />
-                  </div>
-
-                  <h3 className="text-xl font-bold text-foreground mb-3 font-display">
-                    {portal.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                    {portal.desc}
-                  </p>
-
-                  <span className={cn(
-                    "inline-flex items-center gap-2 text-sm font-medium group-hover:gap-3 transition-all duration-300",
-                    portal.accentColor
-                  )}>
-                    Enter Portal
-                    <ArrowRight size={16} />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* Admin link */}
-          <div className="flex justify-center mt-8">
-            <Link
-              href="/admin/dashboard"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border bg-card/50 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all duration-300"
+            <div className="relative w-full h-14 bg-card border border-border rounded-xl shadow-sm focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all">
+              <input 
+                type="email"
+                required
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full h-full bg-transparent text-foreground px-5 outline-none text-base font-medium rounded-xl"
+              />
+            </div>
+            
+            <Button 
+              type="submit"
+              size="lg"
+              className="w-full sm:w-auto h-14 px-8 text-lg rounded-xl gap-2 shadow-md group"
             >
-              <Shield size={16} />
-              Admin Panel
-            </Link>
+              Get Started <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </form>
+        </div>
+      </section>
+
+      {/* Feature Grid */}
+      <section className="py-24 px-6 bg-surface/50 border-y border-border/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">Everything you need to create</h2>
+             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">3DVerse provides a seamless ecosystem connecting designers, consumers, and print facilities.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-card p-8 rounded-3xl border border-border shadow-sm hover:shadow-md transition-shadow group">
+              <div className="w-14 h-14 bg-primary-surface text-primary-ink rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Download size={28} />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4 font-display">Instant Downloads</h3>
+              <p className="text-muted-foreground leading-relaxed">Purchase premium STL files and start printing immediately on your own hardware.</p>
+            </div>
+
+            <div className="bg-card p-8 rounded-3xl border border-border shadow-sm hover:shadow-md transition-shadow group">
+              <div className="w-14 h-14 bg-success-surface text-success-ink rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Printer size={28} />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4 font-display">Professional Printing</h3>
+              <p className="text-muted-foreground leading-relaxed">No printer? Send orders to our global network of print partners for high-quality, doorstep delivery.</p>
+            </div>
+
+            <div className="bg-card p-8 rounded-3xl border border-border shadow-sm hover:shadow-md transition-shadow group">
+              <div className="w-14 h-14 bg-warning-surface text-warning-ink rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Palette size={28} />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4 font-display">Creator Studio</h3>
+              <p className="text-muted-foreground leading-relaxed">Monetize your designs. Set custom pricing, manage variants, and build your brand on 3DVerse.</p>
+            </div>
           </div>
         </div>
       </section>
+
+      {/* Call to Action */}
+      <section className="py-32 px-6">
+        <div className="max-w-5xl mx-auto bg-foreground text-background rounded-[2.5rem] p-12 md:p-20 text-center relative overflow-hidden">
+          {/* Abstract elements inside dark card */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-ember/20 rounded-full blur-3xl" />
+          
+          <h2 className="text-4xl md:text-5xl font-display font-bold mb-6 relative z-10">Join the revolution.</h2>
+          <p className="text-xl text-background/80 mb-10 max-w-2xl mx-auto relative z-10">
+            Whether you're a hobbyist, a professional designer, or a print farm operator, there's a place for you here.
+          </p>
+          <Button size="lg" variant="secondary" className="px-10 h-14 text-lg rounded-xl font-bold relative z-10" onClick={() => router.push('/register')}>
+            Create your account
+          </Button>
+        </div>
+      </section>
+
+      <Footer />
     </div>
   );
 }

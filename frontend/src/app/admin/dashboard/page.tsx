@@ -51,7 +51,7 @@ export default function AdminDashboard() {
     return (
       <AdminShell>
         <div className="min-h-screen flex items-center justify-center flex-col px-6">
-          <ShieldAlert className="text-danger-red w-16 h-16 mb-4" />
+          <ShieldAlert className="text-destructive w-16 h-16 mb-4" />
           <h2 className="text-2xl font-bold mb-2 font-display">Access Denied</h2>
           <p className="text-muted-foreground text-center max-w-md text-sm">
             {(error as any)?.detail ||
@@ -109,16 +109,16 @@ export default function AdminDashboard() {
           label="Active Users"
           value={data?.total_users || 0}
           icon={Users}
-          iconBg="bg-purple-500/15"
-          iconColor="text-purple-500"
+          iconBg="bg-primary/15"
+          iconColor="text-primary"
           trend={{ value: "+21.1%", direction: "up" }}
         />
         <StatCard
           label="Physical / Digital"
           value={`${data?.physical_orders || 0} / ${data?.digital_orders || 0}`}
           icon={Printer}
-          iconBg="bg-nozzle-orange/15"
-          iconColor="text-nozzle-orange"
+          iconBg="bg-ember/15"
+          iconColor="text-ember"
         />
       </div>
 

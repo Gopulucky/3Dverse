@@ -17,8 +17,20 @@ import {
   Printer,
   Shield,
   Bell,
+  Search,
+  MapPin,
+  BarChart3,
+  ClipboardList,
+  Image,
+  Settings,
+  Users,
+  Upload,
+  Wand2,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
+import { useCreatorType } from "@/lib/creator-nav";
+import { SellWith3DverseLink } from "@/components/creator/sell-with-3dverse";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -41,9 +53,16 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isAuthenticated, logout, hydrate } = useAuthStore();
   const { itemCount, setItemCount } = useCartStore();
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Determine portal context
-  const isCreator = pathname.startsWith("/creator");
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      router.push(`/marketplace?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // Determine portal context — /collaboration is a Creator Studio surface
+  const isCreator = pathname.startsWith("/creator") || pathname.startsWith("/collaboration");
   const isPartner = pathname.startsWith("/partner");
   const isAdmin = pathname.startsWith("/admin");
   const isRoot = pathname === "/";
@@ -53,6 +72,9 @@ export function Navbar() {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  // Re-read on pathname change so the seller/designer nav stays in sync
+  const { path: creatorPath, links: creatorLinks, topBarLinks } = useCreatorType([pathname]);
 
   // Fetch cart count
   useEffect(() => {
@@ -70,7 +92,8 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  if (isRoot || isAuth) return null;
+  // Hide navbar on auth pages
+  if (isAuth) return null;
 
   const handleLogout = () => {
     logout();
@@ -82,27 +105,78 @@ export function Navbar() {
   };
 
   const portalLabel = isCreator
-    ? "Creator Studio"
+    ? // Name the locked creator path alongside the portal, so it is always
+      // clear which of the three the account is on.
+      creatorPath
+      ? `Creator Studio · ${creatorPath.label}`
+      : "Creator Studio"
     : isPartner
     ? "Print Partner"
     : isAdmin
     ? "Admin"
     : "Marketplace";
 
-  // Marketplace nav links (shown in top nav since marketplace has no sidebar)
-  const marketplaceLinks = [
-    { href: "/marketplace/home", label: "Home", icon: Store },
-    { href: "/marketplace", label: "Browse", icon: Package },
-    { href: "/wishlist", label: "Wishlist", icon: Heart },
-    { href: "/orders", label: "Orders", icon: Package },
+  // Portal switcher — every portal the role allows, minus the one we're already in
+  const portals = [
+    {
+      key: "marketplace",
+      href: "/marketplace/home",
+      label: "Marketplace",
+      description: "Browse and buy prints",
+      icon: Store,
+      iconClass: "text-primary",
+      active: isMarketplace,
+      allowed: true,
+    },
+    {
+      key: "creator",
+      href: "/creator/dashboard",
+      label: "Creator Studio",
+      description: "Sell your designs",
+      icon: Palette,
+      iconClass: "text-ember",
+      active: isCreator,
+      allowed: user?.role === "creator" || user?.role === "admin",
+    },
+    {
+      key: "partner",
+      href: "/partner",
+      label: "Print Partner Hub",
+      description: "Manage print orders",
+      icon: Printer,
+      iconClass: "text-moss",
+      active: isPartner,
+      allowed: user?.role === "print_partner" || user?.role === "admin",
+    },
+    {
+      key: "admin",
+      href: "/admin/dashboard",
+      label: "Admin Console",
+      description: "Platform operations",
+      icon: Shield,
+      iconClass: "text-destructive",
+      active: isAdmin,
+      allowed: user?.role === "admin",
+    },
   ];
 
+  const switchablePortals = portals.filter((p) => p.allowed && !p.active);
+
+  // Settings are portal-specific — each portal has its own settings page
+  const settingsHref = isCreator
+    ? "/creator/settings"
+    : isPartner
+    ? "/partner/settings"
+    : isAdmin
+    ? "/admin/settings"
+    : "/settings";
+
   // Studio/Console/Admin don't show nav links in the top bar (they use sidebar)
-  const navLinks = isMarketplace ? marketplaceLinks : [];
+  const navLinks = [];
 
   // Accent color logic per portal
-  const accentClass = isPartner ? "text-calibration-cyan" : "text-primary";
-  const accentBgClass = isPartner ? "bg-calibration-cyan/10" : "bg-primary/10";
+  const accentClass = "text-primary";
+  const accentBgClass = "bg-primary/10";
 
   return (
     <>
@@ -116,10 +190,10 @@ export function Navbar() {
       >
         <div className="h-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-full items-center">
-            {/* Logo + Portal label */}
-            <div className="flex items-center gap-6">
+            {/* Left Section: Logo & Location */}
+            <div className="flex items-center gap-4">
               <Link
-                href="/"
+                href={isAuthenticated ? "/marketplace/home" : "/"}
                 className="flex items-center gap-1 group"
               >
                 <span className="text-2xl font-bold tracking-tight font-display">
@@ -130,49 +204,105 @@ export function Navbar() {
                 </span>
               </Link>
 
-              {/* Portal badge */}
-              <Badge variant="secondary" className="hidden sm:flex text-xs font-medium">
-                {portalLabel}
-              </Badge>
-
-              {/* Desktop navigation (marketplace only — Studio/Console use sidebar) */}
-              {navLinks.length > 0 && (
-                <div className="hidden md:flex items-center gap-1">
-                  {navLinks.map((link) => {
-                    const isActive = pathname === link.href;
-                    return (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150",
-                          isActive
-                            ? cn(accentBgClass, accentClass)
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                        )}
-                      >
-                        <link.icon size={16} />
-                        {link.label}
-                      </Link>
-                    );
-                  })}
+              {/* Creator path badge — the locked sub-role, shown across the Studio */}
+              {isCreator && creatorPath && (
+                <div
+                  className={cn(
+                    "hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full border",
+                    creatorPath.accentBg,
+                    creatorPath.accent,
+                    "border-current/20"
+                  )}
+                  title={creatorPath.tagline}
+                >
+                  <creatorPath.icon size={13} />
+                  <span className="text-[11px] font-bold uppercase tracking-wider">
+                    {creatorPath.label}
+                  </span>
                 </div>
               )}
+
             </div>
 
+            {/* Central Search Bar (Marketplace only) */}
+            {isMarketplace && (
+              <div className="hidden md:flex flex-1 max-w-4xl px-4 lg:px-8">
+                <div className="relative w-full shadow-sm rounded-md flex focus-within:ring-2 focus-within:ring-primary/80 transition-shadow bg-card overflow-hidden h-10">
+                  <div className="hidden sm:flex items-center gap-1 px-3 bg-muted border-r border-border hover:bg-muted/80 cursor-pointer transition-colors text-[13px] font-medium text-foreground">
+                    All <ChevronDown size={12} className="text-muted-foreground ml-1" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search 3DVerse"
+                    className="flex-1 h-full pl-4 pr-4 bg-transparent text-[15px] focus:outline-none focus:ring-0"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  />
+                  <div 
+                    onClick={handleSearch}
+                    className="w-12 h-full flex items-center justify-center bg-[#febd69] cursor-pointer hover:bg-[#f3a847] text-foreground transition-colors"
+                  >
+                    <Search size={20} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Central Navigation (Creator Studio only) */}
+            {isCreator && (
+              <div className="hidden lg:flex flex-1 items-center justify-center gap-1 px-4 overflow-x-auto no-scrollbar">
+                {topBarLinks.map(link => {
+                  const isActive = pathname === link.href || (pathname.startsWith(link.href) && link.href !== "/creator/dashboard");
+                  return (
+                    <Link 
+                      key={link.href} 
+                      href={link.href}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-colors whitespace-nowrap",
+                        isActive 
+                          ? cn(creatorPath?.accentBg || "bg-primary/10", creatorPath?.accent || "text-primary")
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      <link.icon size={16} className={cn(isActive ? "opacity-100" : "opacity-70")} />
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Right side */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              {/* Creator Orders (Creator only) */}
+              {isCreator && isAuthenticated && (
+                <Link href="/creator/orders" className="hidden lg:flex flex-col leading-none hover:border-border border border-transparent px-2 py-1 rounded transition-colors cursor-pointer">
+                  <span className="text-[10px] text-muted-foreground font-medium">Customer</span>
+                  <span className="text-xs font-bold text-foreground">Orders</span>
+                </Link>
+              )}
+
+              {/* Returns & Orders (Marketplace only) */}
+              {isMarketplace && isAuthenticated && (
+                <Link href="/orders" className="hidden lg:flex flex-col leading-none hover:border-border border border-transparent px-2 py-1 rounded transition-colors cursor-pointer">
+                  <span className="text-[10px] text-muted-foreground font-medium">Returns</span>
+                  <span className="text-xs font-bold text-foreground">& Orders</span>
+                </Link>
+              )}
+
               {/* Cart (marketplace only) */}
               {isMarketplace && (
-                <Link href="/cart" className="relative group">
-                  <Button variant="ghost" size="icon" className="relative">
-                    <ShoppingCart size={20} />
+                <Link href="/cart" className="relative group flex items-end gap-1 hover:border-border border border-transparent px-2 py-1 rounded transition-colors cursor-pointer">
+                  <div className="relative">
+                    <ShoppingCart size={24} />
                     {itemCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground animate-scale-in">
+                      <span className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground animate-scale-in">
                         {itemCount}
                       </span>
                     )}
-                  </Button>
+                  </div>
+                  <span className="text-xs font-bold text-foreground hidden sm:block mb-0.5">Cart</span>
                 </Link>
               )}
 
@@ -180,58 +310,76 @@ export function Navbar() {
               {isAuthenticated && user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="flex items-center gap-2 px-2"
-                    >
-                      <Avatar className="h-8 w-8">
+                    <div className="flex items-center gap-2 hover:border-border border border-transparent px-2 py-1 rounded transition-colors cursor-pointer select-none">
+                      <div className="flex flex-col items-start leading-none hidden sm:flex">
+                        <span className="text-[10px] text-muted-foreground font-medium">Hello, {user.email?.split('@')[0]}</span>
+                        <span className="text-xs font-bold text-foreground flex items-center gap-1">
+                          Account & Portals <ChevronDown size={12} className="text-muted-foreground" />
+                        </span>
+                      </div>
+                      <Avatar className="h-8 w-8 sm:hidden">
                         <AvatarFallback className={cn(accentBgClass, accentClass, "text-xs font-semibold")}>
                           {getInitials(user.email)}
                         </AvatarFallback>
                       </Avatar>
-                      <ChevronDown size={14} className="text-muted-foreground" />
-                    </Button>
+                    </div>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>
-                      <p className="text-sm font-medium">{user.email}</p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {user.role?.replace("_", " ")}
-                      </p>
-                    </DropdownMenuLabel>
+                  <DropdownMenuContent align="end" className="w-72 p-2 rounded-xl border border-border shadow-2xl">
+                    {/* Active Account Card */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/50 mb-2 border border-border/50">
+                      <Avatar className="h-10 w-10 shadow-sm border border-border">
+                        <AvatarFallback className={cn(accentBgClass, accentClass, "font-bold")}>
+                          {getInitials(user.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col overflow-hidden">
+                        <p className="text-sm font-bold truncate text-foreground">{user.email?.split('@')[0]}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                        <p className={cn("text-[10px] uppercase font-bold mt-0.5 tracking-wider", accentClass)}>{portalLabel} (Active)</p>
+                      </div>
+                    </div>
+                    
                     <DropdownMenuSeparator />
-                    {/* Role switcher */}
-                    <DropdownMenuItem onClick={() => router.push("/marketplace/home")}>
-                      <Store size={16} />
-                      Marketplace
+                    
+                      {/* Switcher Links — every portal the role allows, except the current one */}
+                    {switchablePortals.length > 0 && (
+                    <>
+                    <div className="py-1">
+                      <p className="text-xs font-semibold text-muted-foreground px-3 mb-2 uppercase tracking-wider">Switch Portal</p>
+
+                      {switchablePortals.map((portal) => (
+                      <DropdownMenuItem key={portal.key} onClick={() => router.push(portal.href)} className="rounded-lg cursor-pointer py-2">
+                        <portal.icon size={18} className={cn("mr-3", portal.iconClass)} />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{portal.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{portal.description}</span>
+                        </div>
+                      </DropdownMenuItem>
+                      ))}
+                    </div>
+
+                    <DropdownMenuSeparator />
+                    </>
+                    )}
+                    
+                    <DropdownMenuItem onClick={() => router.push(settingsHref)} className="rounded-lg cursor-pointer py-2">
+                      <Settings size={16} className="mr-3" />
+                      Settings
                     </DropdownMenuItem>
-                    {(user.role === "creator" || user.role === "admin") && (
-                      <DropdownMenuItem onClick={() => router.push("/creator/dashboard")}>
-                        <Palette size={16} />
-                        Creator Studio
-                      </DropdownMenuItem>
-                    )}
-                    {(user.role === "print_partner" || user.role === "admin") && (
-                      <DropdownMenuItem onClick={() => router.push("/partner")}>
-                        <Printer size={16} />
-                        Print Partner
-                      </DropdownMenuItem>
-                    )}
-                    {user.role === "admin" && (
-                      <DropdownMenuItem onClick={() => router.push("/admin/dashboard")}>
-                        <Shield size={16} />
-                        Admin Panel
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => router.push("/orders")}>
-                      <Package size={16} />
+
+                    <DropdownMenuItem onClick={() => router.push("/orders")} className="rounded-lg cursor-pointer py-2">
+                      <Package size={16} className="mr-3" />
                       My Orders
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                      <LogOut size={16} />
-                      Log out
+
+                    <DropdownMenuItem onClick={() => router.push("/commissions")} className="rounded-lg cursor-pointer py-2">
+                      <Wand2 size={16} className="mr-3" />
+                      My Commissions
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive rounded-lg cursor-pointer py-2 mt-1">
+                      <LogOut size={16} className="mr-3" />
+                      Sign out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -268,23 +416,26 @@ export function Navbar() {
         </div>
       </nav>
 
+      {/* Secondary Nav Tier Removed for cleaner aesthetic */}
+
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-ink/40 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
           <div className="fixed right-0 top-0 bottom-0 w-72 bg-card border-l border-border p-6 pt-20 animate-slide-in-from-right">
             <nav className="space-y-1">
-              {(isMarketplace ? marketplaceLinks : [
-                ...(isCreator ? [
-                  { href: "/creator/dashboard", label: "Dashboard", icon: LayoutDashboard },
-                  { href: "/creator/products", label: "My Products", icon: Package },
-                  { href: "/creator/products/new", label: "Upload", icon: Palette },
-                ] : []),
+              {(isMarketplace ? [
+                { href: "/marketplace?category=All", label: "All", icon: Search },
+                { href: "/marketplace?category=Deals", label: "Today's Deals", icon: Package },
+                { href: "/marketplace?category=CustomerService", label: "Customer Service", icon: Shield },
+              ] : [
+                ...(isCreator ? creatorLinks : []),
                 ...(isPartner ? [
                   { href: "/partner", label: "Print Queue", icon: Printer },
+                  { href: "/partner/settings", label: "Settings", icon: Settings },
                 ] : []),
                 ...(isAdmin ? [
                   { href: "/admin/dashboard", label: "Analytics", icon: Shield },

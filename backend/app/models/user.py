@@ -14,6 +14,16 @@ class BusinessType(str, enum.Enum):
     individual = "individual"
     company = "company"
 
+class CreatorType(str, enum.Enum):
+    """
+    Account-level creator path, chosen once on entering the Creator Studio.
+    Locked after selection — the only way out is deleting the account.
+    """
+    studio = "studio"      # owns a printer: designs, prints and sells; may offload overflow
+    seller = "seller"      # no printer: sells designs directly on the marketplace
+    designer = "designer"  # no printer: sells designs, partners with printers to fulfil
+
+
 class CreatorTier(str, enum.Enum):
     bronze = "bronze"
     silver = "silver"
@@ -40,6 +50,9 @@ class User(Base):
     website_url = Column(String, nullable=True)
     social_links = Column(JSON, nullable=True)  # {"instagram": "...", "twitter": "...", "youtube": "..."}
     
+    # Creator path — set once, then immutable (see CreatorType)
+    creator_type = Column(Enum(CreatorType), nullable=True, default=None)
+
     # Creator onboarding state
     onboarding_completed = Column(Boolean, default=False)
     onboarding_step = Column(Integer, default=0)  # 0=not started, 1-6=step number
@@ -60,8 +73,11 @@ class User(Base):
     capabilities = Column(JSON, nullable=True) # e.g. {"materials": ["PLA", "ABS"], "colors": ["red", "blue"]}
     
     is_active = Column(Boolean, default=True)
+    # Set when the user deletes their own account. The row and its email are
+    # retained so order history survives and the address cannot be re-registered;
+    # an admin can restore or purge it.
+    deleted_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    printers = relationship("Printer", back_populates="creator", cascade="all, delete-orphan")
     creator_materials = relationship("CreatorMaterial", back_populates="creator", cascade="all, delete-orphan")

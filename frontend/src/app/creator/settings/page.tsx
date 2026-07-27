@@ -19,8 +19,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { useRequireAuth } from "@/stores/auth-store";
+import { useRequireRole } from "@/stores/auth-store";
 import { StudioShell } from "@/components/layout/studio-shell";
+import { DeleteAccountCard } from "@/components/settings/delete-account";
+import { getCreatorPath, useCreatorType } from "@/lib/creator-nav";
+import { cn } from "@/lib/utils";
+import { Lock } from "lucide-react";
 
 const SPECIALIZATION_OPTIONS = [
   "Prototyping",
@@ -40,7 +44,8 @@ const SPECIALIZATION_OPTIONS = [
 export default function CreatorSettingsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { ready: isAuthenticated } = useRequireAuth();
+  const { ready: isAuthenticated } = useRequireRole(["creator", "admin"]);
+  const { creatorType } = useCreatorType();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["creator-profile"],
@@ -122,10 +127,10 @@ export default function CreatorSettingsPage() {
   }
 
   const TIER_COLORS: Record<string, string> = {
-    bronze: "text-amber-600",
-    silver: "text-gray-400",
-    gold: "text-yellow-400",
-    platinum: "text-cyan-400",
+    bronze: "text-warning",
+    silver: "text-muted-foreground",
+    gold: "text-warning",
+    platinum: "text-primary",
   };
 
   const content = (
@@ -146,6 +151,39 @@ export default function CreatorSettingsPage() {
           </Badge>
         )}
       </div>
+
+      {/* Creator path — set once on entering the studio, immutable afterwards */}
+      {(() => {
+        const path = getCreatorPath(profile?.creator_type || creatorType);
+        if (!path) return null;
+        return (
+          <Card className="p-6 border-border mb-8">
+            <h2 className="text-lg font-bold mb-4 font-display flex items-center gap-2">
+              <Lock size={18} />
+              Creator Path
+            </h2>
+            <div className="flex items-start gap-4">
+              <div
+                className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
+                  path.accentBg
+                )}
+              >
+                <path.icon size={24} className={path.accent} />
+              </div>
+              <div>
+                <p className="font-bold">{path.label}</p>
+                <p className={cn("text-sm font-medium", path.accent)}>{path.tagline}</p>
+                <p className="text-sm text-muted-foreground mt-2">{path.description}</p>
+                <p className="text-xs text-muted-foreground mt-3">
+                  This path is permanent. To operate differently you would need to delete
+                  this account and register again.
+                </p>
+              </div>
+            </div>
+          </Card>
+        );
+      })()}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Personal Info */}
@@ -309,6 +347,11 @@ export default function CreatorSettingsPage() {
           </Button>
         </div>
       </form>
+
+      <DeleteAccountCard
+        email={profile?.email || ""}
+        note="This is also the only way to change your locked creator path."
+      />
     </div>
   );
 

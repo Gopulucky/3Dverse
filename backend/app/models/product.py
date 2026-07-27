@@ -4,10 +4,27 @@ from datetime import datetime
 import enum
 from pgvector.sqlalchemy import Vector
 from app.core.database import Base
+from app.models.printer import PrinterTechnology
+
+class FulfillmentStatus(str, enum.Enum):
+    SELF = "self"
+    PENDING_PARTNER = "pending_partner"
+    PARTNER_ASSIGNED = "partner_assigned"
 
 class ProductStatus(str, enum.Enum):
     draft = "draft"
     published = "published"
+
+class SafetyReviewStatus(str, enum.Enum):
+    """
+    Screens for restricted/dangerous printable items (functional weapon
+    components, lock-picking tools, etc.) before a design can go live. This is
+    separate from the printability report, which only checks whether the
+    geometry is manufacturable, not whether it should be manufactured at all.
+    """
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
 
 class Product(Base):
     __tablename__ = "products"
@@ -24,11 +41,26 @@ class Product(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     published_at = Column(DateTime, nullable=True)
+    is_published = Column(Boolean, default=False)
 
     # 3D Printing Specifics
     print_settings = Column(JSON, default=dict)
     hardware_required = Column(Boolean, default=False)
     assembly_instructions = Column(String, nullable=True)
+    technology_required = Column(Enum(PrinterTechnology), nullable=True)
+    material_required = Column(String, nullable=True)
+    fulfillment_status = Column(Enum(FulfillmentStatus, values_callable=lambda obj: [e.value for e in obj]), default=FulfillmentStatus.PENDING_PARTNER)
+    fulfillment_partner_id = Column(Integer, ForeignKey("print_partners.id"), nullable=True)
+
+    # Design safety review -- restricted/dangerous item screening, gates
+    # publish independently of the printability report.
+    safety_review_status = Column(
+        Enum(SafetyReviewStatus, values_callable=lambda obj: [e.value for e in obj]),
+        default=SafetyReviewStatus.pending,
+        nullable=False,
+    )
+    safety_review_note = Column(String, nullable=True)
+    safety_reviewed_at = Column(DateTime, nullable=True)
 
     # Marketplace Flags
     is_featured = Column(Boolean, default=False)
@@ -66,6 +98,9 @@ class ProductVersion(Base):
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     file_url = Column(String, nullable=False)
+    # Decimated, watermarked-geometry stand-in served publicly on the marketplace
+    # so the full-resolution source file never has to leave the gated endpoint.
+    preview_url = Column(String, nullable=True)
     file_name = Column(String, nullable=False)
     file_size = Column(Integer, nullable=False) # Size in bytes
     version_number = Column(Integer, nullable=False)

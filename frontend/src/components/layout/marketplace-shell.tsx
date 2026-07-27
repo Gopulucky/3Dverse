@@ -9,9 +9,9 @@ import { Footer } from "@/components/layout/footer";
  */
 export function MarketplaceShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="light min-h-screen flex flex-col bg-background text-foreground">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pt-16">{children}</main>
       <Footer />
     </div>
   );

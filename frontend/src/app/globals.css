@@ -14,42 +14,59 @@
    - calibration-cyan #2FD3C2  → tertiary accent (partner/data/success)
    ================================================================ */
 
-/* ===== Dark Theme (Creator Studio / Partner Console default) ===== */
+/* ===== Molten Workshop Theme (Light base) ===== */
 @theme inline {
-  /* Brand palette — raw values */
-  --color-graphite: #15161A;
-  --color-surface: #1D1F24;
-  --color-surface-raised: #252830;
-  --color-paper: #F3F1EC;
-  --color-ink: #1B1B1D;
-  --color-cure-violet: #6E5BFF;
-  --color-cure-violet-light: #8B7CFF;
-  --color-nozzle-orange: #FF5A36;
-  --color-calibration-cyan: #2FD3C2;
-  --color-danger-red: #E5484D;
+  /* Brand palette */
+  --color-ink: #241E1A;
+  --color-ink-muted: #6B625A;
+  --color-primary: #C2431F;
+  --color-ember: #E4572E;
+  --color-clay: #A85B32;
+  --color-kiln: #E39B2C;
+  --color-moss: #487444;
+  --color-rust: #B3402F;
+  --color-edge: #D2C3AB;
 
-  /* Semantic tokens — dark mode (default) */
-  --color-background: #15161A;
-  --color-foreground: #F3F1EC;
-  --color-card: #1D1F24;
-  --color-card-foreground: #F3F1EC;
-  --color-popover: #1D1F24;
-  --color-popover-foreground: #F3F1EC;
-  --color-primary: #6E5BFF;
+  /* Semantic surface/ink pairs for chips/badges */
+  --color-primary-surface: #FBEAE4;
+  --color-primary-ink: #A83A1A;
+  --color-success-surface: #E9F1E7;
+  --color-success-ink: #3D6639;
+  --color-warning-surface: #FDF0DC;
+  --color-warning-ink: #7A5210;
+  --color-danger-surface: #FBE9E6;
+  --color-danger-ink: #9A3527;
+  --color-info-surface: #F3EDE6;
+  --color-info-ink: #6B625A;
+
+  /* Deprecated aliases (swept) */
+  --color-danger-red: var(--color-rust);
+  --color-graphite: var(--color-ink);
+  --color-paper: var(--color-card);
+  --color-surface: var(--color-card);
+  --color-surface-raised: var(--color-card);
+
+  /* Semantic tokens — Light mode as base */
+  --color-background: #FAF7F2;
+  --color-foreground: #241E1A;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #241E1A;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #241E1A;
   --color-primary-foreground: #FFFFFF;
-  --color-secondary: #252830;
-  --color-secondary-foreground: #F3F1EC;
-  --color-muted: #252830;
-  --color-muted-foreground: #8B8D98;
-  --color-accent: #252830;
-  --color-accent-foreground: #F3F1EC;
-  --color-destructive: #E5484D;
+  --color-secondary: #F1ECE3;
+  --color-secondary-foreground: #241E1A;
+  --color-muted: #F1ECE3;
+  --color-muted-foreground: #6B625A;
+  --color-accent: #F1ECE3;
+  --color-accent-foreground: #241E1A;
+  --color-destructive: #B3402F;
   --color-destructive-foreground: #FFFFFF;
-  --color-border: #2E3039;
-  --color-input: #2E3039;
-  --color-ring: #6E5BFF;
-  --color-success: #2FD3C2;
-  --color-warning: #E5954B;
+  --color-border: #D2C3AB;
+  --color-input: #D2C3AB;
+  --color-ring: #C2431F;
+  --color-success: #487444;
+  --color-warning: #E39B2C;
 
   /* Radius — per spec: 6px inputs, 12px cards, 20px modals */
   --radius-xs: 0.25rem;
@@ -79,39 +96,6 @@
   --animate-layer-line: layer-line-fill 1.8s ease-in-out infinite;
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
   --animate-shimmer: shimmer 2s linear infinite;
-}
-
-/* ===== Light Theme (Marketplace default) ===== */
-.light,
-[data-theme="light"] {
-  --color-background: #F3F1EC;
-  --color-foreground: #1B1B1D;
-  --color-card: #FFFFFF;
-  --color-card-foreground: #1B1B1D;
-  --color-popover: #FFFFFF;
-  --color-popover-foreground: #1B1B1D;
-  --color-primary: #6E5BFF;
-  --color-primary-foreground: #FFFFFF;
-  --color-secondary: #E8E6E1;
-  --color-secondary-foreground: #1B1B1D;
-  --color-muted: #E8E6E1;
-  --color-muted-foreground: #64656A;
-  --color-accent: #E8E6E1;
-  --color-accent-foreground: #1B1B1D;
-  --color-destructive: #E5484D;
-  --color-destructive-foreground: #FFFFFF;
-  --color-border: #D5D3CE;
-  --color-input: #D5D3CE;
-  --color-ring: #6E5BFF;
-  --color-success: #2FD3C2;
-  --color-warning: #E5954B;
-}
-
-/* ===== Partner Console accent override ===== */
-[data-portal="partner"] {
-  --color-primary: #2FD3C2;
-  --color-primary-foreground: #15161A;
-  --color-ring: #2FD3C2;
 }
 
 
@@ -192,8 +176,8 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(110, 91, 255, 0.15); }
-  50% { box-shadow: 0 0 40px rgba(110, 91, 255, 0.3); }
+  0%, 100% { box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 15%, transparent); }
+  50% { box-shadow: 0 0 40px color-mix(in srgb, var(--color-primary) 30%, transparent); }
 }
 
 @keyframes shimmer {
@@ -254,30 +238,31 @@ body {
   );
 }
 
-/* Glass morphism — dark variant */
+/* Glass morphism — light variant */
 .glass {
-  background: color-mix(in srgb, var(--color-card) 80%, transparent);
+  background: color-mix(in srgb, var(--color-card) 92%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .glass-strong {
-  background: color-mix(in srgb, var(--color-background) 90%, transparent);
+  background: color-mix(in srgb, var(--color-background) 92%, transparent);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
 }
 
-/* Dark surface card — hairline border, no shadow (Studio/Console) */
-.surface-dark {
+/* Light surface card — hairline border (for modals/dialogs) */
+.surface {
   background: var(--color-card);
   border: 1px solid var(--color-border);
 }
 
-/* Light surface card — shadow (Marketplace) */
-.surface-light {
+/* Light surface card — raised with shadow (for cards/panels) */
+.surface-raised {
   background: var(--color-card);
+  border: 1px solid var(--color-border);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
 }
 
@@ -286,21 +271,21 @@ body {
    Gradient text utilities
    ================================================================ */
 .text-gradient-primary {
-  background: linear-gradient(135deg, #8B7CFF, #6E5BFF);
+  background: linear-gradient(135deg, var(--color-ember), var(--color-primary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .text-gradient-accent {
-  background: linear-gradient(135deg, #2FD3C2, #6E5BFF);
+  background: linear-gradient(135deg, var(--color-moss), var(--color-primary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .text-gradient-warm {
-  background: linear-gradient(135deg, #FF5A36, #6E5BFF);
+  background: linear-gradient(135deg, var(--color-ember), var(--color-primary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

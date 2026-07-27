@@ -180,7 +180,7 @@ export default function CartPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => removeItem(item.id)}
-                      className="text-muted-foreground hover:text-danger-red"
+                      className="text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 size={16} />
                     </Button>
@@ -229,7 +229,7 @@ export default function CartPage() {
                 </Button>
               </div>
               {couponError && (
-                <p className="text-danger-red text-xs">{couponError}</p>
+                <p className="text-destructive text-xs">{couponError}</p>
               )}
             </div>
 

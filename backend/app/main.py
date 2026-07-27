@@ -1,17 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.api.routers import auth, products, marketplace, wishlist, reviews, cart, checkout, orders, partner, analytics, notifications, creator, creator_printers, creator_materials
+from app.api.routers import auth, products, marketplace, wishlist, reviews, cart, checkout, orders, partner, analytics, notifications, creator, creator_materials, financial_metrics, admin_metrics, ads, export, admin, onboarding, designer, collaboration, commissions, users, downloads, stock
 from app.core.config import settings
 from app.core.database import Base, engine
+import logging
 import os
 
-# For initial testing without alembic if desired, but we will use alembic.
-import os
-import traceback
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse
 
 from contextlib import asynccontextmanager
+
+logger = logging.getLogger("3dverse")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,10 +31,11 @@ app = FastAPI(
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
-    print("GLOBAL EXCEPTION:", traceback.format_exc())
-    with open("error_log.txt", "w") as f:
-        f.write(traceback.format_exc())
-    return PlainTextResponse(str(traceback.format_exc()), status_code=500)
+    # Log the full trace server-side; never return it to the caller, since it
+    # exposes file paths, SQL, and internal structure to anyone who can trigger
+    # an error.
+    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
@@ -46,12 +47,18 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
-# Serve static files from 'uploads' directory
+# Only genuinely public assets are served statically. Model files, submitted
+# designs, sample photos and invoices are paid or private and are served through
+# /api/downloads, which checks entitlement per request.
 uploads_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
-os.makedirs(uploads_dir, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+PUBLIC_UPLOAD_SUBFOLDERS = ["media", "images", "avatars", "portfolio"]
+for subfolder in PUBLIC_UPLOAD_SUBFOLDERS:
+    path = os.path.join(uploads_dir, subfolder)
+    os.makedirs(path, exist_ok=True)
+    app.mount(f"/uploads/{subfolder}", StaticFiles(directory=path), name=f"uploads-{subfolder}")
 
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
+app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["users"])
 app.include_router(products.router, prefix=f"{settings.API_V1_STR}/products", tags=["products"])
 app.include_router(marketplace.router, prefix=f"{settings.API_V1_STR}/marketplace", tags=["marketplace"])
 app.include_router(wishlist.router, prefix=f"{settings.API_V1_STR}/wishlist", tags=["wishlist"])
@@ -63,9 +70,18 @@ app.include_router(partner.router, prefix=f"{settings.API_V1_STR}/partner", tags
 app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/analytics", tags=["analytics"])
 app.include_router(notifications.router, prefix=f"{settings.API_V1_STR}/notifications", tags=["notifications"])
 app.include_router(creator.router, prefix=f"{settings.API_V1_STR}/creator", tags=["creator"])
-app.include_router(creator_printers.router, prefix=f"{settings.API_V1_STR}/creator/printers", tags=["creator-printers"])
 app.include_router(creator_materials.router, prefix=f"{settings.API_V1_STR}/creator/materials", tags=["creator-materials"])
-
+app.include_router(financial_metrics.router, prefix=f"{settings.API_V1_STR}/creator/financial", tags=["financial-metrics"])
+app.include_router(admin_metrics.router, prefix=f"{settings.API_V1_STR}/admin/financial", tags=["admin-metrics"])
+app.include_router(ads.router, prefix=f"{settings.API_V1_STR}/creator/ads", tags=["ads"])
+app.include_router(export.router, prefix=f"{settings.API_V1_STR}/export", tags=["export"])
+app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin/management", tags=["admin-management"])
+app.include_router(onboarding.router, prefix=f"{settings.API_V1_STR}")
+app.include_router(designer.router, prefix=f"{settings.API_V1_STR}")
+app.include_router(collaboration.router, prefix=f"{settings.API_V1_STR}/collaboration", tags=["collaboration"])
+app.include_router(commissions.router, prefix=f"{settings.API_V1_STR}/custom-designs", tags=["custom-designs"])
+app.include_router(downloads.router, prefix=f"{settings.API_V1_STR}/downloads", tags=["downloads"])
+app.include_router(stock.router, prefix=f"{settings.API_V1_STR}/creator/stock", tags=["stock"])
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the 3DVerse API"}

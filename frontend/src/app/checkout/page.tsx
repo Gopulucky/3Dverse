@@ -39,9 +39,9 @@ function StepIndicator({ current }: { current: number }) {
             className={cn(
               "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all",
               idx < current
-                ? "bg-calibration-cyan/15 text-calibration-cyan"
+                ? "bg-success-surface text-success-ink"
                 : idx === current
-                ? "bg-primary/15 text-primary ring-2 ring-primary/30"
+                ? "bg-primary-surface text-primary-ink ring-2 ring-primary/30"
                 : "bg-muted text-muted-foreground"
             )}
           >
@@ -52,7 +52,7 @@ function StepIndicator({ current }: { current: number }) {
             <div
               className={cn(
                 "w-8 h-px mx-1",
-                idx < current ? "bg-calibration-cyan" : "bg-border"
+                idx < current ? "bg-moss" : "bg-border"
               )}
             />
           )}
@@ -114,7 +114,7 @@ function CheckoutForm({ clientSecret, shippingMethod, address, couponCode }: any
     <form onSubmit={handleSubmit} className="space-y-6">
       <PaymentElement />
       {error && (
-        <div className="text-danger-red text-sm bg-danger-red/10 p-3 rounded-lg">
+        <div className="text-destructive text-sm bg-destructive/10 p-3 rounded-lg">
           {error}
         </div>
       )}
@@ -304,10 +304,10 @@ export default function CheckoutPage() {
             <span className="text-primary font-bold font-data">${total.toFixed(2)}</span>
           </p>
 
-          <div className="bg-white p-4 rounded-lg text-slate-900 border border-border shadow-inner">
+          <div className="bg-card p-4 rounded-lg text-foreground border border-border shadow-inner">
             {clientSecret === "mock_client_secret" ? (
               <div className="text-center py-6">
-                <p className="mb-4 text-slate-600 text-sm leading-relaxed">
+                <p className="mb-4 text-muted-foreground text-sm leading-relaxed">
                   Test Mode: No Stripe keys provided. Click below to
                   simulate a successful payment.
                 </p>

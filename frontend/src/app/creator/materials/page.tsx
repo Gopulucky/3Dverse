@@ -64,8 +64,8 @@ const CERT_BADGES: { key: string; label: string; color: string }[] = [
   { key: "food_safe", label: "Food Safe", color: "text-success" },
   { key: "flame_retardant", label: "Fire Retardant", color: "text-warning" },
   { key: "biocompatible", label: "Biocompatible", color: "text-primary" },
-  { key: "uv_stable", label: "UV Stable", color: "text-amber-500" },
-  { key: "recyclable", label: "Recyclable", color: "text-emerald-500" },
+  { key: "uv_stable", label: "UV Stable", color: "text-warning" },
+  { key: "recyclable", label: "Recyclable", color: "text-success" },
 ];
 
 export default function MaterialsPage() {

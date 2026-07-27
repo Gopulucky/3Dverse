@@ -41,44 +41,44 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card p-5 flex items-center gap-4 transition-colors hover:border-primary/30",
+        "rounded-sm border border-border bg-card p-4 flex flex-col justify-between transition-colors hover:border-primary/30 min-h-[110px]",
         className
       )}
       {...props}
     >
-      {Icon && (
-        <div
-          className={cn(
-            "w-11 h-11 rounded-lg flex items-center justify-center shrink-0",
-            iconBg
-          )}
-        >
-          <Icon className={iconColor} size={22} />
-        </div>
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-muted-foreground mb-1 truncate">
+      <div className="flex items-center justify-between w-full">
+        <p className="text-sm font-medium text-muted-foreground truncate mr-2">
           {label}
         </p>
-        <div className="flex items-baseline gap-2">
-          <h3 className="text-2xl font-bold text-foreground font-data truncate">
-            {value}
-          </h3>
-          {trend && (
-            <span
-              className={cn(
-                "text-xs font-semibold",
-                trend.direction === "up" && "text-calibration-cyan",
-                trend.direction === "down" && "text-danger-red",
-                trend.direction === "neutral" && "text-muted-foreground"
-              )}
-            >
-              {trend.direction === "up" && "↑"}
-              {trend.direction === "down" && "↓"}
-              {trend.value}
-            </span>
-          )}
-        </div>
+        {Icon && (
+          <div
+            className={cn(
+              "w-8 h-8 rounded-sm flex items-center justify-center shrink-0",
+              iconBg
+            )}
+          >
+            <Icon className={iconColor} size={16} />
+          </div>
+        )}
+      </div>
+      <div className="mt-2 flex items-baseline gap-2 w-full">
+        <h3 className="text-2xl font-bold text-foreground font-data truncate">
+          {value}
+        </h3>
+        {trend && (
+          <span
+            className={cn(
+              "text-xs font-semibold ml-auto",
+              trend.direction === "up" && "text-moss",
+              trend.direction === "down" && "text-destructive",
+              trend.direction === "neutral" && "text-muted-foreground"
+            )}
+          >
+            {trend.direction === "up" && "↑"}
+            {trend.direction === "down" && "↓"}
+            {trend.value}
+          </span>
+        )}
       </div>
     </div>
   );

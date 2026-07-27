@@ -28,15 +28,15 @@ const OBJModel = ({ url }: { url: string }) => {
   return <primitive object={obj} />;
 };
 
-export default function ModelViewer({ url, extension, className = "w-full h-96 bg-gray-900 rounded-lg" }: ModelViewerProps) {
+export default function ModelViewer({ url, extension, className = "w-full h-96 bg-card rounded-lg" }: ModelViewerProps) {
   const is3DSupported = ['stl', 'obj'].includes(extension.toLowerCase());
 
   if (!is3DSupported) {
     return (
-      <div className={`flex flex-col items-center justify-center text-gray-400 ${className}`}>
+      <div className={`flex flex-col items-center justify-center text-muted-foreground ${className}`}>
         <Box size={48} className="mb-2" />
         <p className="text-sm">Preview not available for .{extension} files.</p>
-        <p className="text-xs text-gray-500">Download to view</p>
+        <p className="text-xs text-muted-foreground">Download to view</p>
       </div>
     );
   }

@@ -21,9 +21,7 @@ const buttonVariants = cva(
         link:
           "text-primary underline-offset-4 hover:underline",
         glow:
-          "bg-primary text-primary-foreground shadow-[0_0_20px_rgba(110,91,255,0.25)] hover:shadow-[0_0_30px_rgba(110,91,255,0.4)]",
-        console:
-          "bg-calibration-cyan text-graphite shadow-md shadow-calibration-cyan/15 hover:bg-calibration-cyan/90 hover:shadow-lg hover:shadow-calibration-cyan/25",
+          "bg-primary text-primary-foreground shadow-[0_0_20px_color-mix(in_srgb,var(--color-primary)_25%,transparent)] hover:shadow-[0_0_30px_color-mix(in_srgb,var(--color-primary)_40%,transparent)]",
       },
       size: {
         default: "h-10 px-5 py-2",

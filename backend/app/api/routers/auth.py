@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.rate_limit import rate_limit
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.core.config import settings
 from app.models.user import User
@@ -12,13 +13,24 @@ from app.schemas.user import UserCreate, User as UserSchema, Token
 
 router = APIRouter()
 
-@router.post("/register", response_model=UserSchema)
+@router.post(
+    "/register",
+    response_model=UserSchema,
+    dependencies=[Depends(rate_limit("register", limit=5, window_seconds=3600))],
+)
 def register(*, db: Session = Depends(get_db), user_in: UserCreate) -> Any:
     """
     Register a new user.
     """
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
+        # A deleted account keeps its row and email so history survives; say so
+        # explicitly rather than implying someone else holds the address.
+        if user.deleted_at is not None:
+            raise HTTPException(
+                status_code=400,
+                detail="This account was deleted. Contact support to restore it.",
+            )
         raise HTTPException(
             status_code=400,
             detail="The user with this username already exists in the system.",
@@ -34,7 +46,11 @@ def register(*, db: Session = Depends(get_db), user_in: UserCreate) -> Any:
     db.refresh(user)
     return user
 
-@router.post("/login/access-token", response_model=Token)
+@router.post(
+    "/login/access-token",
+    response_model=Token,
+    dependencies=[Depends(rate_limit("login", limit=10, window_seconds=300))],
+)
 def login_access_token(
     db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:

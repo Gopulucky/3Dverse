@@ -169,7 +169,7 @@ export default function RegisterPage() {
                       key={role.value}
                       className={`flex flex-col items-center gap-1 p-3 rounded-lg border cursor-pointer transition-all text-center ${
                         selectedRole === role.value
-                          ? "border-primary bg-primary/10 text-primary"
+                          ? "border-primary bg-primary-surface text-primary-ink"
                           : "border-border hover:border-primary/30"
                       }`}
                     >

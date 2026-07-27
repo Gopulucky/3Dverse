@@ -54,7 +54,14 @@ export default function LoginPage() {
 
       setAuth(result.access_token, result.user || { id: 0, email: data.email, role: "customer" });
       toast.success("Welcome back!");
-      router.push("/marketplace/home");
+
+      // `?next=` lets entry points like "Sell with 3Dverse" send people back
+      // where they were headed. Read it off the URL rather than through
+      // useSearchParams, which would force this page behind a Suspense
+      // boundary. Only same-site paths are honoured — never an absolute URL.
+      const next = new URLSearchParams(window.location.search).get("next");
+      const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+      router.push(safeNext || "/marketplace/home");
     } catch {
       toast.error("Invalid email or password");
     }

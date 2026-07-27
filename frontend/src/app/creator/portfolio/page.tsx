@@ -175,12 +175,12 @@ export default function CreatorPortfolioPage() {
                       {profile?.avatar_url && (
                         <AvatarImage src={api.mediaUrl(profile.avatar_url)} />
                       )}
-                      <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                      <AvatarFallback className="bg-primary-surface text-primary-ink text-2xl font-bold">
                         {displayName?.[0]?.toUpperCase() || "C"}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Camera size={20} className="text-white" />
+                    <span className="absolute inset-0 rounded-full bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Camera size={20} className="text-primary-foreground" />
                     </span>
                   </button>
                   <input
@@ -201,7 +201,7 @@ export default function CreatorPortfolioPage() {
                   <div className="min-w-0">
                     <p className="font-bold text-lg font-display truncate flex items-center gap-1.5">
                       {displayName}
-                      <BadgeCheck size={16} className="text-calibration-cyan shrink-0" />
+                      <BadgeCheck size={16} className="text-moss shrink-0" />
                     </p>
                     {profile?.creator_tier && (
                       <Badge variant="secondary" className="capitalize mt-1">
@@ -275,7 +275,7 @@ export default function CreatorPortfolioPage() {
                       onClick={() => toggleSpec(s)}
                       className={
                         specializations.includes(s)
-                          ? "px-3 py-1 rounded-full text-xs font-semibold bg-primary text-white border border-primary"
+                          ? "px-3 py-1 rounded-full text-xs font-semibold bg-primary text-primary-foreground border border-primary"
                           : "px-3 py-1 rounded-full text-xs font-semibold bg-card text-muted-foreground border border-border hover:border-primary/40"
                       }
                     >
@@ -382,7 +382,7 @@ export default function CreatorPortfolioPage() {
                                 ${p.price?.toFixed(2)}
                               </span>
                               {p.avg_rating != null && (
-                                <span className="flex items-center gap-0.5 text-xs text-nozzle-orange font-data">
+                                <span className="flex items-center gap-0.5 text-xs text-ember font-data">
                                   <Star size={10} fill="currentColor" />
                                   {p.avg_rating.toFixed(1)}
                                 </span>

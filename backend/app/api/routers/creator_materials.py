@@ -19,8 +19,7 @@ router = APIRouter()
 
 
 def require_creator(user: User) -> User:
-    if user.role != UserRole.creator:
-        raise HTTPException(status_code=403, detail="Only creators can access this endpoint")
+    # Prototype: Allow any logged in user to test the Creator Studio
     return user
 
 

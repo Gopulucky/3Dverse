@@ -39,12 +39,14 @@ const SPECIALIZATION_OPTIONS = [
 ];
 
 const TECHNOLOGIES = [
-  { value: "FDM", label: "FDM" },
-  { value: "SLA", label: "SLA" },
-  { value: "SLS", label: "SLS" },
-  { value: "MJF", label: "MJF" },
-  { value: "DLP", label: "DLP" },
-  { value: "Other", label: "Other" },
+  { value: "fdm", label: "FDM" },
+  { value: "sla", label: "SLA" },
+  { value: "sls", label: "SLS" },
+  { value: "slm", label: "SLM" },
+  { value: "dmls", label: "DMLS" },
+  { value: "mjf", label: "MJF" },
+  { value: "material_jetting", label: "Material Jetting" },
+  { value: "binder_jetting", label: "Binder Jetting" },
 ];
 
 export default function OnboardingPage() {
@@ -60,10 +62,7 @@ export default function OnboardingPage() {
   });
 
   // Step 2: Printer (simple inline add)
-  const [printerForm, setPrinterForm] = useState({
-    name: "", technology: "FDM", brand: "", model: "",
-    build_volume_x: "", build_volume_y: "", build_volume_z: "",
-  });
+  const [printerForm, setPrinterForm] = useState({ label: "", technology: "fdm" });
   const [addedPrinters, setAddedPrinters] = useState<any[]>([]);
 
   // Step 3: Materials
@@ -100,7 +99,7 @@ export default function OnboardingPage() {
     mutationFn: (data: any) => api.post("/api/creator/printers", data),
     onSuccess: (result: any) => {
       setAddedPrinters((prev) => [...prev, result]);
-      setPrinterForm({ name: "", technology: "FDM", brand: "", model: "", build_volume_x: "", build_volume_y: "", build_volume_z: "" });
+      setPrinterForm({ label: "", technology: "fdm" });
       queryClient.invalidateQueries({ queryKey: ["creator-printers"] });
       toast.success("Printer added!");
     },
@@ -200,9 +199,9 @@ export default function OnboardingPage() {
                 <div
                   className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
                     isPast
-                      ? "bg-success/15 text-success"
+                      ? "bg-success-surface text-success-ink"
                       : isCurrent
-                      ? "bg-primary/15 text-primary ring-2 ring-primary/30"
+                      ? "bg-primary-surface text-primary-ink ring-2 ring-primary/30"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
@@ -295,8 +294,8 @@ export default function OnboardingPage() {
                     <div key={p.id || i} className="flex items-center gap-3 p-3 rounded-lg border border-success/30 bg-success/5">
                       <Check size={16} className="text-success shrink-0" />
                       <div>
-                        <p className="font-semibold text-sm">{p.name}</p>
-                        <p className="text-xs text-muted-foreground">{p.technology} — {p.brand} {p.model}</p>
+                        <p className="font-semibold text-sm">{p.label || p.name}</p>
+                        <p className="text-xs text-muted-foreground uppercase">{p.technology}</p>
                       </div>
                     </div>
                   ))}
@@ -308,9 +307,9 @@ export default function OnboardingPage() {
                 <h3 className="text-sm font-semibold mb-3">Add a Printer</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Input
-                    placeholder="Printer name *"
-                    value={printerForm.name}
-                    onChange={(e) => setPrinterForm({ ...printerForm, name: e.target.value })}
+                    placeholder="Name (optional)"
+                    value={printerForm.label}
+                    onChange={(e) => setPrinterForm({ ...printerForm, label: e.target.value })}
                   />
                   <select
                     className="w-full bg-card border border-input text-foreground text-sm rounded-md p-2.5 focus:ring-2 focus:ring-ring focus-visible:outline-none"
@@ -321,38 +320,15 @@ export default function OnboardingPage() {
                       <option key={t.value} value={t.value}>{t.label}</option>
                     ))}
                   </select>
-                  <Input
-                    placeholder="Brand (e.g. Bambu Lab)"
-                    value={printerForm.brand}
-                    onChange={(e) => setPrinterForm({ ...printerForm, brand: e.target.value })}
-                  />
-                  <Input
-                    placeholder="Model (e.g. X1 Carbon)"
-                    value={printerForm.model}
-                    onChange={(e) => setPrinterForm({ ...printerForm, model: e.target.value })}
-                  />
-                </div>
-                <div className="mt-3">
-                  <Label className="mb-1 block text-xs text-muted-foreground">Build Volume (mm) — optional</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Input type="number" placeholder="X" value={printerForm.build_volume_x} onChange={(e) => setPrinterForm({ ...printerForm, build_volume_x: e.target.value })} />
-                    <Input type="number" placeholder="Y" value={printerForm.build_volume_y} onChange={(e) => setPrinterForm({ ...printerForm, build_volume_y: e.target.value })} />
-                    <Input type="number" placeholder="Z" value={printerForm.build_volume_z} onChange={(e) => setPrinterForm({ ...printerForm, build_volume_z: e.target.value })} />
-                  </div>
                 </div>
                 <Button
                   className="mt-3"
                   size="sm"
-                  disabled={!printerForm.name || printerMutation.isPending}
+                  disabled={printerMutation.isPending}
                   onClick={() => {
                     printerMutation.mutate({
-                      name: printerForm.name,
+                      label: printerForm.label || null,
                       technology: printerForm.technology,
-                      brand: printerForm.brand || null,
-                      model: printerForm.model || null,
-                      build_volume_x: printerForm.build_volume_x ? parseFloat(printerForm.build_volume_x) : null,
-                      build_volume_y: printerForm.build_volume_y ? parseFloat(printerForm.build_volume_y) : null,
-                      build_volume_z: printerForm.build_volume_z ? parseFloat(printerForm.build_volume_z) : null,
                     });
                   }}
                 >

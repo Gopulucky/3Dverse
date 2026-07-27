@@ -45,3 +45,10 @@ def get_current_active_user(
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+def require_role(role: str):
+    def role_checker(current_user: User = Depends(get_current_active_user)):
+        if current_user.role.value != role and current_user.role != role:
+            raise HTTPException(status_code=403, detail="Not enough permissions")
+        return current_user
+    return role_checker

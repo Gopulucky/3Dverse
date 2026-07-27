@@ -16,7 +16,7 @@ export interface SidebarLink {
 
 interface SidebarProps {
   links: SidebarLink[];
-  portal: "studio" | "console";
+  portal: "studio" | "console" | "admin";
 }
 
 /**
@@ -30,7 +30,7 @@ export function Sidebar({ links, portal }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-16 bottom-0 z-40 flex flex-col border-r border-border bg-card transition-all duration-200",
+        "sticky top-16 h-[calc(100vh-4rem)] z-40 flex flex-col border-r border-border bg-card transition-all duration-200",
         collapsed ? "w-[72px]" : "w-[240px]"
       )}
     >
@@ -49,9 +49,7 @@ export function Sidebar({ links, portal }: SidebarProps) {
                 "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-150",
                 collapsed ? "justify-center px-3 py-3" : "px-3 py-2.5",
                 isActive
-                  ? portal === "console"
-                    ? "bg-calibration-cyan/10 text-calibration-cyan"
-                    : "bg-primary/10 text-primary"
+                  ? "bg-primary-surface text-primary-ink"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent"
               )}
             >

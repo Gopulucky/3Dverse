@@ -89,8 +89,8 @@ export const api = {
   patch: <T>(endpoint: string, body?: unknown) =>
     request<T>(endpoint, { method: "PATCH", body }),
 
-  delete: <T>(endpoint: string) =>
-    request<T>(endpoint, { method: "DELETE" }),
+  delete: <T>(endpoint: string, body?: unknown) =>
+    request<T>(endpoint, { method: "DELETE", body }),
 
   // For file uploads (FormData, no JSON content-type)
   upload: <T>(endpoint: string, formData: FormData) => {
@@ -119,6 +119,41 @@ export const api = {
     if (!path) return "";
     if (path.startsWith("http")) return path;
     return `${API_BASE_URL}${path}`;
+  },
+
+  /**
+   * Fetch a gated file (paid model, invoice, submitted design) and save it.
+   * These endpoints require the auth header, so a plain <a href> cannot be used.
+   */
+  download: async (endpoint: string, filename?: string) => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      let detail = "Download failed";
+      try {
+        const err = await response.json();
+        detail = err.detail || detail;
+      } catch {
+        detail = response.statusText;
+      }
+      throw new ApiError(response.status, detail);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download =
+      filename ||
+      response.headers
+        .get("content-disposition")
+        ?.match(/filename="?([^"]+)"?/)?.[1] ||
+      "download";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   },
 };
 

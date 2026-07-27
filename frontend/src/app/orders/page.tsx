@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Package, Download, ExternalLink, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -41,9 +42,9 @@ function OrderStatusTracker({ status }: { status: string }) {
               className={cn(
                 "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase whitespace-nowrap transition-all",
                 isPast
-                  ? "bg-calibration-cyan/15 text-calibration-cyan"
+                  ? "bg-success-surface text-success-ink"
                   : isCurrent
-                  ? "bg-primary/15 text-primary ring-1 ring-primary/30"
+                  ? "bg-primary-surface text-primary-ink ring-1 ring-primary/30"
                   : "bg-muted text-muted-foreground/50"
               )}
             >
@@ -54,7 +55,7 @@ function OrderStatusTracker({ status }: { status: string }) {
               <div
                 className={cn(
                   "w-4 h-px mx-0.5",
-                  isPast ? "bg-calibration-cyan" : "bg-border"
+                  isPast ? "bg-moss" : "bg-border"
                 )}
               />
             )}
@@ -134,15 +135,17 @@ export default function OrdersPage() {
                     label={order.status?.toUpperCase()}
                   />
                   {order.invoice_url && (
-                    <a
-                      href={api.mediaUrl(order.invoice_url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={() =>
+                        api
+                          .download(`/api/downloads/orders/${order.id}/invoice`, `invoice_${order.id}.pdf`)
+                          .catch((e) => toast.error(e.message))
+                      }
                       className="flex items-center gap-1 text-sm text-primary hover:underline font-semibold"
                     >
                       <Download size={14} />
                       Invoice
-                    </a>
+                    </button>
                   )}
                 </div>
               </div>

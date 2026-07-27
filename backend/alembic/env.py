@@ -12,14 +12,25 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from app.core.config import settings
 from app.core.database import Base
 from app.models.user import User
+from app.models.creator import Creator
+from app.models.notification import Notification
 from app.models.product import Product, ProductVersion, ProductMedia, PrintabilityReport
 from app.models.wishlist import Wishlist
 from app.models.review import Review
 from app.models.cart import Cart, CartItem
 from app.models.coupon import Coupon
 from app.models.order import Order, OrderItem
-from app.models.printer import Printer
+from app.models.printer import PrinterProfile
 from app.models.material import Material, CreatorMaterial, FinishOption, PostProcessCapability
+from app.models.defect_report import DefectReport
+from app.models.print_partner import PrintPartner
+from app.models.filament_spool import FilamentSpool, ProductFilamentRequirement, ProductionLog
+from app.models.collaboration import CollaborationTicket, CertificationReport, CollaborationMessage, CollaborationAgreement
+from app.models.printer_assumption import PrinterAssumption
+from app.models.reward_ledger import RewardLedger
+from app.models.ad_campaign import AdCampaign
+from app.models.stock import StockItem, StockMovement
+from app.models.return_request import ReturnRequest
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

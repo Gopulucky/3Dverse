@@ -13,6 +13,36 @@ logger = logging.getLogger(__name__)
 # Basic threshold for overhang detection: face normal Z < -0.707 (45 degrees from vertical down)
 OVERHANG_THRESHOLD = -0.707
 
+# Face budget for the public marketplace preview. Enough to read the silhouette
+# and surface detail in a viewer, far too coarse to print as a substitute for
+# the real file.
+PREVIEW_FACE_BUDGET = 4000
+
+
+def _write_preview(mesh, version_id: int) -> str | None:
+    """Write a decimated GLB stand-in for the marketplace viewer. The source
+    file stays behind /api/downloads; only this reduced mesh is public."""
+    try:
+        preview = mesh.copy()
+        if len(preview.faces) > PREVIEW_FACE_BUDGET:
+            preview = preview.simplify_quadric_decimation(face_count=PREVIEW_FACE_BUDGET)
+
+        # Normalise scale/position so the preview cannot be used to recover the
+        # original's true dimensions.
+        preview.apply_translation(-preview.bounds.mean(axis=0))
+        longest = float(max(preview.extents)) or 1.0
+        preview.apply_scale(1.0 / longest)
+
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        preview_dir = os.path.join(base_dir, "uploads", "media", "previews")
+        os.makedirs(preview_dir, exist_ok=True)
+        file_name = f"preview_{version_id}.glb"
+        preview.export(os.path.join(preview_dir, file_name))
+        return f"/uploads/media/previews/{file_name}"
+    except Exception as e:
+        logger.warning(f"Preview generation failed for version {version_id}: {e}")
+        return None
+
 @celery_app.task
 def analyze_model(version_id: int):
     logger.info(f"Starting analysis for version_id: {version_id}")
@@ -89,6 +119,8 @@ def analyze_model(version_id: int):
 
             if len(issues) == 0:
                 status = "pass"
+
+            version.preview_url = _write_preview(mesh, version.id)
 
         except Exception as e:
             logger.error(f"Error during analysis: {e}")

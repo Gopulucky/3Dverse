@@ -3,18 +3,84 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, UploadCloud, Loader2, FileBox } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  UploadCloud,
+  Loader2,
+  FileBox,
+  CheckCircle2,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StudioShell } from "@/components/layout/studio-shell";
+import { getCreatorPath, useCreatorType, type CreatorType } from "@/lib/creator-nav";
+import { cn } from "@/lib/utils";
+
+const STEPS = ["Details", "Upload"] as const;
+
+/**
+ * Per-path copy. Fulfillment is no longer a per-product question — it follows
+ * from the account-level creator path, so the flow is the same everywhere and
+ * only the wording changes.
+ */
+interface UploadCopy {
+  /** `self` for anyone who ships their own work; designers rely on partners. */
+  fulfillment: "self" | "pending_partner";
+  noun: string;
+  detailsTitle: string;
+  detailsSubtitle: string;
+  uploadTitle: string;
+  uploadSubtitle: string;
+  /** Studio creators may list an item they have already printed, file or not. */
+  fileRequired: boolean;
+}
+
+const COPY: Record<CreatorType, UploadCopy> = {
+  studio: {
+    fulfillment: "self",
+    noun: "product",
+    detailsTitle: "Name your product",
+    detailsSubtitle: "A great title helps buyers find what you print.",
+    uploadTitle: "Upload your 3D file",
+    uploadSubtitle:
+      "Attach the model you print from. Optional if you're listing something you've already made.",
+    fileRequired: false,
+  },
+  seller: {
+    fulfillment: "self",
+    noun: "design",
+    detailsTitle: "Name your design",
+    detailsSubtitle: "A great title helps buyers find your design.",
+    uploadTitle: "Upload your design file",
+    uploadSubtitle: "This is the file buyers receive when they purchase.",
+    fileRequired: true,
+  },
+  designer: {
+    fulfillment: "pending_partner",
+    noun: "design",
+    detailsTitle: "Name your design",
+    detailsSubtitle: "A great title helps buyers and print partners find your work.",
+    uploadTitle: "Upload your design file",
+    uploadSubtitle: "Print partners manufacture and ship from this file.",
+    fileRequired: true,
+  },
+};
+
+/** Fallback while the creator path is still loading or was never set. */
+const DEFAULT_COPY = COPY.studio;
 
 export default function NewProductPage() {
   const router = useRouter();
-  
+  const { creatorType } = useCreatorType();
+  const copy = creatorType ? COPY[creatorType] : DEFAULT_COPY;
+  const creatorPath = getCreatorPath(creatorType);
+
+  const [step, setStep] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -34,10 +100,8 @@ export default function NewProductPage() {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0];
-      validateAndSetFile(droppedFile);
+      validateAndSetFile(e.dataTransfer.files[0]);
     }
   }, []);
 
@@ -49,24 +113,20 @@ export default function NewProductPage() {
   };
 
   const validateAndSetFile = (f: File) => {
-    const validExtensions = ['.stl', '.obj', '.3mf', '.step', '.fbx', '.blend'];
-    const ext = '.' + f.name.split('.').pop()?.toLowerCase();
-    
+    const validExtensions = [".stl", ".obj", ".3mf", ".step", ".fbx", ".blend"];
+    const ext = "." + f.name.split(".").pop()?.toLowerCase();
     if (!validExtensions.includes(ext)) {
-      toast.error(`Invalid file type. Supported types: ${validExtensions.join(', ')}`);
+      toast.error(`Invalid file type. Supported: ${validExtensions.join(", ")}`);
       return;
     }
-    
     setFile(f);
-    // Auto-fill title from filename if not set
     if (!title) {
-      setTitle(f.name.replace(ext, '').replace(/[_-]/g, ' '));
+      setTitle(f.name.replace(ext, "").replace(/[_-]/g, " "));
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!file) {
+  const handleSubmit = async () => {
+    if (copy.fileRequired && !file) {
       toast.error("Please select a 3D model file to upload");
       return;
     }
@@ -77,131 +137,314 @@ export default function NewProductPage() {
 
     setIsUploading(true);
     try {
-      // 1. Create the draft product
       const product = await api.post<any>("/api/products/", {
         title: title.trim(),
         description: "",
-        category: "Other", // Default, can be changed in edit
+        category: "Other",
         price: 0,
         license_type: "standard",
         status: "draft",
         tags: [],
+        fulfillment_status: copy.fulfillment,
       });
 
-      // 2. Upload the file
-      const formData = new FormData();
-      formData.append("file", file);
-      
-      toast.loading("Uploading 3D model...", { id: "upload-toast" });
-      await api.upload(`/api/products/${product.id}/upload-model`, formData);
-      toast.success("Upload complete!", { id: "upload-toast" });
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        toast.loading("Uploading 3D model...", { id: "upload-toast" });
+        await api.upload(`/api/products/${product.id}/upload-model`, formData);
+        toast.success("Upload complete!", { id: "upload-toast" });
+      } else {
+        toast.success("Product created successfully!");
+      }
 
-      // 3. Redirect to edit page
       router.push(`/creator/products/${product.id}`);
     } catch (err: any) {
-      toast.error(err.detail || "Failed to upload product", { id: "upload-toast" });
+      toast.error(err.detail || `Failed to create ${copy.noun}`, {
+        id: "upload-toast",
+      });
       setIsUploading(false);
     }
   };
 
   return (
     <StudioShell>
-      <div className="max-w-3xl mx-auto px-6 pt-24 pb-20">
-        <Link
-          href="/creator/products"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors font-semibold"
-        >
-          <ArrowLeft size={16} />
-          Back to Library
-        </Link>
+      <div className="min-h-screen bg-background">
+        {/* ── Top Progress Bar ── */}
+        <div className="sticky top-16 z-20 bg-card/80 backdrop-blur border-b border-border">
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <Link
+                href="/creator/products"
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
+              >
+                <ArrowLeft size={16} />
+                Back
+              </Link>
 
-        <Card className="p-8 border-border bg-card">
-          <h1 className="text-2xl font-bold mb-2 font-display">
-            Upload 3D Design
-          </h1>
-          <p className="text-muted-foreground text-sm mb-8">
-            Start by uploading your primary 3D model file. You can add images, configure print settings, and set pricing on the next screen.
-          </p>
+              {/* Step Indicators */}
+              <div className="flex items-center gap-2">
+                {STEPS.map((s, i) => (
+                  <div key={s} className="flex items-center gap-2">
+                    <div
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300",
+                        i < step
+                          ? "bg-success-surface text-success-ink"
+                          : i === step
+                          ? "bg-primary-surface text-primary-ink"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {i < step ? (
+                        <CheckCircle2 size={13} />
+                      ) : (
+                        <span className="w-4 h-4 rounded-full border-2 flex items-center justify-center text-[10px] font-bold border-current">
+                          {i + 1}
+                        </span>
+                      )}
+                      {s}
+                    </div>
+                    {i < STEPS.length - 1 && (
+                      <div
+                        className={cn(
+                          "w-8 h-px transition-colors duration-300",
+                          i < step ? "bg-success/50" : "bg-border"
+                        )}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Drag & Drop Zone */}
-            <div
-              className={`relative border-2 border-dashed rounded-xl p-10 text-center transition-all ${
-                dragActive
-                  ? "border-primary bg-primary/5 scale-[1.01]"
-                  : file
-                  ? "border-success/50 bg-success/5"
-                  : "border-border hover:border-primary/50"
-              }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-            >
-              <input
-                type="file"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                accept=".stl,.obj,.3mf,.step,.fbx,.blend"
-                onChange={handleChange}
-                disabled={isUploading}
-              />
-              
-              {file ? (
-                <div className="space-y-3">
-                  <div className="w-12 h-12 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-2 text-success">
-                    <FileBox size={24} />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground">{file.name}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
-                  <p className="text-xs text-primary font-medium mt-4">Click or drag to replace</p>
-                </div>
-              ) : (
-                <div className="space-y-3 pointer-events-none">
-                  <UploadCloud size={48} className="mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-lg font-semibold">Click or drag file to this area to upload</p>
-                  <p className="text-sm text-muted-foreground">
-                    Support for a single STL, OBJ, 3MF, STEP, FBX, or BLEND file.
-                  </p>
-                </div>
-              )}
+              <div className="text-xs text-muted-foreground font-medium">
+                Step {step + 1} of {STEPS.length}
+              </div>
             </div>
+          </div>
+        </div>
 
-            {/* Quick Title */}
-            {file && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <Label className="mb-2 block">Design Title</Label>
+        <div className="max-w-4xl mx-auto px-6 py-16">
+          {/* ── STEP 0: Listing Details ── */}
+          {step === 0 && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl mx-auto">
+              <div className="mb-12">
+                <div className="flex flex-wrap items-center gap-2 mb-6">
+                  <div className="inline-flex items-center gap-2 bg-primary-surface text-primary-ink text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full">
+                    <Sparkles size={12} />
+                    Step 1 of {STEPS.length}
+                  </div>
+                  {/* Which creator path this listing is being created under */}
+                  {creatorPath && (
+                    <div
+                      className={cn(
+                        "inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full",
+                        creatorPath.accentBg,
+                        creatorPath.accent
+                      )}
+                    >
+                      <creatorPath.icon size={12} />
+                      {creatorPath.label}
+                    </div>
+                  )}
+                </div>
+                <h1 className="text-4xl font-bold font-display tracking-tight text-foreground mb-3">
+                  {copy.detailsTitle}
+                </h1>
+                <p className="text-muted-foreground">{copy.detailsSubtitle}</p>
+                {creatorPath && (
+                  <p className="text-sm text-muted-foreground mt-3">
+                    You're listing as a{" "}
+                    <span className={cn("font-semibold", creatorPath.accent)}>
+                      {creatorPath.label}
+                    </span>{" "}
+                    creator — {creatorPath.tagline}.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2 mb-10">
+                <Label className="text-sm font-semibold text-foreground">
+                  Listing Title <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Give your design a name..."
-                  className="h-12 text-lg"
-                  disabled={isUploading}
-                  required
+                  placeholder="e.g. Articulated Dragon Figurine"
+                  className="h-14 text-base rounded-xl border-border focus:border-primary bg-card"
+                  autoFocus
                 />
+                <p className="text-xs text-muted-foreground">
+                  Include keywords that buyers would search for.
+                </p>
               </div>
-            )}
 
-            <div className="pt-6 border-t border-border flex justify-end">
-              <Button 
-                type="submit" 
-                disabled={!file || !title || isUploading} 
-                size="lg"
-                className="w-full sm:w-auto"
-              >
-                {isUploading ? (
-                  <Loader2 className="animate-spin mr-2" size={18} />
-                ) : (
-                  <UploadCloud size={18} className="mr-2" />
-                )}
-                {isUploading ? "Uploading..." : "Upload & Continue"}
-              </Button>
+              <div className="flex justify-end">
+                <Button
+                  size="lg"
+                  className="rounded-xl flex-1 sm:flex-none sm:px-12"
+                  disabled={!title.trim()}
+                  onClick={() => setStep(1)}
+                >
+                  Continue <ArrowRight size={16} className="ml-2" />
+                </Button>
+              </div>
             </div>
-          </form>
-        </Card>
+          )}
+
+          {/* ── STEP 1: Upload the file ── */}
+          {step === 1 && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl mx-auto">
+              <div className="mb-12">
+                <div className="inline-flex items-center gap-2 bg-primary-surface text-primary-ink text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full mb-6">
+                  <Sparkles size={12} />
+                  Step 2 of {STEPS.length}
+                </div>
+                <h2 className="text-4xl font-bold font-display tracking-tight text-foreground mb-3">
+                  {copy.uploadTitle}
+                </h2>
+                <p className="text-muted-foreground">{copy.uploadSubtitle}</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Supported formats: STL, OBJ, 3MF, STEP, FBX, BLEND
+                </p>
+              </div>
+
+              {/* Drag & Drop Zone */}
+              <div
+                className={cn(
+                  "relative border-2 border-dashed rounded-3xl transition-all duration-300 cursor-pointer group",
+                  dragActive
+                    ? "border-primary bg-primary/5 scale-[1.01] shadow-[0_0_0_4px_rgba(168,85,247,0.1)]"
+                    : file
+                    ? "border-success/60 bg-success/5"
+                    : "border-border hover:border-primary/50 hover:bg-muted/30"
+                )}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <input
+                  type="file"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  accept=".stl,.obj,.3mf,.step,.fbx,.blend"
+                  onChange={handleChange}
+                  disabled={isUploading}
+                />
+
+                <div className="py-20 px-8 text-center pointer-events-none">
+                  {file ? (
+                    <div className="space-y-4">
+                      <div className="w-16 h-16 bg-success/15 rounded-2xl flex items-center justify-center mx-auto border border-success/30">
+                        <FileBox size={32} className="text-success" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-lg text-foreground">{file.name}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <div className="inline-flex items-center gap-2 bg-success-surface text-success-ink text-xs font-bold px-4 py-2 rounded-full">
+                        <CheckCircle2 size={13} /> File ready — click to replace
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div
+                        className={cn(
+                          "w-20 h-20 rounded-3xl flex items-center justify-center mx-auto border-2 transition-all duration-300",
+                          dragActive
+                            ? "border-primary bg-primary/10 scale-110"
+                            : "border-dashed border-border group-hover:border-primary/50 group-hover:bg-primary/5"
+                        )}
+                      >
+                        <UploadCloud
+                          size={40}
+                          className={cn(
+                            "transition-colors duration-300",
+                            dragActive
+                              ? "text-primary"
+                              : "text-muted-foreground/50 group-hover:text-primary/60"
+                          )}
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xl font-bold text-foreground">
+                          Drag and drop your file
+                        </p>
+                        <p className="text-muted-foreground mt-1">
+                          or{" "}
+                          <span className="text-primary font-semibold underline underline-offset-2">
+                            click to browse
+                          </span>
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground/70">
+                        STL · OBJ · 3MF · STEP · FBX · BLEND · Max 500MB
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Checklist */}
+              <div className="grid grid-cols-3 gap-3 mt-6">
+                {[
+                  { label: "Watertight mesh", ok: !!file },
+                  { label: "Manifold geometry", ok: !!file },
+                  { label: "< 500 MB", ok: file ? file.size < 500 * 1024 * 1024 : false },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className={cn(
+                      "flex items-center gap-2 p-3 rounded-xl border text-xs font-medium transition-colors",
+                      item.ok
+                        ? "border-success/30 bg-success/5 text-success"
+                        : "border-border bg-muted/30 text-muted-foreground"
+                    )}
+                  >
+                    <CheckCircle2 size={13} className={item.ok ? "text-success" : "opacity-30"} />
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-between gap-4 mt-10">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="rounded-xl"
+                  onClick={() => setStep(0)}
+                  disabled={isUploading}
+                >
+                  <ArrowLeft size={16} className="mr-2" /> Back
+                </Button>
+                <Button
+                  size="lg"
+                  className="rounded-xl flex-1 sm:flex-none sm:px-12"
+                  disabled={(copy.fileRequired && !file) || isUploading}
+                  onClick={handleSubmit}
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2" size={18} /> Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud size={18} className="mr-2" /> Create Listing
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {!copy.fileRequired && !file && (
+                <p className="text-xs text-muted-foreground text-center mt-4">
+                  No file? You can skip this and attach one later from the product page.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </StudioShell>
   );

@@ -80,3 +80,34 @@ export function useRequireAuth(redirectTo: string = "/login") {
 
   return { ready: hydrated && isAuthenticated, isAuthenticated, user };
 }
+
+/**
+ * Gate a page behind a specific user role.
+ * Redirects to /marketplace/home if authenticated but wrong role.
+ * Redirects to /login if not authenticated at all.
+ */
+export function useRequireRole(
+  allowedRoles: Array<"creator" | "customer" | "print_partner" | "admin">,
+  redirectTo: string = "/marketplace/home"
+) {
+  const router = useRouter();
+  const { isAuthenticated, hydrated, user, hydrate } = useAuthStore();
+
+  useEffect(() => {
+    if (!hydrated) hydrate();
+  }, [hydrated, hydrate]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    if (user && !allowedRoles.includes(user.role)) {
+      router.push(redirectTo);
+    }
+  }, [hydrated, isAuthenticated, user, router, redirectTo]);
+
+  const hasAccess = hydrated && isAuthenticated && !!user && allowedRoles.includes(user.role);
+  return { ready: hasAccess, user };
+}
