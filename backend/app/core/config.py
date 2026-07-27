@@ -77,3 +77,15 @@ if settings.is_production and settings.SECRET_KEY == DEV_SECRET_KEY:
         "SECRET_KEY is still the development default. Set a strong SECRET_KEY "
         "environment variable before running with ENVIRONMENT != development."
     )
+
+# POSTGRES_SERVER must be "host:port". A malformed value (missing/empty port,
+# stray whitespace) otherwise surfaces as an opaque
+# `ValueError: invalid literal for int() with base 10: ''` deep inside
+# SQLAlchemy's URL parser, which is hard to trace back to the env var.
+_server_host, _, _server_port = settings.POSTGRES_SERVER.strip().partition(":")
+if not _server_host or not _server_port.isdigit():
+    raise RuntimeError(
+        f"POSTGRES_SERVER is set to {settings.POSTGRES_SERVER!r}, which is not "
+        "a valid 'host:port' value (e.g. db.<project-ref>.supabase.co:5432). "
+        "Check for a missing port, trailing colon, or stray whitespace."
+    )
