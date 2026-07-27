@@ -29,6 +29,7 @@ MarkupSafe==3.0.3
 numpy==2.5.1
 packaging==26.2
 passlib==1.7.4
+pgvector==0.5.0
 prompt_toolkit==3.0.52
 psycopg==3.3.4
 psycopg-binary==3.3.4
@@ -42,6 +43,7 @@ python-dotenv==1.2.2
 python-jose==3.5.0
 python-multipart==0.0.32
 redis==8.0.1
+requests==2.32.5
 rsa==4.9.1
 rtree==1.4.1
 s3transfer==0.19.1
@@ -62,3 +64,4 @@ stripe
 reportlab
 sentence-transformers
 openpyxl
+Pillow==12.1.1
