@@ -107,7 +107,11 @@ def update_product(
         d = update_data.get("description", product.description) or ""
         c = update_data.get("category", product.category) or ""
         text_for_embedding = f"{t} {d} {c}".strip()
-        update_data["embedding"] = get_embedding(text_for_embedding)
+        new_embedding = get_embedding(text_for_embedding)
+        # Keep the existing embedding rather than blanking it when no worker
+        # is available to compute a fresh one.
+        if new_embedding is not None:
+            update_data["embedding"] = new_embedding
 
     for field, value in update_data.items():
         setattr(product, field, value)

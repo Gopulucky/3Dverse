@@ -33,13 +33,21 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
-    # Log the full trace server-side; never return it to the caller, since it
-    # exposes file paths, SQL, and internal structure to anyone who can trigger
-    # an error.
-    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
-    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+# Registered before CORSMiddleware so it ends up *inside* it: an unhandled
+# exception that escapes to Starlette's own error handler produces a 500 that
+# never passes back through CORS, so the browser reports a real server crash as
+# a misleading "No 'Access-Control-Allow-Origin' header" error. Converting it to
+# a response here means the 500 gets CORS headers and the real status is visible.
+@app.middleware("http")
+async def catch_unhandled_errors(request, call_next):
+    try:
+        return await call_next(request)
+    except Exception:
+        # Log the full trace server-side; never return it to the caller, since
+        # it exposes file paths, SQL, and internal structure to anyone who can
+        # trigger an error.
+        logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:

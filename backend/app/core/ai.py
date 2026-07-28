@@ -31,21 +31,29 @@ def _celery_worker_available() -> bool:
     return _worker_available
 
 
-def get_embedding(text: str) -> list[float]:
+def get_embedding(text: str) -> list[float] | None:
     """
     Generates a 384-dimensional embedding for the given text using
-    all-MiniLM-L6-v2.
+    all-MiniLM-L6-v2, or None if no worker is available to compute one.
 
     Runs on the Celery worker when one is reachable, so the model itself
     never loads into the web process -- loading it in-request added several
     seconds of latency and ~400MB RSS to the web dyno, which OOMs on Render's
-    starter plan. Falls back to computing it locally if no worker is
-    reachable, so this still works without one (e.g. local dev).
+    starter plan. In development it falls back to computing locally so the
+    feature works without a worker; in production it returns None instead,
+    because the OOM kills the request mid-flight and the browser reports the
+    dropped connection as a CORS failure rather than as a server error.
+    Callers must treat None as "no embedding" and degrade to text search.
     """
     if _celery_worker_available():
         from app.worker.tasks import compute_embedding
         try:
             return compute_embedding.delay(text).get(timeout=10)
         except Exception as e:
-            logger.warning("Embedding worker call failed (%s); computing in-process", e)
+            logger.warning("Embedding worker call failed (%s)", e)
+
+    from app.core.config import settings
+    if settings.is_production:
+        logger.warning("No embedding worker reachable; proceeding without an embedding")
+        return None
     return _local_embedding(text)

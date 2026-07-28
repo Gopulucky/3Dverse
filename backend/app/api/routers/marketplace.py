@@ -108,15 +108,19 @@ def get_products(
         search_term = q.strip()
         from app.core.ai import get_embedding
         query_embedding = get_embedding(search_term)
-        
-        query = query.filter(
-            or_(
-                func.to_tsvector('english', Product.title).op('@@')(func.plainto_tsquery('english', search_term)),
-                func.to_tsvector('english', func.coalesce(Product.description, '')).op('@@')(func.plainto_tsquery('english', search_term)),
-                Product.embedding.cosine_distance(query_embedding) < 0.7
-            )
-        ).order_by(Product.embedding.cosine_distance(query_embedding))
-        
+
+        text_match = or_(
+            func.to_tsvector('english', Product.title).op('@@')(func.plainto_tsquery('english', search_term)),
+            func.to_tsvector('english', func.coalesce(Product.description, '')).op('@@')(func.plainto_tsquery('english', search_term)),
+        )
+
+        if query_embedding is None:
+            query = query.filter(text_match)
+        else:
+            query = query.filter(
+                or_(text_match, Product.embedding.cosine_distance(query_embedding) < 0.7)
+            ).order_by(Product.embedding.cosine_distance(query_embedding))
+
     if category:
         query = query.filter(Product.category == category)
         
