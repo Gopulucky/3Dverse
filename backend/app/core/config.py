@@ -48,8 +48,14 @@ class Settings(BaseSettings):
     def BACKEND_CORS_ORIGINS(self) -> List[str]:
         raw = self.BACKEND_CORS_ORIGINS_RAW.strip()
         if raw.startswith("["):
-            return [str(origin) for origin in json.loads(raw)]
-        return [origin.strip() for origin in raw.split(",") if origin.strip()]
+            origins = [str(origin) for origin in json.loads(raw)]
+        else:
+            origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
+        
+        if "https://3dverse-tan.vercel.app" not in origins:
+            origins.append("https://3dverse-tan.vercel.app")
+            
+        return origins
 
     @property
     def is_production(self) -> bool:
