@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # array -- pydantic-settings would otherwise require strict JSON for a
     # List[str] env var, which is easy to get wrong when pasting by hand.
     BACKEND_CORS_ORIGINS_RAW: str = Field(
-        default="http://localhost:3000,http://127.0.0.1:3000",
+        default="http://localhost:3000,http://127.0.0.1:3000,https://3dverse-tan.vercel.app",
         validation_alias="BACKEND_CORS_ORIGINS",
     )
 
