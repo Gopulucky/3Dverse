@@ -22,8 +22,18 @@ def rate_limit(action: str, limit: int, window_seconds: int):
             logger.warning("Rate limiting disabled for %s: Redis unavailable", action)
             return
 
-        ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (
-            request.client.host if request.client else "unknown"
+        # X-Forwarded-For is "client, proxy1, proxy2, ..." -- each hop appends
+        # the address it received the request from. The FIRST entry is
+        # whatever the client sent and is trivially spoofable (a different
+        # value per request defeats the limiter entirely); only the LAST
+        # entry is the one our own trusted reverse proxy appended. If the
+        # request didn't come through a proxy at all, fall back to the
+        # socket's peer address.
+        forwarded_for = request.headers.get("x-forwarded-for", "")
+        ip = (
+            forwarded_for.split(",")[-1].strip()
+            if forwarded_for
+            else (request.client.host if request.client else "unknown")
         )
         key = f"ratelimit:{action}:{ip}"
 

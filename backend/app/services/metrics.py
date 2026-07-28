@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models.order import Order
+from app.models.order import Order, UNPAID_STATUSES
 from app.models.defect_report import DefectReport
 from app.models.print_partner import PrintPartner
 from app.models.ad_campaign import AdCampaign
@@ -13,7 +13,7 @@ def creator_financial_summary(db: Session, creator_id: int) -> dict:
          .join(OrderItem, Order.id == OrderItem.order_id)
          .join(Product, OrderItem.product_id == Product.id)
          .filter(Product.creator_id == creator_id)
-         .filter(Order.status != "pending"))
+         .filter(Order.status.notin_(UNPAID_STATUSES)))
 
     orders = q.all()
     order_count = len(orders)
@@ -39,7 +39,7 @@ def creator_financial_summary(db: Session, creator_id: int) -> dict:
 
 
 def admin_financial_summary(db: Session) -> dict:
-    orders = db.query(Order).filter(Order.status != "pending").all()
+    orders = db.query(Order).filter(Order.status.notin_(UNPAID_STATUSES)).all()
     order_count = len(orders)
     total_gmv = sum(o.total for o in orders)
     

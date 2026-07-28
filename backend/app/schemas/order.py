@@ -33,6 +33,7 @@ class OrderBase(BaseModel):
 class OrderCreate(BaseModel):
     shipping_address: dict
     coupon_code: Optional[str] = None
+    idempotency_key: Optional[str] = None
 
 class OrderResponse(OrderBase):
     id: int

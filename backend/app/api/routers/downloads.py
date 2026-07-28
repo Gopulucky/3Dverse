@@ -7,17 +7,15 @@ from sqlalchemy.orm import Session
 
 from app.api import deps
 from app.models.user import User, UserRole
-from app.models.order import Order, OrderItem
+from app.models.order import Order, OrderItem, UNPAID_STATUSES
 from app.models.product import Product, ProductVersion
 from app.models.collaboration import CollaborationTicket, CertificationReport, PaymentStatus
 from app.models.commission import CustomDesignRequest
 from app.models.print_partner import PrintPartner
 from app.core.storage import LOCAL_UPLOADS_DIR, get_s3_client, AWS_BUCKET_NAME
+from app.services.entitlements import has_purchased
 
 router = APIRouter()
-
-# Orders that have not been paid for grant no entitlement.
-UNPAID_STATUSES = {"pending", "pending_payment", "cancelled", "failed"}
 
 
 def _serve(url: Optional[str], download_name: Optional[str] = None) -> Any:
@@ -47,20 +45,6 @@ def _serve(url: Optional[str], download_name: Optional[str] = None) -> Any:
         raise HTTPException(status_code=404, detail="File not found")
 
     return FileResponse(path, filename=download_name or os.path.basename(path))
-
-
-def _has_purchased(db: Session, user_id: int, product_id: int) -> bool:
-    return (
-        db.query(Order.id)
-        .join(OrderItem, OrderItem.order_id == Order.id)
-        .filter(
-            Order.customer_id == user_id,
-            OrderItem.product_id == product_id,
-            Order.status.notin_(UNPAID_STATUSES),
-        )
-        .first()
-        is not None
-    )
 
 
 def _is_assigned_partner(db: Session, user_id: int, product_id: int) -> bool:
@@ -93,7 +77,7 @@ def download_product_model(
     allowed = (
         product.creator_id == current_user.id
         or current_user.role == UserRole.admin
-        or _has_purchased(db, current_user.id, product_id)
+        or has_purchased(db, current_user.id, product_id)
         or _is_assigned_partner(db, current_user.id, product_id)
     )
     if not allowed:

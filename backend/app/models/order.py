@@ -12,6 +12,13 @@ class OrderMode(str, enum.Enum):
     PERSONALIZED = "mode_4"
 
 
+# Orders in any of these statuses have not been paid for and must be excluded
+# from revenue/GMV figures and from download entitlement checks. Order.status
+# is created as "pending_payment" (see orders.py's confirm_order), not
+# "pending" -- both are listed since old rows may still carry the latter.
+UNPAID_STATUSES = {"pending", "pending_payment", "cancelled", "failed"}
+
+
 class Order(Base):
     __tablename__ = "orders"
 
@@ -42,6 +49,7 @@ class Order(Base):
     status = Column(String, default="pending", nullable=False) # pending, paid, queued, printing, qc, packed, shipped, delivered
     status_history = Column(JSON, nullable=True, default=list) # [{"status": "paid", "timestamp": "...", "note": "..."}]
     invoice_url = Column(String, nullable=True)
+    idempotency_key = Column(String, nullable=True)  # client-supplied; (customer_id, key) is unique
 
     print_partner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     shiprocket_order_id = Column(String, nullable=True)

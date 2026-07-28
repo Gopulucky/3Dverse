@@ -16,4 +16,10 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
+    beat_schedule={
+        "expire-pending-orders": {
+            "task": "app.worker.tasks.expire_pending_orders",
+            "schedule": 300.0,  # every 5 minutes
+        },
+    },
 )

@@ -92,6 +92,7 @@ def change_my_password(
     if len(body.new_password) < 8:
         raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
     current_user.hashed_password = get_password_hash(body.new_password)
+    current_user.token_version += 1
     db.add(current_user)
     db.commit()
     return {"detail": "Password updated"}

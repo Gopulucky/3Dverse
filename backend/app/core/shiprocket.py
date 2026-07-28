@@ -5,7 +5,7 @@ from typing import Dict, Any
 # Using mock integration for local dev unless real credentials exist
 SHIPROCKET_EMAIL = os.getenv("SHIPROCKET_EMAIL", "mock")
 SHIPROCKET_PASSWORD = os.getenv("SHIPROCKET_PASSWORD", "mock")
-BASE_URL = "https://apiv2.shiprocket.in/v1/payload"
+BASE_URL = "https://apiv2.shiprocket.in/v1/external"
 
 def get_shiprocket_token() -> str:
     if SHIPROCKET_EMAIL == "mock":

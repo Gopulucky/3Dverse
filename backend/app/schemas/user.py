@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from typing import Literal, Optional, List
 from datetime import datetime
 from app.models.user import UserRole, BusinessType, CreatorTier, CreatorType
 
@@ -12,6 +12,9 @@ class UserBase(BaseModel):
 # Properties to receive via API on creation
 class UserCreate(UserBase):
     password: str
+    # Self-registration must never grant admin: restrict to the roles the
+    # register form actually offers (customer/creator/print_partner).
+    role: Literal[UserRole.customer, UserRole.creator, UserRole.print_partner] = UserRole.customer
 
 # Properties to receive via API on update
 class UserUpdate(UserBase):

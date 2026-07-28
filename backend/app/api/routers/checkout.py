@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.api import deps
 from app.models.user import User
 from app.models.cart import Cart, CartItem
-from app.models.coupon import Coupon
+from app.services.coupons import InvalidCoupon, compute_discount, get_valid_coupon
 
 # Note: In a real app, load this from settings.
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "sk_test_fake")
@@ -41,14 +41,14 @@ def create_payment_intent(
     # 3. Apply Coupon
     discount = 0.0
     if req.coupon_code:
-        import datetime
-        coupon = db.query(Coupon).filter(Coupon.code == req.coupon_code).first()
-        if coupon and not (coupon.expiry_date and coupon.expiry_date < datetime.datetime.utcnow()) and not (coupon.usage_limit and coupon.times_used >= coupon.usage_limit):
-            if coupon.percent_off:
-                discount = subtotal * (coupon.percent_off / 100.0)
-            elif coupon.flat_off:
-                discount = coupon.flat_off
-                
+        try:
+            # Preview only -- usage_limit is enforced/incremented at
+            # /orders/confirm, so no row lock is taken here.
+            coupon = get_valid_coupon(db, req.coupon_code, lock=False)
+        except InvalidCoupon as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        discount = compute_discount(coupon, subtotal)
+
     total = max(0, subtotal - discount + shipping_cost)
     
     # Stripe requires amount in cents

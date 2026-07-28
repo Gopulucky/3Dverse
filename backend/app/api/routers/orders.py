@@ -6,7 +6,6 @@ from app.api import deps
 from app.models.user import User
 from app.models.cart import Cart
 from app.models.order import Order, OrderItem
-from app.models.coupon import Coupon
 from app.models.defect_report import DefectReport
 from app.models.return_request import ReturnRequest, ReturnReason, ReturnStatus
 from app.schemas.order import OrderCreate, OrderResponse
@@ -14,6 +13,7 @@ from app.core.config import settings
 from app.core.invoice import generate_invoice_pdf
 from app.core.partner_assignment import assign_print_partner
 from app.services import returns, stock
+from app.services.coupons import InvalidCoupon, compute_discount, get_valid_coupon
 
 router = APIRouter()
 
@@ -45,6 +45,27 @@ def get_order(
     order = db.query(Order).filter(Order.id == order_id, Order.customer_id == current_user.id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    return order
+
+@router.post("/{order_id}/cancel", response_model=OrderResponse)
+def cancel_order(
+    order_id: int,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user),
+) -> Any:
+    """Customer-initiated cancel, only while the order hasn't been paid for
+    yet. Releases any stock reserved for it back to sellable."""
+    order = db.query(Order).filter(Order.id == order_id, Order.customer_id == current_user.id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.status != "pending_payment":
+        raise HTTPException(status_code=400, detail="Only an unpaid order can be cancelled")
+
+    stock.release_for_order(db, order, reason="cancelled by customer")
+    order.status = "cancelled"
+    db.add(order)
+    db.commit()
+    db.refresh(order)
     return order
 
 @router.get("/{order_id}/return-policy")
@@ -189,41 +210,56 @@ def confirm_order(
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
+    # A retried/double-clicked confirm with the same key returns the order
+    # already created for it instead of creating (and charging) a duplicate.
+    if req.idempotency_key:
+        existing = db.query(Order).filter(
+            Order.customer_id == current_user.id,
+            Order.idempotency_key == req.idempotency_key,
+        ).first()
+        if existing:
+            return existing
+
     cart = db.query(Cart).filter(Cart.user_id == current_user.id).first()
     if not cart or not cart.items:
         raise HTTPException(status_code=400, detail="Cart is empty")
 
     subtotal = sum(item.product.price * item.quantity for item in cart.items)
-    shipping_cost = 5.0 # simplified logic 
+    shipping_cost = 5.0 # simplified logic
     discount = 0.0
-    
+
+    coupon = None
     if req.coupon_code:
-        import datetime
-        coupon = db.query(Coupon).filter(Coupon.code == req.coupon_code).first()
-        if coupon and not (coupon.expiry_date and coupon.expiry_date < datetime.datetime.utcnow()) and not (coupon.usage_limit and coupon.times_used >= coupon.usage_limit):
-            if coupon.percent_off:
-                discount = subtotal * (coupon.percent_off / 100.0)
-            elif coupon.flat_off:
-                discount = coupon.flat_off
-            coupon.times_used += 1
-            db.add(coupon)
+        try:
+            # Locked now, not just read: two concurrent confirms for the same
+            # coupon must not both pass a usage_limit check before either
+            # writes times_used back.
+            coupon = get_valid_coupon(db, req.coupon_code, lock=True)
+        except InvalidCoupon as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        discount = compute_discount(coupon, subtotal)
 
     total = max(0, subtotal - discount + shipping_cost)
 
-    # An order is never "paid" because the client said so. Until a payment
-    # provider is wired up and its webhook verified server-side, orders stop at
-    # pending_payment; only a local development build may auto-advance them.
+    # Everything below (order, items, coupon usage, stock reservation, cart
+    # clear) commits atomically. If stock reservation fails we roll back the
+    # whole thing instead of leaving a paid-for-nothing order and a burned
+    # coupon behind.
     order = Order(
         customer_id=current_user.id,
         shipping_address=req.shipping_address,
         shipping_cost=shipping_cost,
         subtotal=subtotal,
         total=total,
+        # An order is never "paid" because the client said so. Until a payment
+        # provider is wired up and its webhook verified server-side, orders
+        # stop at pending_payment; only a local development build may
+        # auto-advance them.
         status="pending_payment",
+        idempotency_key=req.idempotency_key,
     )
     db.add(order)
-    db.commit()
-    db.refresh(order)
+    db.flush()
 
     invoice_items = []
     for item in cart.items:
@@ -252,11 +288,16 @@ def confirm_order(
         db.rollback()
         raise HTTPException(status_code=409, detail=str(e))
 
+    if coupon is not None:
+        coupon.times_used += 1
+        db.add(coupon)
+
     # Empty Cart
     for item in cart.items:
         db.delete(item)
 
     db.commit()
+    db.refresh(order)
 
     if not settings.is_production:
         # Development convenience only: stand in for the payment confirmation

@@ -58,7 +58,7 @@ def get_products(
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     skip: int = 0,
-    limit: int = 20,
+    limit: int = Query(20, le=100),
 ) -> Any:
     query = db.query(Product).filter(Product.status == ProductStatus.published)
 

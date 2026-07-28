@@ -73,6 +73,9 @@ class User(Base):
     capabilities = Column(JSON, nullable=True) # e.g. {"materials": ["PLA", "ABS"], "colors": ["red", "blue"]}
     
     is_active = Column(Boolean, default=True)
+    # Bumped on password change; embedded in issued JWTs so a token minted
+    # before the bump is rejected even though it hasn't expired yet.
+    token_version = Column(Integer, default=0, nullable=False)
     # Set when the user deletes their own account. The row and its email are
     # retained so order history survives and the address cannot be re-registered;
     # an admin can restore or purge it.

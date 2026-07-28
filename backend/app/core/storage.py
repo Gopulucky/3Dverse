@@ -15,6 +15,46 @@ AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 # Local fallback directory
 LOCAL_UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 
+# Every extension any upload endpoint may accept. Anything else -- including a
+# filename crafted to smuggle path separators or ".." through naive parsing --
+# is rejected before it ever reaches disk.
+ALLOWED_UPLOAD_EXTENSIONS = {
+    "stl", "obj", "3mf", "step", "stp", "fbx", "blend",  # 3D model files
+    "png", "jpg", "jpeg", "gif", "webp",                  # images
+    "mp4", "webm", "mov",                                 # videos
+}
+
+
+class InvalidUpload(Exception):
+    pass
+
+
+def safe_extension(filename: str) -> str:
+    """Extract a whitelisted extension from a filename. os.path.splitext only
+    looks at the final path segment, so a filename like
+    "a.png/../../../app/x.py" yields no match here (its true extension after
+    the last real path separator is empty) and is rejected, rather than
+    letting a naive `filename.split(".")[-1]` smuggle a path through."""
+    ext = os.path.splitext(filename or "")[1].lstrip(".").lower()
+    if not ext or not ext.isalnum() or ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise InvalidUpload(f"Unsupported file extension: {ext!r}")
+    return ext
+
+
+def looks_like_image(head: bytes) -> bool:
+    """Check the first bytes against known image magic numbers, so a file
+    that merely claims Content-Type: image/* (client-controlled, easily
+    spoofed) can't smuggle HTML/SVG through to be served back and executed."""
+    if head.startswith(b"\x89PNG\r\n\x1a\n"):
+        return True
+    if head.startswith(b"\xff\xd8\xff"):  # JPEG
+        return True
+    if head.startswith((b"GIF87a", b"GIF89a")):
+        return True
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return True
+    return False
+
 def get_s3_client():
     if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
         return boto3.client(
@@ -25,17 +65,23 @@ def get_s3_client():
         )
     return None
 
-async def save_upload_file(upload_file: UploadFile, subfolder: str = "models") -> tuple[str, int]:
+async def save_upload_file(
+    upload_file: UploadFile, subfolder: str = "models", content: Optional[bytes] = None
+) -> tuple[str, int]:
     """
     Saves the file to S3 if credentials are provided, otherwise saves locally.
     Returns (url, file_size).
+
+    Pass `content` if the caller already read the file (e.g. to check its
+    size or magic bytes) so it isn't read into memory a second time here.
     """
-    file_extension = upload_file.filename.split(".")[-1]
+    file_extension = safe_extension(upload_file.filename)
     unique_filename = f"{uuid.uuid4()}.{file_extension}"
     s3_client = get_s3_client()
-    
-    # Calculate file size by reading it
-    file_bytes = await upload_file.read()
+
+    if content is None:
+        content = await upload_file.read()
+    file_bytes = content
     file_size = len(file_bytes)
     # Reset cursor for potential S3 upload
     await upload_file.seek(0)

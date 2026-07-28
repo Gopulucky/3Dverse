@@ -23,9 +23,13 @@ async def lifespan(app: FastAPI):
     await redis_client.disconnect()
 
 app = FastAPI(
-    title=settings.PROJECT_NAME, 
-    version=settings.VERSION, 
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION,
+    # The interactive schema/docs describe every internal endpoint; keep them
+    # available in dev but not handed out publicly in production.
+    openapi_url=None if settings.is_production else f"{settings.API_V1_STR}/openapi.json",
+    docs_url=None if settings.is_production else "/docs",
+    redoc_url=None if settings.is_production else "/redoc",
     lifespan=lifespan
 )
 
@@ -46,6 +50,16 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+@app.middleware("http")
+async def no_sniff(request, call_next):
+    # Belt-and-suspenders alongside the upload-time extension/magic-byte
+    # checks: even if a mislabeled file ever made it to disk, this stops a
+    # browser from content-sniffing it into something other than what its
+    # Content-Type says (the classic route to stored XSS via file upload).
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 # Only genuinely public assets are served statically. Model files, submitted
 # designs, sample photos and invoices are paid or private and are served through
@@ -85,3 +99,7 @@ app.include_router(stock.router, prefix=f"{settings.API_V1_STR}/creator/stock", 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the 3DVerse API"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}

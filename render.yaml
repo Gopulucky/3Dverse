@@ -6,7 +6,7 @@ services:
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /api/openapi.json
+    healthCheckPath: /health
     envVars:
       - key: ENVIRONMENT
         value: production
@@ -43,6 +43,40 @@ services:
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: celery -A app.core.celery_app worker --loglevel=info
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        sync: false
+      - key: POSTGRES_SERVER
+        sync: false
+      - key: POSTGRES_USER
+        sync: false
+      - key: POSTGRES_PASSWORD
+        sync: false
+      - key: POSTGRES_DB
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_BUCKET_NAME
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: 3dverse-redis
+          property: connectionString
+
+  - type: worker
+    name: 3dverse-celery-beat
+    runtime: python
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A app.core.celery_app beat --loglevel=info
     envVars:
       - key: ENVIRONMENT
         value: production

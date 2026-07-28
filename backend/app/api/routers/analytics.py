@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from app.api import deps
 from app.models.user import User, UserRole
-from app.models.order import Order, OrderItem
+from app.models.order import Order, OrderItem, UNPAID_STATUSES
 from app.models.product import Product, ProductStatus
 from app.models.review import Review
 
@@ -32,7 +32,7 @@ def get_creator_analytics(
         .join(Product, OrderItem.product_id == Product.id)
         .filter(
             Product.creator_id == current_user.id,
-            Order.status != "pending",
+            Order.status.notin_(UNPAID_STATUSES),
             Order.created_at >= threshold_date
         )
     )
@@ -66,7 +66,7 @@ def get_creator_analytics(
         .join(Product, OrderItem.product_id == Product.id)
         .filter(
             Product.creator_id == current_user.id,
-            Order.status != "pending",
+            Order.status.notin_(UNPAID_STATUSES),
             Order.created_at >= prev_start,
             Order.created_at < threshold_date,
         )
@@ -149,7 +149,7 @@ def get_admin_analytics(
     threshold_date = datetime.utcnow() - timedelta(days=days)
 
     orders = db.query(Order).filter(
-        Order.status != "pending",
+        Order.status.notin_(UNPAID_STATUSES),
         Order.created_at >= threshold_date
     ).all()
 

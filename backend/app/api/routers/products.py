@@ -6,7 +6,7 @@ from app.api import deps
 from app.models.user import User, UserRole
 from app.models.product import Product, ProductVersion, ProductMedia, ProductStatus, FulfillmentStatus, SafetyReviewStatus
 from app.schemas.product import ProductCreate, ProductUpdate, Product as ProductSchema, ProductVersionResponse as ProductVersionSchema, ProductMedia as ProductMediaSchema
-from app.core.storage import save_upload_file
+from app.core.storage import save_upload_file, InvalidUpload, looks_like_image
 
 router = APIRouter()
 
@@ -24,7 +24,6 @@ def read_creator_products(
     current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
     """Retrieve products for the logged-in creator."""
-    # Bypass role check for testing
     products = db.query(Product).filter(Product.creator_id == current_user.id).all()
     return products
 
@@ -154,8 +153,12 @@ async def upload_model(product_id: int, file: UploadFile = File(...), db: Sessio
     if file_size > 100 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File too large. Max 100MB.")
 
-    # Upload to storage
-    file_url, _ = await save_upload_file(file, subfolder="models")
+    # Upload to storage (pass the bytes already read above instead of
+    # re-reading the whole file a second time)
+    try:
+        file_url, _ = await save_upload_file(file, subfolder="models", content=contents)
+    except InvalidUpload as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Create new version
     latest_version = db.query(ProductVersion).filter(ProductVersion.product_id == product_id, ProductVersion.is_latest == True).first()
@@ -194,12 +197,26 @@ async def upload_media(
 ) -> Any:
     """Upload an image or video for the product."""
     product = get_product(db, product_id, current_user)
-    
+
     media_type = "image" if file.content_type.startswith("image/") else "video" if file.content_type.startswith("video/") else "unknown"
     if media_type == "unknown":
          raise HTTPException(status_code=400, detail="Only images and videos are allowed.")
-         
-    url, _ = await save_upload_file(file, subfolder="media")
+
+    # The Content-Type header is client-supplied and easily spoofed (e.g. an
+    # HTML/SVG file declaring image/png so it gets served back inline and
+    # executes in the victim's browser). Verify the real file signature for
+    # images before trusting the declared type; videos are checked by
+    # extension only via save_upload_file's whitelist.
+    if media_type == "image":
+        head = await file.read(16)
+        await file.seek(0)
+        if not looks_like_image(head):
+            raise HTTPException(status_code=400, detail="File content does not match an allowed image format.")
+
+    try:
+        url, _ = await save_upload_file(file, subfolder="media")
+    except InvalidUpload as e:
+        raise HTTPException(status_code=400, detail=str(e))
     
     # If is_primary, unset others
     if is_primary:
