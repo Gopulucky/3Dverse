@@ -692,9 +692,9 @@ def order_print(
     # A creator who owns a printer fulfills their own commission; the others need
     # the normal print-partner routing.
     fulfillment = (
-        FulfillmentStatus.SELF
+        FulfillmentStatus.self
         if creator and creator.creator_type == CreatorType.studio
-        else FulfillmentStatus.PENDING_PARTNER
+        else FulfillmentStatus.pending_partner
     )
 
     product = Product(

@@ -84,7 +84,7 @@ def update_product(
             )
             raise HTTPException(status_code=400, detail=detail)
 
-        if product.fulfillment_status == FulfillmentStatus.SELF:
+        if product.fulfillment_status == FulfillmentStatus.self:
             if not product.media:
                 raise HTTPException(status_code=400, detail="Cannot publish a self-fulfilled product without uploading at least one photo.")
         else:

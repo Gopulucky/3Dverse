@@ -7,9 +7,9 @@ from app.core.database import Base
 from app.models.printer import PrinterTechnology
 
 class FulfillmentStatus(str, enum.Enum):
-    SELF = "self"
-    PENDING_PARTNER = "pending_partner"
-    PARTNER_ASSIGNED = "partner_assigned"
+    self = "self"
+    pending_partner = "pending_partner"
+    partner_assigned = "partner_assigned"
 
 class ProductStatus(str, enum.Enum):
     draft = "draft"
@@ -49,7 +49,7 @@ class Product(Base):
     assembly_instructions = Column(String, nullable=True)
     technology_required = Column(Enum(PrinterTechnology), nullable=True)
     material_required = Column(String, nullable=True)
-    fulfillment_status = Column(Enum(FulfillmentStatus, values_callable=lambda obj: [e.value for e in obj]), default=FulfillmentStatus.PENDING_PARTNER)
+    fulfillment_status = Column(Enum(FulfillmentStatus, values_callable=lambda obj: [e.value for e in obj]), default=FulfillmentStatus.pending_partner)
     fulfillment_partner_id = Column(Integer, ForeignKey("print_partners.id"), nullable=True)
 
     # Design safety review -- restricted/dangerous item screening, gates

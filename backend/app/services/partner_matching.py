@@ -45,7 +45,7 @@ def recommended_partners(db: Session, product: Product) -> list[dict]:
 
 def assign_partner(db: Session, product: Product, print_partner_id: int) -> Product:
     product.fulfillment_partner_id = print_partner_id
-    product.fulfillment_status = FulfillmentStatus.PARTNER_ASSIGNED
+    product.fulfillment_status = FulfillmentStatus.partner_assigned
     db.commit()
     db.refresh(product)
     return product

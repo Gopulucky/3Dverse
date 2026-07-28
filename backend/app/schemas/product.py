@@ -81,7 +81,7 @@ class ProductBase(BaseModel):
     price: float = 0.0
     license_type: Optional[str] = None
     status: ProductStatus = ProductStatus.draft
-    fulfillment_status: Optional[FulfillmentStatus] = FulfillmentStatus.PENDING_PARTNER
+    fulfillment_status: Optional[FulfillmentStatus] = FulfillmentStatus.pending_partner
 
     is_mode_2_active: Optional[bool] = False
     is_mode_3_active: Optional[bool] = False
