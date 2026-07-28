@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { api, ApiError } from "@/lib/api";
 
 interface User {
   id: number;
@@ -22,9 +23,10 @@ interface AuthState {
   setAuth: (token: string, user: User) => void;
   logout: () => void;
   hydrate: () => void;
+  refreshUser: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   user: null,
   isAuthenticated: false,
@@ -50,12 +52,50 @@ export const useAuthStore = create<AuthState>((set) => ({
       try {
         const user = JSON.parse(userStr);
         set({ token, user, isAuthenticated: true, hydrated: true });
+        // The cached copy can go stale the moment a role/profile changes
+        // server-side (e.g. an admin promotion done directly in the DB) --
+        // nothing previously re-checked it after login. Refresh in the
+        // background so a stale role doesn't hide portals/pages until the
+        // next manual logout+login.
+        void get().refreshUser();
         return;
       } catch {
         // fall through
       }
     }
     set({ token: null, user: null, isAuthenticated: false, hydrated: true });
+  },
+
+  refreshUser: async () => {
+    const { token } = get();
+    if (!token) return;
+    try {
+      const fresh = await api.get<{
+        id: number;
+        email: string;
+        role: User["role"];
+        full_name?: string;
+      }>("/api/users/me");
+      const user: User = {
+        id: fresh.id,
+        email: fresh.email,
+        role: fresh.role,
+        full_name: fresh.full_name,
+      };
+      localStorage.setItem("user", JSON.stringify(user));
+      set({ user });
+    } catch (err) {
+      // An expired/invalidated token (e.g. password changed elsewhere,
+      // bumping token_version) should sign the user out instead of leaving
+      // them stuck with a token the API will keep rejecting.
+      if (err instanceof ApiError && err.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        set({ token: null, user: null, isAuthenticated: false });
+      }
+      // Any other failure (offline, backend down) -- keep the cached user,
+      // don't fight the user's session over a transient network error.
+    }
   },
 }));
 
