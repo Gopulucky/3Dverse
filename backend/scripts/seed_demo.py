@@ -1,7 +1,7 @@
 """Seed realistic demo data: creators, published products with images,
 versions + printability reports, reviews, and orders across recent weeks.
 
-Run:  python seed_demo.py
+Run (from backend/):  python scripts/seed_demo.py
 Idempotent: skips if the demo marker user already exists.
 Demo logins (password for all: password123):
   creator: maya@3dverse.demo   customer: arjun@3dverse.demo
@@ -12,7 +12,7 @@ import sys
 import uuid
 from datetime import datetime, timedelta
 
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from PIL import Image, ImageDraw, ImageFont
 

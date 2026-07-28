@@ -31,6 +31,16 @@
    npm run dev
    ```
 
+### Optional data scripts (`backend/scripts/`)
+
+Not run automatically -- use only if you want this data locally:
+- `seed_demo.py` -- demo creators/products/orders/reviews (logins: `maya@3dverse.demo` / `arjun@3dverse.demo`, password `password123`)
+- `seed_materials.py` -- the platform Material catalog (PLA, ABS, etc.)
+- `seed_collaboration.py` -- sample print-partner collaboration tickets
+- `generate_embeddings.py` -- backfill search embeddings for any product missing one
+
+Run from `backend/` with the venv active, e.g. `python scripts/seed_demo.py`.
+
 ## Roles
 
 - **Creator**: Can upload 3D models and sell digital/physical prints.
@@ -66,7 +76,7 @@
 - Product Listing & Detail Pages with integrated 3D Model Preview
 - Full-text search (Postgres tsvector) with dynamic filtering (Category, Price range)
 - Customer Wishlist API & UI functionality
-- Review System (Ratings & Text) with seeded test data
+- Review System (Ratings & Text), gated to verified purchasers
 
 ## Phase 6 Implementation (Finished)
 - Cart model and APIs (add, remove, update quantity)

@@ -1,7 +1,10 @@
-"""Seed the platform Material catalog with common 3D printing materials."""
+"""Seed the platform Material catalog with common 3D printing materials.
+
+Run (from backend/):  python scripts/seed_materials.py
+"""
 import sys
 import os
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.core.database import SessionLocal
 from app.models.user import User  # noqa: F401 — needed for relationship resolution

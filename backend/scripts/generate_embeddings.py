@@ -1,6 +1,10 @@
+"""Backfill embeddings for any product missing one (e.g. after a bulk import).
+
+Run (from backend/):  python scripts/generate_embeddings.py
+"""
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.database import SessionLocal
 from app.models.product import Product
