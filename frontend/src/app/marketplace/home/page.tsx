@@ -12,22 +12,7 @@ import { ProductCard } from "@/components/shared/product-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 
-const POPULAR_CREATORS = [
-  { name: "VertexStudio", followers: "12k", role: "Architecture", initials: "VS", image: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150" },
-  { name: "MechMaster", followers: "8.5k", role: "Engineering", initials: "MM", image: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150" },
-  { name: "BioPrint", followers: "5.2k", role: "Medical", initials: "BP", image: "https://images.unsplash.com/photo-1594824436998-058b2315530d?auto=format&fit=crop&q=80&w=150" },
-  { name: "MiniatureHeroes", followers: "21k", role: "Gaming", initials: "MH", image: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=150" },
-  { name: "Artisan3D", followers: "15k", role: "Decor", initials: "A3", image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=150" },
-];
 
-const CATEGORY_BANNERS = [
-  { name: "Architecture", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=500" },
-  { name: "Miniatures", image: "https://images.unsplash.com/photo-1590483736622-398541ce0ce6?auto=format&fit=crop&q=80&w=500" },
-  { name: "Engineering", image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=500" },
-  { name: "Medical", image: "https://images.unsplash.com/photo-1559757175-5700dde675bc?auto=format&fit=crop&q=80&w=500" },
-  { name: "Gaming", image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=500" },
-  { name: "Mechanical Parts", image: "https://images.unsplash.com/photo-1622322305545-a4613b5a1532?auto=format&fit=crop&q=80&w=500" },
-];
 
 function ProductSection({
   title,
@@ -168,7 +153,7 @@ export default function MarketplaceHome() {
                   </h2>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
-                  {POPULAR_CREATORS.map((creator, i) => (
+                  {(data?.popular_creators || []).map((creator: any, i: number) => (
                     <Card key={i} className="p-6 text-center hover:shadow-md transition-all group hover:-translate-y-1 bg-card/50 backdrop-blur">
                       <Avatar className="w-24 h-24 mx-auto mb-4 border-2 border-primary/20 group-hover:border-primary transition-colors">
                         <AvatarImage src={creator.image} />
@@ -191,7 +176,7 @@ export default function MarketplaceHome() {
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {CATEGORY_BANNERS.map((category, i) => (
+                  {(data?.categories || []).map((category: any, i: number) => (
                     <Link key={i} href={`/marketplace?category=${encodeURIComponent(category.name)}`}>
                       <div className="group relative h-48 rounded-2xl overflow-hidden cursor-pointer">
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors z-10" />

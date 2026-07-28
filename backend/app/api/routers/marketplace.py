@@ -36,7 +36,48 @@ def enrich_products(db: Session, products: List[Product]) -> List[Product]:
 
 @router.get("/homepage")
 def get_homepage(db: Session = Depends(deps.get_db)) -> Any:
-    categories = ["Tabletop", "Jewelry", "Cosplay", "Miniatures", "Home Decor", "Gadgets"]
+    from app.models.user import User, UserRole
+    
+    # 1. Fetch real popular creators
+    creators = db.query(User).filter(User.role == UserRole.creator).limit(5).all()
+    popular_creators = []
+    for c in creators:
+        role_label = "Creator"
+        if c.specializations and len(c.specializations) > 0:
+            role_label = c.specializations[0]
+        elif c.business_type:
+            role_label = c.business_type.value.capitalize()
+            
+        popular_creators.append({
+            "name": c.company_name or c.full_name or c.email.split("@")[0],
+            "followers": "1k", # Placeholder as we don't track followers yet
+            "role": role_label,
+            "initials": (c.company_name or c.full_name or c.email)[0].upper(),
+            "image": c.avatar_url or "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150"
+        })
+
+    # 2. Fetch real categories and their images
+    distinct_categories = db.query(Product.category).filter(Product.category != None, Product.status == ProductStatus.published).distinct().all()
+    categories = []
+    for (cat_name,) in distinct_categories:
+        # Get an image from a product in this category
+        product = db.query(Product).filter(Product.category == cat_name, Product.status == ProductStatus.published).first()
+        image_url = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=500"
+        if product and product.media:
+            primary_media = next((m for m in product.media if m.is_primary), product.media[0])
+            image_url = primary_media.media_url
+            
+        categories.append({
+            "name": cat_name,
+            "image": image_url
+        })
+        
+    if not categories:
+        # Fallback if DB has no products
+        categories = [
+            {"name": "Architecture", "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=500"},
+            {"name": "Miniatures", "image": "https://images.unsplash.com/photo-1590483736622-398541ce0ce6?auto=format&fit=crop&q=80&w=500"}
+        ]
     
     featured = db.query(Product).filter(Product.status == ProductStatus.published, Product.is_featured == True).limit(4).all()
     trending = db.query(Product).filter(Product.status == ProductStatus.published).order_by(desc(Product.mock_order_count)).limit(4).all()
@@ -45,6 +86,7 @@ def get_homepage(db: Session = Depends(deps.get_db)) -> Any:
     # Pydantic v2 requires explicit serialization if no response_model is provided
     return {
         "categories": categories,
+        "popular_creators": popular_creators,
         "featured": [ProductSchema.model_validate(p).model_dump() for p in enrich_products(db, featured)],
         "trending": [ProductSchema.model_validate(p).model_dump() for p in enrich_products(db, trending)],
         "new_arrivals": [ProductSchema.model_validate(p).model_dump() for p in enrich_products(db, new_arrivals)]
