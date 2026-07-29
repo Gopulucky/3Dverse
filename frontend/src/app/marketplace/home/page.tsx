@@ -156,7 +156,7 @@ export default function MarketplaceHome() {
                   {(data?.popular_creators || []).map((creator: any, i: number) => (
                     <Card key={i} className="p-6 text-center hover:shadow-md transition-all group hover:-translate-y-1 bg-card/50 backdrop-blur">
                       <Avatar className="w-24 h-24 mx-auto mb-4 border-2 border-primary/20 group-hover:border-primary transition-colors">
-                        <AvatarImage src={creator.image} />
+                        {creator.image && <AvatarImage src={api.mediaUrl(creator.image)} />}
                         <AvatarFallback>{creator.initials}</AvatarFallback>
                       </Avatar>
                       <h3 className="font-bold font-display text-lg mb-1">{creator.name}</h3>

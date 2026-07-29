@@ -50,10 +50,13 @@ def get_homepage(db: Session = Depends(deps.get_db)) -> Any:
             
         popular_creators.append({
             "name": c.company_name or c.full_name or c.email.split("@")[0],
-            "followers": "1k", # Placeholder as we don't track followers yet
             "role": role_label,
             "initials": (c.company_name or c.full_name or c.email)[0].upper(),
-            "image": c.avatar_url or "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150"
+            # Only a creator's own uploaded avatar. This used to fall back to a
+            # stock photo of an unrelated person, which showed real names beside
+            # a face that was not theirs. None here lets the card render their
+            # initials instead.
+            "image": c.avatar_url or None,
         })
 
     # 2. Fetch real categories and their images

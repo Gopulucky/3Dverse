@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Any, List
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
@@ -131,7 +132,19 @@ def update_product(
 
     for field, value in update_data.items():
         setattr(product, field, value)
-        
+
+    # `status` is what the marketplace filters on, but `is_published` and
+    # `published_at` are read elsewhere (the admin product table, designer
+    # assignment) and were never maintained here -- so a live product still
+    # reported is_published=False and no publish date. Keep them in step.
+    if "status" in update_data:
+        if product.status == ProductStatus.published:
+            product.is_published = True
+            if product.published_at is None:
+                product.published_at = datetime.utcnow()
+        else:
+            product.is_published = False
+
     db.add(product)
     db.commit()
     db.refresh(product)

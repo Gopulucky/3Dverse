@@ -264,6 +264,24 @@ export default function ProductDetailPage({
           </div>
         )}
 
+        {/* Self-fulfilled listings are rejected at publish without a photo. That
+            was only discoverable by pressing Publish and reading the error, so
+            say it up front alongside the other publish blockers. */}
+        {product.fulfillment_status === "self" &&
+          (product.media?.length ?? 0) === 0 &&
+          product.status !== "published" && (
+            <div className="mb-8 p-4 bg-ember/10 border border-ember/20 rounded-xl flex items-start gap-3">
+              <AlertTriangle className="text-ember mt-0.5" size={20} />
+              <div>
+                <h3 className="font-semibold text-ember">Add a photo before publishing</h3>
+                <p className="text-sm text-ember/80 mt-1">
+                  Buyers browse by photos of the finished print, not the model file. Upload at
+                  least one image below to publish this listing.
+                </p>
+              </div>
+            </div>
+          )}
+
         {product.safety_review_status === "rejected" && (
           <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
             <AlertTriangle className="text-destructive mt-0.5" size={20} />
