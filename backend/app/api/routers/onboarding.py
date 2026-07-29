@@ -3,7 +3,8 @@ from app.api import deps
 from app.api.deps import get_db, require_role
 from app.services.onboarding import complete_creator_onboarding
 from app.models.printer import PrinterTechnology
-from app.models.user import User, CreatorType
+from app.models.creator import Creator
+from app.models.user import User, CreatorType, UserRole
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -55,10 +56,31 @@ def set_creator_type(
 
     current_user.creator_type = request.creator_type
     current_user.onboarding_completed = True
+
+    # Choosing a path *is* becoming a creator. Without this the account keeps
+    # the default `customer` role, the Studio opens (it gates on creator_type
+    # alone) and then every creator-only endpoint answers 403 -- "Only creators
+    # can create products" on an account that just finished creator onboarding.
+    # Only customers are promoted: an admin or print partner picking a path
+    # must not be silently demoted out of their own role.
+    if current_user.role == UserRole.customer:
+        current_user.role = UserRole.creator
+
     db.add(current_user)
+
+    # The printer step creates this row, but it is gated on the creator role and
+    # is skippable, so seed it here to keep the profile consistent from the
+    # moment the path is chosen.
+    if not db.query(Creator).filter(Creator.user_id == current_user.id).first():
+        db.add(Creator(user_id=current_user.id))
+
     db.commit()
     db.refresh(current_user)
-    return {"creator_type": current_user.creator_type.value, "locked": True}
+    return {
+        "creator_type": current_user.creator_type.value,
+        "role": current_user.role.value,
+        "locked": True,
+    }
 
 
 @router.post("/printer")

@@ -14,6 +14,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Admins list and upload on the platform's own behalf while operating it, the
+# same way collaboration.py already treats them as creator-equivalent. Keeping
+# this as one constant means the create and upload checks cannot drift apart.
+PRODUCT_AUTHOR_ROLES = (UserRole.creator, UserRole.admin)
+
+
 def get_product(db: Session, product_id: int, user: User) -> Product:
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
@@ -39,8 +45,14 @@ def create_product(
     current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
     """Create new product."""
-    if current_user.role != UserRole.creator:
-        raise HTTPException(status_code=403, detail="Only creators can create products")
+    if current_user.role not in PRODUCT_AUTHOR_ROLES:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "This account is not set up as a creator. Finish creator onboarding "
+                "to start listing products."
+            ),
+        )
     
     from app.core.ai import get_embedding
     text_for_embedding = f"{product_in.title} {product_in.description or ''} {product_in.category or ''}".strip()
@@ -143,7 +155,7 @@ MAX_MEDIA_UPLOAD_BYTES = 25 * 1024 * 1024
 
 @router.post("/{product_id}/upload-model", response_model=ProductVersionSchema)
 async def upload_model(product_id: int, background_tasks: BackgroundTasks, file: UploadFile = File(...), db: Session = Depends(deps.get_db), current_user: User = Depends(deps.get_current_active_user)):
-    if current_user.role != UserRole.creator:
+    if current_user.role not in PRODUCT_AUTHOR_ROLES:
         raise HTTPException(status_code=403, detail="Only creators can upload models")
 
     product = db.query(Product).filter(Product.id == product_id, Product.creator_id == current_user.id).first()
