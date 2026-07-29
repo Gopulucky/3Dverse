@@ -16,6 +16,19 @@ logger = logging.getLogger("3dverse")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    if not settings.is_production:
+        # ENVIRONMENT defaults to "development", so a hosted deploy that simply
+        # never sets it runs with every development shortcut switched on and no
+        # other sign that anything is wrong. Say so loudly rather than letting
+        # it be discovered from behaviour.
+        logger.warning(
+            "ENVIRONMENT=%r -- running in DEVELOPMENT mode. Active in this mode: "
+            "orders self-mark as 'paid' with no payment taken; /docs, /redoc and "
+            "the OpenAPI schema are publicly served; the SECRET_KEY safety check "
+            "is disabled. Set ENVIRONMENT=production for any public deployment.",
+            settings.ENVIRONMENT,
+        )
+
     from app.core.redis import redis_client
     await redis_client.connect()
     yield

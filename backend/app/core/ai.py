@@ -1,6 +1,22 @@
 import logging
+import os
 
 logger = logging.getLogger(__name__)
+
+# Loading all-MiniLM-L6-v2 in-process costs ~400MB RSS and downloads the model
+# on first use. That is survivable on a laptop and fatal on a small dyno, where
+# it OOM-kills the request mid-flight and the browser reports the dropped
+# connection as "Failed to fetch".
+#
+# This used to be gated on `not settings.is_production`, i.e. it was armed by
+# *failing* to set ENVIRONMENT -- so the one deployment most likely to be
+# misconfigured was also the one that loaded the model. Opt-in instead: the
+# fallback now stays off unless someone deliberately turns it on.
+ENABLE_LOCAL_EMBEDDINGS = os.getenv("ENABLE_LOCAL_EMBEDDINGS", "").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
 
 # Local fallback model, only loaded if no Celery worker is reachable (e.g. a
 # dev environment with no worker process running).
@@ -38,14 +54,13 @@ def get_embedding(text: str) -> list[float] | None:
     Generates a 384-dimensional embedding for the given text using
     all-MiniLM-L6-v2, or None if no worker is available to compute one.
 
-    Runs on the Celery worker when one is reachable, so the model itself
-    never loads into the web process -- loading it in-request added several
-    seconds of latency and ~400MB RSS to the web dyno, which OOMs on Render's
-    starter plan. In development it falls back to computing locally so the
-    feature works without a worker; in production it returns None instead,
-    because the OOM kills the request mid-flight and the browser reports the
-    dropped connection as a CORS failure rather than as a server error.
-    Callers must treat None as "no embedding" and degrade to text search.
+    Runs on the Celery worker when one is reachable, so the model itself never
+    loads into the web process -- loading it in-request adds several seconds of
+    latency and ~400MB RSS to the web dyno, which OOMs on a small plan and kills
+    the request mid-flight.
+
+    With no worker it returns None, unless ENABLE_LOCAL_EMBEDDINGS is explicitly
+    set. Callers must treat None as "no embedding" and degrade to text search.
     """
     if _celery_worker_available():
         # Dispatched by name: importing app.worker.tasks here would drag
@@ -60,8 +75,7 @@ def get_embedding(text: str) -> list[float] | None:
         except Exception as e:
             logger.warning("Embedding worker call failed (%s)", e)
 
-    from app.core.config import settings
-    if settings.is_production:
+    if not ENABLE_LOCAL_EMBEDDINGS:
         logger.warning("No embedding worker reachable; proceeding without an embedding")
         return None
     return _local_embedding(text)
