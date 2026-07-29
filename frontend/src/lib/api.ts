@@ -114,6 +114,64 @@ export const api = {
     });
   },
 
+  /**
+   * File upload with real byte-level progress. fetch() cannot report upload
+   * progress, so this uses XHR — the progress bar reflects what has actually
+   * been sent rather than a timer.
+   */
+  uploadWithProgress: <T>(
+    endpoint: string,
+    formData: FormData,
+    onProgress?: (percent: number) => void
+  ): Promise<T> =>
+    new Promise<T>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${API_BASE_URL}${endpoint}`);
+
+      const headers = getAuthHeaders() as Record<string, string>;
+      Object.entries(headers).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+
+      xhr.onload = () => {
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(xhr.responseText);
+        } catch {
+          parsed = undefined;
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(parsed as T);
+          return;
+        }
+        const detail =
+          (parsed as { detail?: string } | undefined)?.detail ||
+          xhr.statusText ||
+          "Upload failed";
+        reject(new ApiError(xhr.status, detail));
+      };
+
+      // A dropped connection (server restart, proxy timeout, offline) surfaces
+      // here. The browser deliberately hides the cause, so say so plainly
+      // instead of letting a bare "Failed to fetch" reach the user.
+      xhr.onerror = () =>
+        reject(
+          new ApiError(
+            0,
+            "Could not reach the server while uploading. Check your connection and try again."
+          )
+        );
+      xhr.ontimeout = () =>
+        reject(new ApiError(0, "The upload timed out. Try again, or use a smaller file."));
+      xhr.onabort = () => reject(new ApiError(0, "Upload cancelled."));
+
+      xhr.send(formData);
+    }),
+
   /** Get the full URL for a media/upload path */
   mediaUrl: (path: string) => {
     if (!path) return "";

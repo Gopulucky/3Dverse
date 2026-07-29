@@ -46,9 +46,15 @@ def get_embedding(text: str) -> list[float] | None:
     Callers must treat None as "no embedding" and degrade to text search.
     """
     if _celery_worker_available():
-        from app.worker.tasks import compute_embedding
+        # Dispatched by name: importing app.worker.tasks here would drag
+        # trimesh/numpy/scipy into the web process, which is exactly the RSS
+        # this indirection exists to avoid.
+        from app.core.celery_app import celery_app
         try:
-            return compute_embedding.delay(text).get(timeout=10)
+            result = celery_app.send_task(
+                "app.worker.tasks.compute_embedding", args=[text], retry=False
+            )
+            return result.get(timeout=10)
         except Exception as e:
             logger.warning("Embedding worker call failed (%s)", e)
 

@@ -23,6 +23,9 @@ import { cn } from "@/lib/utils";
 
 const STEPS = ["Details", "Upload"] as const;
 
+/** Keep in step with MAX_MODEL_UPLOAD_BYTES in backend/app/api/routers/products.py. */
+const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+
 /**
  * Per-path copy. Fulfillment is no longer a per-product question — it follows
  * from the account-level creator path, so the flow is the same everywhere and
@@ -119,10 +122,20 @@ export default function NewProductPage() {
   };
 
   const validateAndSetFile = (f: File) => {
-    const validExtensions = [".stl", ".obj", ".3mf", ".step", ".fbx", ".blend"];
+    const validExtensions = [".stl", ".obj", ".3mf", ".step", ".stp", ".fbx", ".blend"];
     const ext = "." + f.name.split(".").pop()?.toLowerCase();
     if (!validExtensions.includes(ext)) {
       toast.error(`Invalid file type. Supported: ${validExtensions.join(", ")}`);
+      return;
+    }
+    // Matches the API's own cap — better to say so here than to let the user
+    // wait out a long upload that the server was always going to reject.
+    if (f.size > MAX_UPLOAD_BYTES) {
+      toast.error(`File is too large (${(f.size / 1024 / 1024).toFixed(0)} MB). Maximum is 100 MB.`);
+      return;
+    }
+    if (f.size === 0) {
+      toast.error("That file is empty.");
       return;
     }
     setFile(f);
@@ -143,19 +156,13 @@ export default function NewProductPage() {
 
     setIsUploading(true);
     setUploadStage("uploading");
-    
-    // Simulate multi-stage upload progress
-    const progressInterval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 95) return prev;
-        return prev + Math.floor(Math.random() * 5) + 1;
-      });
-    }, 200);
+    setUploadProgress(0);
 
-    // Simulate stages advancing
-    setTimeout(() => setUploadStage("verifying"), 2000);
-    setTimeout(() => setUploadStage("analyzing"), 4000);
-    setTimeout(() => setUploadStage("generating"), 6000);
+    // The draft is created first, so once this succeeds the listing exists even
+    // if the file transfer later fails. Tracked here so the failure path can say
+    // so and hand the creator their draft, rather than reporting a flat error
+    // next to a product that is plainly already in their portfolio.
+    let productId: number | null = null;
 
     try {
       const product = await api.post<any>("/api/products/", {
@@ -168,30 +175,43 @@ export default function NewProductPage() {
         tags: [],
         fulfillment_status: copy.fulfillment,
       });
+      productId = product.id;
 
       if (file) {
         const formData = new FormData();
         formData.append("file", file);
-        // Wait at least until generating stage to simulate the full AI process
-        await new Promise(resolve => setTimeout(resolve, 6000));
-        await api.upload(`/api/products/${product.id}/upload-model`, formData);
+        await api.uploadWithProgress(
+          `/api/products/${product.id}/upload-model`,
+          formData,
+          (percent) => {
+            setUploadProgress(percent);
+            // Once the bytes are all sent, the server is still storing the file
+            // and queueing analysis — say that instead of sitting at 100%.
+            if (percent >= 100) setUploadStage("verifying");
+          }
+        );
       }
-      
-      clearInterval(progressInterval);
+
       setUploadProgress(100);
       setUploadStage("ready");
-      
-      setTimeout(() => {
-        toast.success("Product created successfully!");
-        router.push(`/creator/products/${product.id}`);
-      }, 1000);
-      
+      toast.success(
+        file
+          ? "Listing created. Printability analysis is running in the background."
+          : "Listing created."
+      );
+      router.push(`/creator/products/${product.id}`);
     } catch (err: any) {
-      clearInterval(progressInterval);
       setUploadStage("idle");
       setUploadProgress(0);
-      toast.error(err.detail || `Failed to create ${copy.noun}`);
       setIsUploading(false);
+
+      const message = err?.detail || err?.message || `Failed to create ${copy.noun}`;
+      if (productId) {
+        toast.error(`${message} Your draft was saved — you can retry the file upload from it.`);
+        router.push(`/creator/products/${productId}`);
+      } else {
+        toast.error(message);
+      }
     }
   };
 
@@ -369,7 +389,7 @@ export default function NewProductPage() {
                       <div className="flex items-center justify-between font-bold font-display text-lg">
                         <span className="capitalize text-primary">
                           {uploadStage === "uploading" && "Uploading..."}
-                          {uploadStage === "verifying" && "Verifying Mesh..."}
+                          {uploadStage === "verifying" && "Saving on server..."}
                           {uploadStage === "analyzing" && "Analyzing Printability..."}
                           {uploadStage === "generating" && "Generating Preview..."}
                           {uploadStage === "ready" && "Ready"}
@@ -437,7 +457,7 @@ export default function NewProductPage() {
                         </p>
                       </div>
                       <p className="text-xs text-muted-foreground/70">
-                        STL · OBJ · 3MF · STEP · FBX · BLEND · Max 500MB
+                        STL · OBJ · 3MF · STEP · FBX · BLEND · Max 100MB
                       </p>
                     </div>
                   )}
@@ -450,7 +470,7 @@ export default function NewProductPage() {
                   {[
                     { label: "Watertight mesh", ok: !!file },
                     { label: "Manifold geometry", ok: !!file },
-                    { label: "< 500 MB", ok: file ? file.size < 500 * 1024 * 1024 : false },
+                    { label: "< 100 MB", ok: file ? file.size <= MAX_UPLOAD_BYTES : false },
                   ].map((item) => (
                     <div
                       key={item.label}

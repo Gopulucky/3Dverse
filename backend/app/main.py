@@ -54,6 +54,11 @@ if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+        # Vercel gives every preview deployment its own hostname, so testing a
+        # branch build hits a origin that is not in the fixed list and the
+        # browser reports every call -- uploads included -- as a bare
+        # "Failed to fetch". Scoped to this project's own vercel subdomains.
+        allow_origin_regex=r"^https://3dverse[a-z0-9-]*\.vercel\.app$",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

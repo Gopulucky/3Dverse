@@ -1,12 +1,16 @@
+import logging
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from app.api import deps
+from app.core.dispatch import dispatch_task
 from app.models.user import User, UserRole
-from app.models.product import Product, ProductVersion, ProductMedia, ProductStatus, FulfillmentStatus, SafetyReviewStatus
+from app.models.product import Product, ProductVersion, ProductMedia, ProductStatus, FulfillmentStatus, SafetyReviewStatus, PrintabilityReport
 from app.schemas.product import ProductCreate, ProductUpdate, Product as ProductSchema, ProductVersionResponse as ProductVersionSchema, ProductMedia as ProductMediaSchema
-from app.core.storage import save_upload_file, InvalidUpload, looks_like_image
+from app.core.storage import save_upload_file, InvalidUpload, UploadTooLarge, looks_like_image, safe_extension
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -132,10 +136,13 @@ def read_product_versions(
     product = get_product(db, product_id, current_user)
     return product.versions
 
-from app.worker.tasks import analyze_model
+ALLOWED_MODEL_EXTENSIONS = {"stl", "obj", "3mf", "step", "stp", "fbx", "blend"}
+MAX_MODEL_UPLOAD_BYTES = 100 * 1024 * 1024
+MAX_MEDIA_UPLOAD_BYTES = 25 * 1024 * 1024
+
 
 @router.post("/{product_id}/upload-model", response_model=ProductVersionSchema)
-async def upload_model(product_id: int, file: UploadFile = File(...), db: Session = Depends(deps.get_db), current_user: User = Depends(deps.get_current_active_user)):
+async def upload_model(product_id: int, background_tasks: BackgroundTasks, file: UploadFile = File(...), db: Session = Depends(deps.get_db), current_user: User = Depends(deps.get_current_active_user)):
     if current_user.role != UserRole.creator:
         raise HTTPException(status_code=403, detail="Only creators can upload models")
 
@@ -143,26 +150,30 @@ async def upload_model(product_id: int, file: UploadFile = File(...), db: Sessio
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    extension = file.filename.split(".")[-1].lower()
-    allowed_extensions = ["stl", "obj", "3mf", "step", "fbx", "blend"]
-    if extension not in allowed_extensions:
-        raise HTTPException(status_code=400, detail="Unsupported file type")
-
-    # Read file size
-    contents = await file.read()
-    file_size = len(contents)
-    # Seek back to 0 for upload_file stream
-    await file.seek(0)
-    
-    if file_size > 100 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="File too large. Max 100MB.")
-
-    # Upload to storage (pass the bytes already read above instead of
-    # re-reading the whole file a second time)
     try:
-        file_url, _ = await save_upload_file(file, subfolder="models", content=contents)
+        extension = safe_extension(file.filename)
+    except InvalidUpload:
+        raise HTTPException(status_code=400, detail="Unsupported file type")
+    if extension not in ALLOWED_MODEL_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type. Supported: {', '.join(sorted(ALLOWED_MODEL_EXTENSIONS))}",
+        )
+
+    # Streamed to storage a chunk at a time, with the size limit enforced mid
+    # stream -- reading the whole model into memory first is what made large
+    # uploads die as an unexplained dropped connection.
+    try:
+        file_url, file_size = await save_upload_file(
+            file, subfolder="models", max_bytes=MAX_MODEL_UPLOAD_BYTES
+        )
+    except UploadTooLarge:
+        raise HTTPException(status_code=413, detail="File too large. Max 100MB.")
     except InvalidUpload as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+    if file_size == 0:
+        raise HTTPException(status_code=400, detail="The uploaded file is empty.")
 
     # Create new version
     latest_version = db.query(ProductVersion).filter(ProductVersion.product_id == product_id, ProductVersion.is_latest == True).first()
@@ -182,13 +193,42 @@ async def upload_model(product_id: int, file: UploadFile = File(...), db: Sessio
     )
 
     db.add(new_version)
+
+    # Create the report up front so the version always has a reportable state.
+    # If the broker is unreachable the row stays "pending" and the creator sees
+    # "analysis queued" instead of a version with no report at all, which the
+    # publish check reports as the baffling "analysis status is: missing".
+    db.add(PrintabilityReport(version=new_version, status="pending", issues=[]))
     db.commit()
     db.refresh(new_version)
 
-    # Dispatch Celery background task for printability analysis
-    analyze_model.delay(new_version.id)
+    # Queueing the analysis is best-effort: the file is stored and the version
+    # is committed, so a broker outage must not turn this into a failed upload.
+    queued = await dispatch_task("app.worker.tasks.analyze_model", new_version.id)
+    if not queued:
+        # No worker (or no broker) -- run it here instead, but only *after* the
+        # response has been sent, so mesh analysis cannot slow down or fail the
+        # upload. Without this the report would sit at "pending" forever and the
+        # creator could never publish the product.
+        logger.warning(
+            "Analysis not queued for version %s; running in-process instead.",
+            new_version.id,
+        )
+        background_tasks.add_task(_analyze_in_process, new_version.id)
 
     return new_version
+
+
+def _analyze_in_process(version_id: int) -> None:
+    """Fallback analysis path for single-service deployments. Imported lazily:
+    it pulls in trimesh/numpy, which the web process should not carry when a
+    worker is doing this job."""
+    from app.services.printability import analyze_version
+
+    try:
+        analyze_version(version_id)
+    except Exception:
+        logger.exception("In-process printability analysis failed for version %s", version_id)
 
 @router.post("/{product_id}/upload-media", response_model=ProductMediaSchema)
 async def upload_media(
@@ -202,7 +242,8 @@ async def upload_media(
     """Upload an image or video for the product."""
     product = get_product(db, product_id, current_user)
 
-    media_type = "image" if file.content_type.startswith("image/") else "video" if file.content_type.startswith("video/") else "unknown"
+    content_type = file.content_type or ""
+    media_type = "image" if content_type.startswith("image/") else "video" if content_type.startswith("video/") else "unknown"
     if media_type == "unknown":
          raise HTTPException(status_code=400, detail="Only images and videos are allowed.")
 
@@ -218,7 +259,11 @@ async def upload_media(
             raise HTTPException(status_code=400, detail="File content does not match an allowed image format.")
 
     try:
-        url, _ = await save_upload_file(file, subfolder="media")
+        url, _ = await save_upload_file(
+            file, subfolder="media", max_bytes=MAX_MEDIA_UPLOAD_BYTES
+        )
+    except UploadTooLarge:
+        raise HTTPException(status_code=413, detail="File too large. Max 25MB.")
     except InvalidUpload as e:
         raise HTTPException(status_code=400, detail=str(e))
     

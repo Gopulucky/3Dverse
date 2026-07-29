@@ -12,7 +12,7 @@ from app.models.product import Product, ProductVersion
 from app.models.collaboration import CollaborationTicket, CertificationReport, PaymentStatus
 from app.models.commission import CustomDesignRequest
 from app.models.print_partner import PrintPartner
-from app.core.storage import LOCAL_UPLOADS_DIR, get_s3_client, AWS_BUCKET_NAME
+from app.core.storage import LOCAL_UPLOADS_DIR, get_s3_client, s3_key_for, AWS_BUCKET_NAME
 from app.services.entitlements import has_purchased
 
 router = APIRouter()
@@ -28,7 +28,7 @@ def _serve(url: Optional[str], download_name: Optional[str] = None) -> Any:
         if not s3 or not AWS_BUCKET_NAME:
             return RedirectResponse(url)
         # Presign so the bucket itself can stay private.
-        key = url.split(f"{AWS_BUCKET_NAME}.s3", 1)[-1].split("/", 1)[-1]
+        key = s3_key_for(url)
         signed = s3.generate_presigned_url(
             "get_object",
             Params={"Bucket": AWS_BUCKET_NAME, "Key": key},
