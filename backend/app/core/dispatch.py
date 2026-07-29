@@ -12,6 +12,7 @@ Two rules the API has to hold to, both learned the hard way:
 """
 
 import asyncio
+import concurrent.futures
 import logging
 import time
 
@@ -30,15 +31,56 @@ DISPATCH_TIMEOUT_SECONDS = 3.0
 BROKER_FAILURE_COOLDOWN_SECONDS = 60.0
 _broker_failed_at: float | None = None
 
+# Hard ceiling on the liveness probe. Celery's own inspect(timeout=...) only
+# bounds how long it waits for a *reply* -- it does not bound establishing the
+# broker connection, so with no Redis at all the call blocks well past it.
+BROKER_PROBE_TIMEOUT_SECONDS = 2.0
+
+# Never shut down: a probe thread stuck on a dead broker would otherwise be
+# waited on at shutdown, which is exactly the block the timeout exists to avoid.
+_probe_pool = concurrent.futures.ThreadPoolExecutor(
+    max_workers=2, thread_name_prefix="broker-probe"
+)
+
+
+def broker_recently_failed() -> bool:
+    return (
+        _broker_failed_at is not None
+        and time.monotonic() - _broker_failed_at < BROKER_FAILURE_COOLDOWN_SECONDS
+    )
+
+
+def probe_broker() -> bool:
+    """Is a Celery worker reachable? Safe to call from a synchronous request
+    handler: it can cost at most BROKER_PROBE_TIMEOUT_SECONDS."""
+    global _broker_failed_at
+
+    if broker_recently_failed():
+        return False
+
+    def _ping() -> bool:
+        from app.core.celery_app import celery_app
+
+        return bool(celery_app.control.inspect(timeout=0.5).ping())
+
+    try:
+        reachable = _probe_pool.submit(_ping).result(
+            timeout=BROKER_PROBE_TIMEOUT_SECONDS
+        )
+    except Exception as e:
+        logger.warning("Celery worker probe failed: %s", e)
+        reachable = False
+
+    if not reachable:
+        _broker_failed_at = time.monotonic()
+    return reachable
+
 
 def dispatch_task_sync(task_name: str, *args, **kwargs) -> bool:
     """Queue a task by name. Returns True if the broker accepted it."""
     global _broker_failed_at
 
-    if (
-        _broker_failed_at is not None
-        and time.monotonic() - _broker_failed_at < BROKER_FAILURE_COOLDOWN_SECONDS
-    ):
+    if broker_recently_failed():
         return False
 
     from app.core.celery_app import celery_app

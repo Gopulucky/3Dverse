@@ -19,15 +19,17 @@ def _local_embedding(text: str) -> list[float]:
 def _celery_worker_available() -> bool:
     """Checked once per process and cached -- this is a liveness probe, not a
     per-request health check, so it's fine if a worker that starts later
-    isn't picked up until the web process restarts."""
+    isn't picked up until the web process restarts.
+
+    The probe is hard-bounded (see dispatch.probe_broker). It sits on the
+    product-creation path, and with no broker deployed an unbounded probe holds
+    the request open long enough for the proxy to drop it -- which the browser
+    reports as a bare "Failed to fetch"."""
     global _worker_available
     if _worker_available is None:
-        from app.core.celery_app import celery_app
-        try:
-            pong = celery_app.control.inspect(timeout=0.5).ping()
-            _worker_available = bool(pong)
-        except Exception:
-            _worker_available = False
+        from app.core.dispatch import probe_broker
+
+        _worker_available = probe_broker()
     return _worker_available
 
 
