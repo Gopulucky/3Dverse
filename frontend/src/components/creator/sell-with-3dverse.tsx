@@ -58,7 +58,7 @@ export function SellWith3DverseLink({ className }: { className?: string }) {
           className
         )}
       >
-        Sell with 3Dverse
+        Sell with 3DVerse
       </Link>
 
       <Dialog open={askOpen} onOpenChange={setAskOpen}>

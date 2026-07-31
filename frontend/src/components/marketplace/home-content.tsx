@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Star, Tag, Clock, ChevronLeft, ChevronRight, Users, LayoutGrid } from "lucide-react";
 import { api } from "@/lib/api";
+import { BRAND } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/shared/product-card";
@@ -89,28 +90,33 @@ export function MarketplaceHomeContent() {
 
   return (
     <div className="min-h-screen pb-20">
-      {/* Hero Section (Carousel) */}
-      <section className="relative w-full h-[400px] md:h-[500px] overflow-hidden bg-muted group mb-12">
-        <div className="absolute inset-0 flex transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-0%)` }}>
-          <div className="w-full h-full flex-shrink-0 relative bg-gradient-to-r from-primary/90 to-primary/80 text-primary-foreground flex items-center">
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-30"></div>
-            <div className="max-w-7xl mx-auto px-12 relative z-10">
-              <h1 className="text-4xl sm:text-6xl font-bold tracking-tight mb-4 font-display">
-                The Future of <br/> 3D Printing
-              </h1>
-              <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 max-w-lg">
-                Explore thousands of premium, ready-to-print models from world-class creators.
-              </p>
-              <Button size="lg" className="bg-card text-primary hover:bg-card/90 font-bold rounded-full px-8 shadow-lg hover:scale-105 transition-transform">
-                Shop Now
-              </Button>
-            </div>
-          </div>
+      {/* Hero Section */}
+      <section className="relative w-full h-[400px] md:h-[500px] overflow-hidden bg-gradient-to-br from-primary/90 to-primary/80 text-primary-foreground flex items-center mb-12">
+        <div className="absolute inset-0 layer-lines opacity-[0.08]" />
+        <div className="max-w-7xl mx-auto px-12 relative z-10">
+          <h1 className="text-4xl sm:text-6xl font-bold tracking-tight mb-4 font-display leading-[1.05]">
+            {BRAND.tagline.split(". ").map((line, i) => (
+              <span key={i} className="block">
+                {line}
+                {i < BRAND.tagline.split(". ").length - 1 ? "." : ""}
+              </span>
+            ))}
+          </h1>
+          <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 max-w-lg">
+            Every listing is checked for printability before it ever reaches you.
+          </p>
+          <Button
+            asChild
+            size="lg"
+            className="bg-card text-primary hover:bg-card/90 font-bold rounded-full px-8 shadow-lg hover:scale-105 transition-transform"
+          >
+            <a href="#featured">Browse the marketplace</a>
+          </Button>
         </div>
       </section>
 
       {/* Content */}
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div id="featured" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         {isLoading ? (
           <div className="space-y-16">
             <div>

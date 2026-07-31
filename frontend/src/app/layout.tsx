@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { BRAND } from "@/lib/brand";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://3dverse.com";
 
 // Display — headlines, hero numbers, section titles
 const spaceGrotesk = Space_Grotesk({
@@ -28,12 +31,12 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "3DVerse — Premium 3D Marketplace",
-    template: "%s | 3DVerse",
+    default: `${BRAND.name} — ${BRAND.positioning}`,
+    template: `%s | ${BRAND.name}`,
   },
-  description:
-    "The premium marketplace for 3D-printed goods. Discover, customize, and order stunning 3D designs from talented creators worldwide.",
+  description: BRAND.oneLiner,
   keywords: [
     "3D printing",
     "marketplace",
@@ -42,6 +45,18 @@ export const metadata: Metadata = {
     "print on demand",
     "3D design",
   ],
+  openGraph: {
+    type: "website",
+    siteName: BRAND.name,
+    title: `${BRAND.name} — ${BRAND.positioning}`,
+    description: BRAND.oneLiner,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${BRAND.name} — ${BRAND.positioning}`,
+    description: BRAND.oneLiner,
+  },
 };
 
 export default function RootLayout({

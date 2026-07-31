@@ -1,7 +1,10 @@
 /**
  * 3DVerse brand system — single source of truth.
  *
- * Every public-facing surface (about page, brand page, footer, metadata)
+ * Full brand book: docs/brand/ at the repo root. This file mirrors that
+ * document — colour and type values here must match the tokens defined
+ * in globals.css (docs/brand/04-technical.md is the canonical token
+ * table). Every public-facing surface (about page, footer, metadata)
  * reads its copy from here, so the brand voice stays consistent instead of
  * being retyped slightly differently on each page.
  */
@@ -16,6 +19,47 @@ export const BRAND = {
   oneLiner:
     "3DVerse is the infrastructure layer for physical creation — a marketplace, an AI manufacturing assistant, and a distributed print network operating as one system.",
 } as const;
+
+/* ================================================================
+   Visual identity — docs/brand/03-visual.md / 04-technical.md.
+
+   Anchor hexes only (step 9 of each 12-step OKLCH scale). The full
+   scales live as CSS custom properties in globals.css
+   (--color-violet-1..12, --color-ember-1..12, --color-moss-1..12,
+   --color-slate-1..12) — reference those in CSS/Tailwind classes.
+   This object exists so brand-adjacent copy (docs, decks, external
+   partners) has a single place to read the anchor values from.
+   ================================================================ */
+
+export const BRAND_COLORS = {
+  violet: { hex: "#6366F1", name: "Cure Violet", role: "Primary — customers" },
+  ember: { hex: "#EA580C", name: "Nozzle Orange", role: "Creators" },
+  moss: { hex: "#059669", name: "Calibration Green", role: "Print partners" },
+  slate: { hex: "#64748B", name: "Slate", role: "Neutral — most of the UI" },
+} as const;
+
+/** Audience → accent hue. A platform-wide rule, not a one-off constant —
+ *  see docs/brand/01-strategy.md. Wherever the UI signals which side of
+ *  the network something belongs to, use this mapping. */
+export const AUDIENCE_ACCENT_HUE = {
+  creators: "ember",
+  customers: "violet",
+  partners: "moss",
+} as const;
+
+export const BRAND_TYPE = {
+  display: { name: "Space Grotesk", cssVar: "--font-display", use: "Headlines, the wordmark" },
+  sans: { name: "IBM Plex Sans", cssVar: "--font-sans", use: "Body copy, UI labels" },
+  mono: { name: "IBM Plex Mono", cssVar: "--font-mono", use: "Currency, dimensions, IDs — always tabular figures" },
+} as const;
+
+export const LOGO_RULES = [
+  "The name is always 3DVerse — capital 3, capital D, no space, capital V, lowercase erse. Never 3Dverse, 3D-Verse, 3DVERSE, or 3dverse.",
+  "Do not rewrite the wordmark in a different typeface if Space Grotesk isn't loaded yet on some surface — fix the font loading instead.",
+  "Keep the 3D / Verse split — the gradient half (3D) always leads; it does not move to Verse.",
+  "Minimum size: wordmark not smaller than 16px cap-height in UI contexts.",
+  "Clear space: padding equal to the cap-height of the '3', on all sides, before any other element.",
+] as const;
 
 /* ================================================================
    Mission & principles — the "how an organization works" material

@@ -1,57 +1,115 @@
 @import "tailwindcss";
 
+/* Raw surface values that don't map cleanly onto a 12-step scale step
+   (pure white card/popover in light, white-on-solid text). Declared
+   OUTSIDE @theme so Tailwind's `inline` mode can't bake them in as
+   literals — @theme inline only preserves runtime theme-switching for
+   a token when its own value is a var() reference, not a bare literal;
+   these exist purely to give --color-card etc. that one hop. */
+:root {
+  --surface-card: #FFFFFF;
+  --surface-popover: #FFFFFF;
+  --on-solid-primary: #FFFFFF;
+  --on-solid-destructive: #FFFFFF;
+}
+.dark {
+  --surface-card: var(--color-slate-2);
+  --surface-popover: var(--color-slate-2);
+  --on-solid-primary: var(--color-slate-1);
+  --on-solid-destructive: var(--color-slate-1);
+}
+
 /* ================================================================
-   3DVerse Design Token System
-   Based on FRONTEND_DESIGN.md v1 — Section 7
-   
-   Named palette:
-   - graphite   #15161A  → dark base (Studio/Console default)
-   - surface    #1D1F24  → card/panel on dark
-   - paper      #F3F1EC  → light base (Marketplace default)
-   - ink        #1B1B1D  → primary text on light
-   - cure-violet     #6E5BFF  → primary accent (marketplace/creator)
-   - nozzle-orange   #FF5A36  → secondary accent (warm highlights)
-   - calibration-cyan #2FD3C2  → tertiary accent (partner/data/success)
+   3DVerse Design Token System — see docs/brand/ for the full book.
+
+   Every brand colour is a 12-step OKLCH scale (docs/brand/04-technical.md).
+   Steps: 1-2 background · 3-5 component · 6-8 border · 9-10 solid fill ·
+   11-12 text (AA / AAA, contrast-verified against steps 1-3 of the same
+   scale). Components must reference the SEMANTIC tokens further down,
+   never a numbered step directly — that indirection is what keeps colour
+   consistent across the app: a hue change becomes one edit here.
    ================================================================ */
 
-/* ===== Premium Light Theme ===== */
 @theme inline {
-  /* Brand palette */
-  --color-primary: #6366F1;
-  --color-success: #16A34A;
-  --color-warning: #D97706;
-  --color-destructive: #DC2626;
-  --color-moss: #059669;
-  --color-ember: #EA580C;
+  /* ---- Violet — primary / customers ---- */
+  --color-violet-1: #FCFCFF;  --color-violet-2: #F8F9FF;  --color-violet-3: #F1F3FF;
+  --color-violet-4: #EAEDFF;  --color-violet-5: #E1E6FF;  --color-violet-6: #D6DCFF;
+  --color-violet-7: #C6CEFF;  --color-violet-8: #ADB8FF;  --color-violet-9: #6366F1;
+  --color-violet-10: #5757E1; --color-violet-11: #5A5FD2; --color-violet-12: #2A2E66;
+
+  /* ---- Ember — creators ---- */
+  --color-ember-1: #FFFCFB;  --color-ember-2: #FFF8F6;  --color-ember-3: #FFF1EB;
+  --color-ember-4: #FFE9E1;  --color-ember-5: #FFDFD4;  --color-ember-6: #FFD3C3;
+  --color-ember-7: #FFC1AB;  --color-ember-8: #FFA381;  --color-ember-9: #EA580C;
+  --color-ember-10: #D64D00; --color-ember-11: #BB4405; --color-ember-12: #5B2007;
+
+  /* ---- Moss — print partners ---- */
+  --color-moss-1: #F9FEFB;  --color-moss-2: #F4FCF8;  --color-moss-3: #E9F9F0;
+  --color-moss-4: #DDF5E9;  --color-moss-5: #D1F0E0;  --color-moss-6: #C3E9D6;
+  --color-moss-7: #AFDFC7;  --color-moss-8: #8ECEAF;  --color-moss-9: #059669;
+  --color-moss-10: #00875E; --color-moss-11: #16805A; --color-moss-12: #0F3F2C;
+
+  /* ---- Slate — neutral, most of the UI ---- */
+  --color-slate-1: #FCFDFE;  --color-slate-2: #F8FAFC;  --color-slate-3: #F1F4F9;
+  --color-slate-4: #EAEEF5;  --color-slate-5: #E2E8F0;  --color-slate-6: #D8DFE9;
+  --color-slate-7: #CAD2DE;  --color-slate-8: #B4BFCE;  --color-slate-9: #64748B;
+  --color-slate-10: #57677E; --color-slate-11: #627083; --color-slate-12: #2F3640;
+
+  /* ---- Status — red / amber / green (status only, never decoration) ---- */
+  --color-red-1: #FFFCFB;   --color-red-3: #FFF0EE;   --color-red-6: #FFD2CC;
+  --color-red-9: #DC2626;   --color-red-10: #CC0515;  --color-red-11: #C4332E; --color-red-12: #601915;
+  --color-amber-1: #FFFCFA; --color-amber-3: #FFF1E7; --color-amber-6: #FDD6B9;
+  --color-amber-9: #D97706; --color-amber-10: #C66B00; --color-amber-11: #A65900; --color-amber-12: #512A03;
+  --color-green-1: #F9FEFA; --color-green-3: #E8FAEA; --color-green-6: #C2EBC8;
+  --color-green-9: #16A34A; --color-green-10: #00943F; --color-green-11: #0F823A; --color-green-12: #0D401C;
+
+  /* ---- Brand hue aliases (kept for existing call sites) ---- */
+  --color-primary: var(--color-violet-9);
+  --color-success: var(--color-green-9);
+  --color-warning: var(--color-amber-9);
+  --color-destructive: var(--color-red-9);
+  --color-moss: var(--color-moss-9);
+  --color-ember: var(--color-ember-9);
+
+  /* Fixed scrim — deliberately does NOT flip with theme (a modal backdrop
+     should stay dark in both light and dark mode). */
+  --color-ink: #0F172A;
 
   /* Semantic surface/ink pairs */
-  --color-primary-surface: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  --color-primary-ink: #4338CA;
-  --color-success-surface: color-mix(in srgb, var(--color-success) 12%, transparent);
-  --color-success-ink: #15803D;
-  --color-warning-surface: color-mix(in srgb, var(--color-warning) 12%, transparent);
-  --color-warning-ink: #B45309;
-  --color-danger-surface: color-mix(in srgb, var(--color-destructive) 12%, transparent);
-  --color-danger-ink: #B91C1C;
+  --color-primary-surface: var(--color-violet-3);
+  --color-primary-ink: var(--color-violet-11);
+  --color-success-surface: var(--color-green-3);
+  --color-success-ink: var(--color-green-11);
+  --color-warning-surface: var(--color-amber-3);
+  --color-warning-ink: var(--color-amber-11);
+  --color-danger-surface: var(--color-red-3);
+  --color-danger-ink: var(--color-red-11);
 
-  /* Semantic tokens — Light mode */
-  --color-background: #F8F9FC;
-  --color-foreground: #0F172A;
-  --color-card: #FFFFFF;
-  --color-card-foreground: #0F172A;
-  --color-popover: #FFFFFF;
-  --color-popover-foreground: #0F172A;
-  --color-primary-foreground: #FFFFFF;
-  --color-secondary: #F1F5F9;
-  --color-secondary-foreground: #0F172A;
-  --color-muted: #F1F5F9;
-  --color-muted-foreground: #64748B;
-  --color-accent: #F1F5F9;
-  --color-accent-foreground: #0F172A;
-  --color-destructive-foreground: #FFFFFF;
-  --color-border: #E2E8F0;
-  --color-input: #E2E8F0;
-  --color-ring: #6366F1;
+  /* Audience accents — creators→ember, customers→violet, partners→moss.
+     See docs/brand/01-strategy.md — this mapping is a platform-wide rule,
+     not a one-off constant. */
+  --color-creator-accent: var(--color-ember-9);
+  --color-customer-accent: var(--color-violet-9);
+  --color-partner-accent: var(--color-moss-9);
+
+  /* Semantic tokens — Light mode (redefined under .dark below) */
+  --color-background: var(--color-slate-1);
+  --color-foreground: var(--color-slate-12);
+  --color-card: var(--surface-card);
+  --color-card-foreground: var(--color-slate-12);
+  --color-popover: var(--surface-popover);
+  --color-popover-foreground: var(--color-slate-12);
+  --color-primary-foreground: var(--on-solid-primary);
+  --color-secondary: var(--color-slate-3);
+  --color-secondary-foreground: var(--color-slate-12);
+  --color-muted: var(--color-slate-3);
+  --color-muted-foreground: var(--color-slate-11);
+  --color-accent: var(--color-slate-3);
+  --color-accent-foreground: var(--color-slate-12);
+  --color-destructive-foreground: var(--on-solid-destructive);
+  --color-border: var(--color-slate-6);
+  --color-input: var(--color-slate-6);
+  --color-ring: var(--color-violet-9);
 
   /* Radius */
   --radius-xs: 0.25rem;
@@ -75,6 +133,104 @@
   --animate-scale-in: scale-in 0.2s ease-out;
   --animate-layer-line: layer-line-fill 1.8s ease-in-out infinite;
   --animate-shimmer: shimmer 2s linear infinite;
+}
+
+/* ================================================================
+   Dark mode — a parallel scale, not a per-component override.
+   next-themes toggles the `dark` class on <html> (see providers.tsx).
+   Same semantic tokens, same roles, different lightness ramp — nothing
+   downstream needs a `dark:` variant.
+   ================================================================ */
+.dark {
+  --color-violet-1: #0E101D;  --color-violet-2: #15172B;  --color-violet-3: #1C1E43;
+  --color-violet-4: #212458;  --color-violet-5: #28296B;  --color-violet-6: #30317F;
+  --color-violet-7: #3D3F9D;  --color-violet-8: #5356C9;  --color-violet-9: #6C71FD;
+  --color-violet-10: #7D86FF; --color-violet-11: #A1ADFF; --color-violet-12: #D5DCFF;
+
+  --color-ember-1: #1B0D08;  --color-ember-2: #27130B;  --color-ember-3: #3C1607;
+  --color-ember-4: #4D1701;  --color-ember-5: #5B1C00;  --color-ember-6: #6B2200;
+  --color-ember-7: #852D00;  --color-ember-8: #AE3D00;  --color-ember-9: #F76421;
+  --color-ember-10: #FF7D4A; --color-ember-11: #FE946C; --color-ember-12: #FFD3C3;
+
+  --color-moss-1: #0A130F;  --color-moss-2: #0E1D16;  --color-moss-3: #0C291D;
+  --color-moss-4: #063423;  --color-moss-5: #003E29;  --color-moss-6: #004A32;
+  --color-moss-7: #005D3F;  --color-moss-8: #057B55;  --color-moss-9: #21A173;
+  --color-moss-10: #38B182; --color-moss-11: #7BC7A4; --color-moss-12: #BFEAD4;
+
+  --color-slate-1: #101114;  --color-slate-2: #17191D;  --color-slate-3: #1F232A;
+  --color-slate-4: #262C35;  --color-slate-5: #2C343F;  --color-slate-6: #353E4B;
+  --color-slate-7: #444F5E;  --color-slate-8: #5B697C;  --color-slate-9: #6E7E96;
+  --color-slate-10: #7D8DA5; --color-slate-11: #A9B5C7; --color-slate-12: #D7DFEA;
+
+  --color-red-1: #1C0C0A;   --color-red-3: #3F120F;   --color-red-6: #750E0F;
+  --color-red-9: #E93632;   --color-red-10: #FB4A42;  --color-red-11: #FF9084; --color-red-12: #FFD2CB;
+  --color-amber-1: #180F08; --color-amber-3: #351C06; --color-amber-6: #5E3000;
+  --color-amber-9: #E58220; --color-amber-10: #F69236; --color-amber-11: #EAA268; --color-amber-12: #FFD5B5;
+  --color-green-1: #0A140C; --color-green-3: #0B2A13; --color-green-6: #004B1D;
+  --color-green-9: #2AAE55; --color-green-10: #40BE64; --color-green-11: #79CA89; --color-green-12: #BEECC5;
+
+  --color-primary: var(--color-violet-9);
+  --color-success: var(--color-green-9);
+  --color-warning: var(--color-amber-9);
+  --color-destructive: var(--color-red-9);
+  --color-moss: var(--color-moss-9);
+  --color-ember: var(--color-ember-9);
+
+  --color-primary-surface: var(--color-violet-3);
+  --color-primary-ink: var(--color-violet-11);
+  --color-success-surface: var(--color-green-3);
+  --color-success-ink: var(--color-green-11);
+  --color-warning-surface: var(--color-amber-3);
+  --color-warning-ink: var(--color-amber-11);
+  --color-danger-surface: var(--color-red-3);
+  --color-danger-ink: var(--color-red-11);
+
+  --color-creator-accent: var(--color-ember-9);
+  --color-customer-accent: var(--color-violet-9);
+  --color-partner-accent: var(--color-moss-9);
+
+  /* --color-card/-popover/-primary-foreground/-destructive-foreground are
+     NOT redeclared here — they alias to --surface-card / --surface-popover
+     / --on-solid-primary / --on-solid-destructive (top of file), which is
+     where their dark-mode values actually live. See the comment there for
+     why: @theme inline only preserves runtime theme-switching through one
+     layer of var() indirection, so the override has to happen at that
+     lower layer, not by redeclaring the alias itself here. */
+  --color-background: var(--color-slate-1);
+  --color-foreground: var(--color-slate-12);
+  --color-card-foreground: var(--color-slate-12);
+  --color-popover-foreground: var(--color-slate-12);
+  --color-secondary: var(--color-slate-3);
+  --color-secondary-foreground: var(--color-slate-12);
+  --color-muted: var(--color-slate-3);
+  --color-muted-foreground: var(--color-slate-11);
+  --color-accent: var(--color-slate-3);
+  --color-accent-foreground: var(--color-slate-12);
+  --color-border: var(--color-slate-6);
+  --color-input: var(--color-slate-6);
+  --color-ring: var(--color-violet-9);
+}
+
+/* ================================================================
+   Type scale — named roles, not ad hoc sizes. docs/brand/03-visual.md.
+   All currency, dimensions, weights, percentages and IDs use the
+   data-* tokens (Plex Mono, tabular figures) — never the body face.
+   ================================================================ */
+@layer utilities {
+  .text-display-lg { font-family: var(--font-display); font-size: 3.5rem; line-height: 1.05; font-weight: 600; }
+  .text-display-md { font-family: var(--font-display); font-size: 2.5rem; line-height: 1.1; font-weight: 600; }
+  .text-display-sm { font-family: var(--font-display); font-size: 1.75rem; line-height: 1.2; font-weight: 600; }
+  .text-heading-1 { font-family: var(--font-display); font-size: 1.5rem; line-height: 1.3; font-weight: 600; }
+  .text-heading-2 { font-family: var(--font-display); font-size: 1.25rem; line-height: 1.35; font-weight: 600; }
+  .text-heading-3 { font-family: var(--font-sans); font-size: 1.0625rem; line-height: 1.4; font-weight: 600; }
+  .text-heading-4 { font-family: var(--font-sans); font-size: 0.9375rem; line-height: 1.4; font-weight: 600; }
+  .text-body-lg { font-family: var(--font-sans); font-size: 1.0625rem; line-height: 1.6; font-weight: 400; }
+  .text-body-md { font-family: var(--font-sans); font-size: 0.9375rem; line-height: 1.6; font-weight: 400; }
+  .text-body-sm { font-family: var(--font-sans); font-size: 0.8125rem; line-height: 1.5; font-weight: 400; }
+  .text-label { font-family: var(--font-sans); font-size: 0.8125rem; line-height: 1.3; font-weight: 500; }
+  .text-caption { font-family: var(--font-sans); font-size: 0.75rem; line-height: 1.4; font-weight: 400; }
+  .text-data-md { font-family: var(--font-mono); font-size: 0.9375rem; line-height: 1.5; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .text-data-sm { font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.4; font-weight: 500; font-variant-numeric: tabular-nums; }
 }
 
 /* Micro-interaction utility classes */
@@ -245,6 +401,13 @@ body {
 /* ================================================================
    Layer-line pattern & surface utilities
    ================================================================ */
+
+/* Faint dot grid — for hero/section backgrounds where a flat colour
+   needs texture without competing with foreground content. */
+.bg-grid-pattern {
+  background-image: radial-gradient(var(--color-slate-9) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
 
 /* Subtle layer-line hairline background — for dividers & backgrounds */
 .layer-lines {
