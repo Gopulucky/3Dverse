@@ -33,6 +33,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useCreatorType } from "@/lib/creator-nav";
 import { SellWith3DverseLink } from "@/components/creator/sell-with-3dverse";
+import { Wordmark } from "@/components/shared/wordmark";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -243,13 +244,18 @@ export function Navbar() {
                 href={isAuthenticated ? "/marketplace/home" : "/"}
                 className="flex items-center gap-1 group"
               >
-                <span className="text-2xl font-bold tracking-tight font-display">
-                  <span className="text-gradient-primary">3D</span>
-                  <span className="text-foreground group-hover:text-foreground/80 transition-colors">
-                    Verse
-                  </span>
-                </span>
+                <Wordmark className="group-hover:opacity-80 transition-opacity" />
               </Link>
+
+              {/* Guest-facing links — About/Brand only make sense outside the portals */}
+              {!isCreator && !isPartner && !isAdmin && (
+                <Link
+                  href="/about"
+                  className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  About
+                </Link>
+              )}
 
               {/* Creator path badge — the locked sub-role, shown across the Studio */}
               {isCreator && creatorPath && (
