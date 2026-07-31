@@ -206,23 +206,6 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* ============================== BRAND LINK-OUT ============================== */}
-        <section className="py-16 px-6 bg-muted/20 border-y border-border/30">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-2xl md:text-3xl font-display font-bold mb-4">
-              Looking for logo files, colors, or voice guidelines?
-            </h2>
-            <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              The full identity system — palette, typography, and how we write — lives on the brand page.
-            </p>
-            <Button variant="outline" className="rounded-xl gap-2 group" asChild>
-              <Link href="/brand">
-                View the brand guidelines <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
-          </div>
-        </section>
-
         {/* ============================== CTA ============================== */}
         <section className="py-28 px-6">
           <div className="max-w-5xl mx-auto bg-foreground text-background rounded-[3rem] p-12 md:p-20 text-center relative overflow-hidden">

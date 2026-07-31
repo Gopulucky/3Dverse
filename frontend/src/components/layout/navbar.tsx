@@ -246,16 +246,6 @@ export function Navbar() {
                 <Wordmark className="group-hover:opacity-80 transition-opacity" />
               </Link>
 
-              {/* Guest-facing links — About/Brand only make sense outside the portals */}
-              {!isCreator && !isPartner && !isAdmin && (
-                <Link
-                  href="/about"
-                  className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  About
-                </Link>
-              )}
-
               {/* Creator path badge — the locked sub-role, shown across the Studio */}
               {isCreator && creatorPath && (
                 <div
