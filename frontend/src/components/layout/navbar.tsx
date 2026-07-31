@@ -113,9 +113,8 @@ export function Navbar() {
   const isCreator = pathname.startsWith("/creator") || pathname.startsWith("/collaboration");
   const isPartner = pathname.startsWith("/partner");
   const isAdmin = pathname.startsWith("/admin");
-  const isRoot = pathname === "/";
   const isAuth = pathname.startsWith("/login") || pathname.startsWith("/register");
-  const isMarketplace = !isCreator && !isPartner && !isAdmin && !isRoot && !isAuth;
+  const isMarketplace = !isCreator && !isPartner && !isAdmin && !isAuth;
 
   useEffect(() => {
     hydrate();
