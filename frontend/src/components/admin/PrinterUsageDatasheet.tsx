@@ -16,12 +16,12 @@ export default function PrinterUsageDatasheet() {
   return (
     <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
       <div className="p-4 border-b border-border bg-muted">
-        <h3 className="font-semibold text-lg text-slate-800">Printer Technology Usage</h3>
+        <h3 className="font-semibold text-lg text-foreground">Printer Technology Usage</h3>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left border-collapse">
           <thead>
-            <tr className="bg-muted text-slate-700">
+            <tr className="bg-muted text-muted-foreground">
               <th className="p-3 border-b font-medium">Technology</th>
               {ownerTypes.map(o => (
                 <th key={o} className="p-3 border-b font-medium capitalize">
@@ -44,7 +44,7 @@ export default function PrinterUsageDatasheet() {
                     {tech.replace("_", " ")}
                   </td>
                   {ownerTypes.map(o => (
-                    <td key={o} className="p-3 text-muted-foreground">
+                    <td key={o} className="p-3 text-muted-foreground font-data">
                       {summary[o][tech] ?? 0}
                     </td>
                   ))}

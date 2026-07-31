@@ -210,7 +210,7 @@ export default function AboutPage() {
         <section className="py-28 px-6">
           <div className="max-w-5xl mx-auto bg-foreground text-background rounded-[3rem] p-12 md:p-20 text-center relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-moss/20 rounded-full blur-3xl" />
             <p className="text-sm font-bold uppercase tracking-wider mb-6 text-background/50 relative z-10">
               <Wordmark size="sm" className="[&_span:last-child]:text-background" />
             </p>

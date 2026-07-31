@@ -324,7 +324,7 @@ export function Navbar() {
                   />
                   <div
                     onClick={() => handleSearch()}
-                    className="w-12 h-full flex items-center justify-center bg-[#febd69] cursor-pointer hover:bg-[#f3a847] text-foreground transition-colors"
+                    className="w-12 h-full flex items-center justify-center bg-ember hover:bg-ember-10 cursor-pointer text-foreground transition-colors"
                   >
                     <Search size={20} />
                   </div>

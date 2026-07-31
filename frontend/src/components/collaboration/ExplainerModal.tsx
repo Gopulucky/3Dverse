@@ -22,23 +22,23 @@ export default function ExplainerModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink bg-opacity-50 backdrop-blur-sm transition-opacity">
-      <div className="bg-card border border-zinc-800 rounded-xl shadow-2xl max-w-md w-full p-6 text-primary-foreground transform transition-all">
-        <h2 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+      <div className="bg-card border border-border rounded-xl shadow-2xl max-w-md w-full p-6 text-foreground transform transition-all">
+        <h2 className="text-2xl font-bold mb-4 text-gradient-accent">
           Print Partner Collaboration
         </h2>
-        <div className="space-y-4 text-zinc-300">
+        <div className="space-y-4 text-muted-foreground">
           <p>
             Welcome to the Collaboration hub! This feature is designed to help you manufacture your designs seamlessly.
           </p>
           <ul className="list-disc list-inside space-y-2">
             <li>
-              <span className="font-semibold text-primary-foreground">Have a printer?</span> You can fulfill orders yourself.
+              <span className="font-semibold text-foreground">Have a printer?</span> You can fulfill orders yourself.
             </li>
             <li>
-              <span className="font-semibold text-primary-foreground">No printer?</span> You can collaborate with a verified print partner.
+              <span className="font-semibold text-foreground">No printer?</span> You can collaborate with a verified print partner.
             </li>
             <li>
-              <span className="font-semibold text-primary-foreground">At capacity?</span> Offload excess orders to a partner when you're busy.
+              <span className="font-semibold text-foreground">At capacity?</span> Offload excess orders to a partner when you're busy.
             </li>
           </ul>
           <p className="text-sm text-muted-foreground italic">
@@ -48,7 +48,7 @@ export default function ExplainerModal() {
         <div className="mt-8 flex justify-end">
           <button
             onClick={handleClose}
-            className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-primary-foreground rounded-lg font-medium transition-all shadow-lg hover:shadow-blue-500/25"
+            className="px-6 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-all shadow-lg hover:shadow-primary/25"
           >
             Get Started
           </button>

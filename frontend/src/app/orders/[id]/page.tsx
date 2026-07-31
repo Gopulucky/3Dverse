@@ -109,8 +109,8 @@ export default function OrderDetailsPage() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-slate-950 text-primary-foreground flex justify-center pt-24">Loading order details...</div>;
-  if (!order) return <div className="min-h-screen bg-slate-950 text-primary-foreground flex justify-center pt-24">Order not found</div>;
+  if (loading) return <div className="min-h-screen bg-background text-foreground flex justify-center pt-24">Loading order details...</div>;
+  if (!order) return <div className="min-h-screen bg-background text-foreground flex justify-center pt-24">Order not found</div>;
 
   const STATUS_FLOW = ["paid", "queued", "printing", "qc", "packed", "shipped", "delivered"];
   const currentStepIndex = STATUS_FLOW.indexOf(order.status);
@@ -123,7 +123,7 @@ export default function OrderDetailsPage() {
       .reduce((sum, r) => sum + r.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-primary-foreground pt-24 pb-20">
+    <div className="min-h-screen bg-background text-foreground pt-24 pb-20">
       <div className="max-w-4xl mx-auto px-6">
 
         <div className="flex justify-between items-center mb-8">
@@ -133,7 +133,7 @@ export default function OrderDetailsPage() {
           {order.invoice_url && (
             <button
               onClick={() => api.download(`/api/downloads/orders/${order.id}/invoice`, `invoice_${order.id}.pdf`).catch((e) => alert(e.message))}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded text-sm font-medium transition-colors border border-slate-700"
+              className="px-4 py-2 bg-secondary hover:bg-accent rounded text-sm font-medium transition-colors border border-border"
             >
               Download Invoice
             </button>
@@ -141,12 +141,12 @@ export default function OrderDetailsPage() {
         </div>
 
         {/* Timeline Component */}
-        <div className="bg-card border border-slate-800 rounded-xl p-8 mb-8">
-          <h2 className="text-lg font-semibold mb-8 text-slate-300">Order Status Timeline</h2>
+        <div className="bg-card border border-border rounded-xl p-8 mb-8">
+          <h2 className="text-lg font-semibold mb-8 text-muted-foreground">Order Status Timeline</h2>
 
           <div className="relative">
             {/* Connecting line */}
-            <div className="absolute top-5 left-8 bottom-5 w-0.5 bg-slate-800" />
+            <div className="absolute top-5 left-8 bottom-5 w-0.5 bg-border" />
 
             <div className="space-y-8 relative">
               {STATUS_FLOW.map((status, idx) => {
@@ -161,15 +161,15 @@ export default function OrderDetailsPage() {
 
                 return (
                   <div key={status} className={`flex items-start ${isFuture ? "opacity-40" : ""}`}>
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-4 border-slate-900 z-10 ${
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-4 border-background z-10 ${
                       isPast ? "bg-success text-foreground" :
                       isCurrent ? "bg-primary text-primary-foreground" :
-                      "bg-slate-800 text-muted-foreground"
+                      "bg-secondary text-muted-foreground"
                     }`}>
                       <Icon size={16} />
                     </div>
                     <div className="ml-6 pt-2">
-                      <h3 className={`font-semibold capitalize ${isCurrent ? "text-primary" : "text-primary-foreground"}`}>
+                      <h3 className={`font-semibold capitalize ${isCurrent ? "text-primary" : "text-foreground"}`}>
                         {status.replace('qc', 'Quality Control')}
                       </h3>
                       {isCurrent && status === "packed" && (
@@ -177,7 +177,7 @@ export default function OrderDetailsPage() {
                       )}
                       {isPast && status === "shipped" && order.tracking_url && (
                         <div className="mt-2 inline-block">
-                          <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1 bg-primary/20 text-primary rounded text-xs border border-blue-500/30 flex items-center">
+                          <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1 bg-primary/20 text-primary rounded text-xs border border-primary/30 flex items-center">
                             <Truck size={12} className="mr-2" /> Track on Shiprocket
                           </a>
                         </div>
@@ -191,8 +191,8 @@ export default function OrderDetailsPage() {
         </div>
 
         {/* Order Details */}
-        <div className="bg-card border border-slate-800 rounded-xl p-6">
-          <h2 className="text-lg font-semibold mb-4 text-slate-300 border-b border-slate-800 pb-4">Order Summary</h2>
+        <div className="bg-card border border-border rounded-xl p-6">
+          <h2 className="text-lg font-semibold mb-4 text-muted-foreground border-b border-border pb-4">Order Summary</h2>
           <div className="space-y-4">
             {order.items?.map((item: any) => {
               const p = itemPolicy(item.id);
@@ -204,13 +204,13 @@ export default function OrderDetailsPage() {
               const existing = requestsFor(item.id);
 
               return (
-                <div key={item.id} className="py-2 border-b border-slate-800/50 last:border-0">
+                <div key={item.id} className="py-2 border-b border-border/50 last:border-0">
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-medium">{item.product?.title || `Product #${item.product_id}`}</p>
                       <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                     </div>
-                    <p className="text-slate-300">${(item.price_at_purchase * item.quantity).toFixed(2)}</p>
+                    <p className="text-muted-foreground font-data">${(item.price_at_purchase * item.quantity).toFixed(2)}</p>
                   </div>
 
                   {existing.map((r) => (
@@ -230,11 +230,11 @@ export default function OrderDetailsPage() {
                   )}
 
                   {openReturnFor === item.id && (
-                    <div className="mt-3 bg-slate-800/50 border border-slate-700 rounded-lg p-3 space-y-2">
+                    <div className="mt-3 bg-secondary/50 border border-border rounded-lg p-3 space-y-2">
                       <select
                         value={returnForm.reason}
                         onChange={(e) => setReturnForm({ ...returnForm, reason: e.target.value })}
-                        className="w-full bg-card border border-slate-700 rounded px-2 py-1.5 text-sm"
+                        className="w-full bg-card border border-border rounded px-2 py-1.5 text-sm"
                       >
                         {RETURN_REASONS.map((r) => (
                           <option key={r.value} value={r.value}>{r.label}</option>
@@ -244,19 +244,19 @@ export default function OrderDetailsPage() {
                         placeholder="Details (optional)"
                         value={returnForm.description}
                         onChange={(e) => setReturnForm({ ...returnForm, description: e.target.value })}
-                        className="w-full bg-card border border-slate-700 rounded px-2 py-1.5 text-sm"
+                        className="w-full bg-card border border-border rounded px-2 py-1.5 text-sm"
                         rows={2}
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleSubmitReturn(item.id, item.quantity - alreadyReturned)}
-                          className="px-3 py-1.5 bg-primary hover:bg-primary rounded text-xs font-medium"
+                          className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded text-xs font-medium"
                         >
                           Submit return request
                         </button>
                         <button
                           onClick={() => setOpenReturnFor(null)}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-xs"
+                          className="px-3 py-1.5 bg-secondary hover:bg-accent rounded text-xs"
                         >
                           Cancel
                         </button>
@@ -268,25 +268,25 @@ export default function OrderDetailsPage() {
             })}
           </div>
 
-          <div className="mt-6 pt-6 border-t border-slate-800 space-y-2">
+          <div className="mt-6 pt-6 border-t border-border space-y-2">
             <div className="flex justify-between text-muted-foreground text-sm">
               <span>Subtotal</span>
-              <span>${order.subtotal.toFixed(2)}</span>
+              <span className="font-data">${order.subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-muted-foreground text-sm">
               <span>Shipping</span>
-              <span>${order.shipping_cost.toFixed(2)}</span>
+              <span className="font-data">${order.shipping_cost.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-primary-foreground font-bold text-lg pt-2 mt-2 border-t border-slate-800/50">
+            <div className="flex justify-between text-foreground font-bold text-lg pt-2 mt-2 border-t border-border/50">
               <span>Total</span>
-              <span>${order.total.toFixed(2)}</span>
+              <span className="font-data">${order.total.toFixed(2)}</span>
             </div>
           </div>
         </div>
 
         {policy && policy.policy !== 'digital_no_return' && (
-          <div className="bg-card border border-slate-800 rounded-xl p-6 mt-8">
-            <h2 className="text-lg font-semibold mb-2 text-slate-300">
+          <div className="bg-card border border-border rounded-xl p-6 mt-8">
+            <h2 className="text-lg font-semibold mb-2 text-muted-foreground">
               {policy.policy === 'defect_reprint' ? 'Something wrong with your print?' : 'Returns'}
             </h2>
             {policy.policy === 'defect_reprint' ? (
@@ -314,7 +314,7 @@ export default function OrderDetailsPage() {
             ) : policy.policy === 'defect_reprint' ? (
               <button
                 onClick={handleReportDefect}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded text-sm font-medium transition-colors border border-slate-700"
+                className="px-4 py-2 bg-secondary hover:bg-accent rounded text-sm font-medium transition-colors border border-border"
               >
                 Report a defect
               </button>

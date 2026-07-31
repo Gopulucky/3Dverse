@@ -47,14 +47,14 @@ export default function PrinterOwnershipStep({ onComplete }: { onComplete: () =>
         <div className="animate-in fade-in slide-in-from-top-2 duration-300">
           <label className="block text-sm font-medium mb-1">Which technology?</label>
           <select value={technology} onChange={e => setTechnology(e.target.value)}
-            className="w-full border rounded p-2 focus:ring focus:ring-blue-200 transition-shadow">
+            className="w-full border rounded p-2 focus:ring focus:ring-primary/30 transition-shadow">
             {TECHNOLOGIES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
       )}
 
       {ownsPrinter !== null && (
-        <button onClick={submit} className="w-full bg-success hover:bg-green-700 text-primary-foreground rounded py-2 transition-colors animate-in fade-in duration-300">
+        <button onClick={submit} className="w-full bg-success hover:bg-success/90 text-primary-foreground rounded py-2 transition-colors animate-in fade-in duration-300">
           Continue
         </button>
       )}

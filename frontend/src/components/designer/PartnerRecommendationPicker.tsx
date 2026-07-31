@@ -29,15 +29,15 @@ export default function PartnerRecommendationPicker({ productId }: { productId: 
 
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold text-lg text-slate-800">Choose a print partner</h3>
+      <h3 className="font-semibold text-lg text-foreground">Choose a print partner</h3>
       <div className="space-y-2">
         {partners.map(p => (
           <div key={p.print_partner_id} className="flex justify-between items-center border rounded-lg p-4 bg-card hover:shadow-md transition-shadow">
             <div>
               <div className="font-medium text-foreground flex items-center gap-2">
-                {p.name} 
+                {p.name}
                 {p.is_private_partnership && (
-                  <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-semibold bg-moss-3 text-moss-11 px-2 py-0.5 rounded-full">
                     Your partner
                   </span>
                 )}
@@ -46,7 +46,7 @@ export default function PartnerRecommendationPicker({ productId }: { productId: 
                 {p.region} · Cost tier {"⭐".repeat(p.cost_tier || 1)} · Reship rate {(p.reship_rate * 100).toFixed(2)}%
               </div>
             </div>
-            <button onClick={() => choose(p.print_partner_id)} className="px-4 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-blue-700 text-primary-foreground transition-colors">
+            <button onClick={() => choose(p.print_partner_id)} className="px-4 py-2 text-sm font-medium rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground transition-colors">
               Select
             </button>
           </div>

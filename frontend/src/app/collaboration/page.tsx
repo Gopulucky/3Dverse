@@ -110,7 +110,7 @@ export default function CollaborationPage() {
         <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-end mb-8">
           <div>
-            <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+            <h1 className="text-4xl font-extrabold text-gradient-accent">
               Find a Print Partner
             </h1>
             <p className="text-muted-foreground mt-2">
@@ -120,7 +120,7 @@ export default function CollaborationPage() {
         </div>
 
         {creatorType === 'studio' && (
-          <div className="mb-8 bg-card border border-zinc-800 rounded-2xl p-6">
+          <div className="mb-8 bg-card border border-border rounded-2xl p-6">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
               Why route this to a print partner?
             </label>
@@ -130,7 +130,7 @@ export default function CollaborationPage() {
             <select
               value={overflowReason}
               onChange={(e) => setOverflowReason(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-primary-foreground"
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground"
             >
               <option value="">Select a reason…</option>
               {OVERFLOW_REASONS.map((r) => (
@@ -145,9 +145,9 @@ export default function CollaborationPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {partners.map(partner => (
-              <div key={partner.id} className="bg-card border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 transition-all hover:shadow-2xl hover:shadow-blue-500/10 flex flex-col">
+              <div key={partner.id} className="bg-card border border-border rounded-2xl p-6 hover:border-moss/40 transition-all hover:shadow-2xl hover:shadow-moss/10 flex flex-col">
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold text-primary-foreground">{partner.name}</h3>
+                  <h3 className="text-xl font-bold text-foreground">{partner.name}</h3>
                   <div className="flex text-warning text-sm">
                     {Array(partner.cost_tier).fill('⭐').join('')}
                   </div>
@@ -162,24 +162,24 @@ export default function CollaborationPage() {
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Capabilities</h4>
                   <div className="flex flex-wrap gap-2">
                     {partner.capabilities.map((cap, idx) => (
-                      <span key={idx} className="px-2 py-1 bg-zinc-800 text-zinc-300 text-xs rounded-md">
+                      <span key={idx} className="px-2 py-1 bg-secondary text-muted-foreground text-xs rounded-md">
                         {cap.technology.toUpperCase()} - {cap.material_type}
                       </span>
                     ))}
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => handlePurchaseTicket(partner.id)}
-                  className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-primary-foreground rounded-xl font-medium transition-colors border border-zinc-700 hover:border-zinc-500"
+                  className="w-full py-3 bg-secondary hover:bg-accent text-foreground rounded-xl font-medium transition-colors border border-border hover:border-moss/40"
                 >
                   Buy Evaluation Ticket ($50)
                 </button>
               </div>
             ))}
-            
+
             {partners.length === 0 && (
-              <div className="col-span-full text-center py-12 text-muted-foreground bg-card/50 rounded-2xl border border-zinc-800 border-dashed">
+              <div className="col-span-full text-center py-12 text-muted-foreground bg-card/50 rounded-2xl border border-border border-dashed">
                 No print partners found matching your criteria.
               </div>
             )}

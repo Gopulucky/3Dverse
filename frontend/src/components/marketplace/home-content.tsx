@@ -134,7 +134,7 @@ export function MarketplaceHomeContent() {
             <ProductSection
               title="Featured Models"
               icon={Star}
-              iconColor="text-amber-500"
+              iconColor="text-warning"
               products={data?.featured || []}
             />
 
@@ -148,7 +148,7 @@ export function MarketplaceHomeContent() {
             <ProductSection
               title="New Arrivals"
               icon={Clock}
-              iconColor="text-emerald-500"
+              iconColor="text-success"
               products={data?.new_arrivals || []}
             />
 
@@ -156,7 +156,7 @@ export function MarketplaceHomeContent() {
             <section className="mb-20">
               <div className="flex justify-between items-end mb-8">
                 <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-3 font-display">
-                  <Users className="text-blue-500" size={28} />
+                  <Users className="text-ember" size={28} />
                   Popular Creators
                 </h2>
               </div>
@@ -179,7 +179,7 @@ export function MarketplaceHomeContent() {
             <section className="mb-20">
               <div className="flex justify-between items-end mb-8">
                 <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-3 font-display">
-                  <LayoutGrid className="text-purple-500" size={28} />
+                  <LayoutGrid className="text-muted-foreground" size={28} />
                   Explore Categories
                 </h2>
               </div>
