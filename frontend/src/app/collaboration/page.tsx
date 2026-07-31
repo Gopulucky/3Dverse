@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ExplainerModal from '@/components/collaboration/ExplainerModal';
 import { StudioShell } from '@/components/layout/studio-shell';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCreatorType } from '@/lib/creator-nav';
+import { useRequireAuth } from '@/stores/auth-store';
 import { api } from '@/lib/api';
 import { Ban } from 'lucide-react';
 
@@ -29,12 +31,15 @@ const OVERFLOW_REASONS = [
 
 export default function CollaborationPage() {
   const router = useRouter();
+  const { ready: isAuthenticated } = useRequireAuth();
   const { creatorType, path: creatorPath } = useCreatorType();
   const [partners, setPartners] = useState<PrintPartner[]>([]);
   const [loading, setLoading] = useState(true);
   const [overflowReason, setOverflowReason] = useState('');
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     api.get<PrintPartner[]>('/api/collaboration/partners')
       .then(data => {
         if (Array.isArray(data)) {
@@ -43,7 +48,7 @@ export default function CollaborationPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [isAuthenticated]);
 
   const handlePurchaseTicket = async (partnerId: number) => {
     if (creatorType === 'studio' && !overflowReason) {
@@ -68,6 +73,17 @@ export default function CollaborationPage() {
       alert(`Failed to purchase ticket: ${error.message}`);
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <StudioShell>
+        <div className="max-w-6xl mx-auto px-6 pt-24 pb-20 space-y-6">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-80 w-full" />
+        </div>
+      </StudioShell>
+    );
+  }
 
   // Seller accounts sell designs directly and never use print partners. The nav
   // link is hidden for them; this covers a direct visit to the URL.

@@ -1,0 +1,136 @@
+{
+  "generatedAt": "2026-07-30T14:34:43.564Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "results": [
+    {
+      "persona": "guest",
+      "route": "/",
+      "status": 200,
+      "pageErrors": [],
+      "clientBugs": []
+    },
+    {
+      "persona": "guest",
+      "route": "/login",
+      "status": 200,
+      "pageErrors": [],
+      "clientBugs": []
+    },
+    {
+      "persona": "guest",
+      "route": "/register",
+      "status": 200,
+      "pageErrors": [],
+      "clientBugs": []
+    },
+    {
+      "persona": "guest",
+      "route": "/marketplace",
+      "status": 200,
+      "pageErrors": [],
+      "clientBugs": []
+    },
+    {
+      "persona": "guest",
+      "route": "/marketplace/home",
+      "status": 200,
+      "pageErrors": [],
+      "clientBugs": []
+    },
+    {
+      "persona": "guest",
+      "route": "/cart",
+      "status": 200,
+      "pageErrors": [],
+      "clientBugs": []
+    },
+    {
+      "persona": "guest",
+      "route": "/wishlist",
+      "status": 200,
+      "pageErrors": [],
+      "clientBugs": []
+    },
+    {
+      "persona": "guest",
+      "route": "/partner",
+      "status": 200,
+      "pageErrors": [],
+      "clientBugs": []
+    },
+    {
+      "persona": "customer",
+      "route": "/login",
+      "status": null,
+      "pageErrors": [
+        {
+          "kind": "login-native-submit",
+          "severity": "error",
+          "message": "Login form submitted natively instead of via JS — password was appended to the URL as a query string",
+          "detail": "http://127.0.0.1:3000/login?email=arjun%403dverse.demo&password=password123",
+          "route": "/login"
+        },
+        {
+          "kind": "login-failed",
+          "severity": "error",
+          "message": "Login did not produce a token for arjun@3dverse.demo — wrong/missing demo credentials, or the login API call failed",
+          "route": "/login"
+        }
+      ],
+      "clientBugs": []
+    },
+    {
+      "persona": "creator",
+      "route": "/login",
+      "status": null,
+      "pageErrors": [
+        {
+          "kind": "login-native-submit",
+          "severity": "error",
+          "message": "Login form submitted natively instead of via JS — password was appended to the URL as a query string",
+          "detail": "http://127.0.0.1:3000/login?email=maya%403dverse.demo&password=password123",
+          "route": "/login"
+        },
+        {
+          "kind": "login-failed",
+          "severity": "error",
+          "message": "Login did not produce a token for maya@3dverse.demo — wrong/missing demo credentials, or the login API call failed",
+          "route": "/login"
+        }
+      ],
+      "clientBugs": []
+    }
+  ],
+  "findings": [
+    {
+      "persona": "customer",
+      "route": "/login",
+      "kind": "login-native-submit",
+      "severity": "error",
+      "message": "Login form submitted natively instead of via JS — password was appended to the URL as a query string",
+      "detail": "http://127.0.0.1:3000/login?email=arjun%403dverse.demo&password=password123"
+    },
+    {
+      "persona": "customer",
+      "route": "/login",
+      "kind": "login-failed",
+      "severity": "error",
+      "message": "Login did not produce a token for arjun@3dverse.demo — wrong/missing demo credentials, or the login API call failed"
+    },
+    {
+      "persona": "creator",
+      "route": "/login",
+      "kind": "login-native-submit",
+      "severity": "error",
+      "message": "Login form submitted natively instead of via JS — password was appended to the URL as a query string",
+      "detail": "http://127.0.0.1:3000/login?email=maya%403dverse.demo&password=password123"
+    },
+    {
+      "persona": "creator",
+      "route": "/login",
+      "kind": "login-failed",
+      "severity": "error",
+      "message": "Login did not produce a token for maya@3dverse.demo — wrong/missing demo credentials, or the login API call failed"
+    }
+  ]
+}

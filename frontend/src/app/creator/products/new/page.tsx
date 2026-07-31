@@ -18,7 +18,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StudioShell } from "@/components/layout/studio-shell";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCreatorPath, useCreatorType, type CreatorType } from "@/lib/creator-nav";
+import { useRequireAuth } from "@/stores/auth-store";
 import { cn } from "@/lib/utils";
 
 const STEPS = ["Details", "Upload"] as const;
@@ -79,6 +81,7 @@ const DEFAULT_COPY = COPY.studio;
 
 export default function NewProductPage() {
   const router = useRouter();
+  const { ready: isAuthenticated } = useRequireAuth();
   const { creatorType } = useCreatorType();
   const copy = creatorType ? COPY[creatorType] : DEFAULT_COPY;
   const creatorPath = getCreatorPath(creatorType);
@@ -214,6 +217,17 @@ export default function NewProductPage() {
       }
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <StudioShell>
+        <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 space-y-6">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </StudioShell>
+    );
+  }
 
   return (
     <StudioShell>

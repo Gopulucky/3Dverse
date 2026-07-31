@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useRequireAuth } from '@/stores/auth-store';
 import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
 
 interface ItemPolicy {
@@ -40,6 +41,7 @@ const RETURN_REASONS = [
 
 export default function OrderDetailsPage() {
   const router = useRouter();
+  const { ready: isAuthenticated } = useRequireAuth();
   const { id } = useParams();
   const [order, setOrder] = useState<any>(null);
   const [policy, setPolicy] = useState<ReturnPolicy | null>(null);
@@ -65,11 +67,10 @@ export default function OrderDetailsPage() {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const fetchOrder = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return router.push('/login');
-
         setOrder(await api.get<any>(`/api/orders/${id}`));
         await Promise.all([fetchPolicy(), fetchReturnRequests()]);
       } catch (e) {
@@ -79,7 +80,7 @@ export default function OrderDetailsPage() {
       setLoading(false);
     };
     fetchOrder();
-  }, [id, router]);
+  }, [id, router, isAuthenticated]);
 
   const handleReportDefect = async () => {
     const description = window.prompt('Briefly describe the defect:');

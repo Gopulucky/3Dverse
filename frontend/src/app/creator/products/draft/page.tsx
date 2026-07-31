@@ -10,10 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { StudioShell } from "@/components/layout/studio-shell";
+import { useRequireAuth } from "@/stores/auth-store";
 
 export default function DraftProductPage() {
   const router = useRouter();
+  const { ready: isAuthenticated } = useRequireAuth();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -63,6 +66,17 @@ ${formData.description}
       setIsSubmitting(false);
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <StudioShell>
+        <div className="max-w-3xl mx-auto px-6 pt-24 pb-20 space-y-6">
+          <Skeleton className="h-10 w-40" />
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </StudioShell>
+    );
+  }
 
   return (
     <StudioShell>

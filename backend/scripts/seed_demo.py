@@ -19,6 +19,7 @@ from PIL import Image, ImageDraw, ImageFont
 import app.models.printer  # noqa: F401 — register mappers
 import app.models.material  # noqa: F401
 import app.models.notification  # noqa: F401
+import app.models.defect_report  # noqa: F401
 from app.core.database import SessionLocal
 from app.core.security import get_password_hash
 from app.models.user import User, UserRole
