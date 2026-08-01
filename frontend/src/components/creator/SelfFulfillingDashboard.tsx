@@ -42,7 +42,7 @@ import { FunnelChart } from "@/components/shared/funnel-chart";
 
 const statusVariant: Record<string, string> = {
   paid: "bg-success-surface text-success-ink",
-  queued: "bg-primary-surface text-primary-ink",
+  queued: "bg-ember-surface text-ember-ink",
   printing: "bg-warning-surface text-warning-ink",
   shipped: "bg-success-surface text-success-ink",
   delivered: "bg-success-surface text-success-ink",
@@ -89,8 +89,8 @@ export default function SelfFulfillingDashboard() {
         <div className="p-5 border border-border rounded-2xl bg-card hover-lift transition-all group">
           <div className="text-sm font-semibold text-muted-foreground mb-2 flex items-center justify-between">
             Revenue
-            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-              <DollarSign size={16} className="text-primary" />
+            <div className="p-2 bg-ember/10 rounded-lg group-hover:bg-ember/20 transition-colors">
+              <DollarSign size={16} className="text-ember" />
             </div>
           </div>
           <p className="text-3xl font-bold font-display text-foreground">
@@ -151,7 +151,7 @@ export default function SelfFulfillingDashboard() {
         <div className="lg:col-span-2 border border-border rounded-2xl bg-card hover-lift transition-all flex flex-col">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
             <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-              <BarChart3 size={14} className="text-primary" /> Net Revenue Over Time
+              <BarChart3 size={14} className="text-ember" /> Net Revenue Over Time
             </h2>
           </div>
           <div className="px-5 py-6 flex-1">
@@ -160,8 +160,8 @@ export default function SelfFulfillingDashboard() {
                 <AreaChart data={data?.chart_data || []}>
                   <defs>
                     <linearGradient id="colorRevenueFin" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="var(--color-ember-9)" stopOpacity={0.15}/>
+                      <stop offset="95%" stopColor="var(--color-ember-9)" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
@@ -179,7 +179,7 @@ export default function SelfFulfillingDashboard() {
                     }}
                     formatter={(value: any) => [`$${Number(value).toFixed(2)}`, "Net Revenue"]}
                   />
-                  <Area type="monotone" dataKey="revenue" stroke="var(--color-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenueFin)" />
+                  <Area type="monotone" dataKey="revenue" stroke="var(--color-ember-9)" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenueFin)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

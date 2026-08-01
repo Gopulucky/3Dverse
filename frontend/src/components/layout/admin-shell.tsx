@@ -23,8 +23,9 @@ const adminLinks: SidebarLink[] = [
 ];
 
 /**
- * AdminShell — dark-first layout for Admin Panel.
- * Graphite background, sidebar + top nav.
+ * AdminShell — Admin Panel layout.
+ * Sidebar + top nav. Admin is neutral by design (docs/brand/05-applications.md):
+ * no audience accent — colour here means status (red/amber/green), not identity.
  */
 export function AdminShell({ children }: { children: React.ReactNode }) {
   return (

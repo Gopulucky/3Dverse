@@ -221,9 +221,25 @@ export function Navbar() {
   // Studio/Console/Admin don't show nav links in the top bar (they use sidebar)
   const navLinks = [];
 
-  // Accent color logic per portal
-  const accentClass = "text-primary";
-  const accentBgClass = "bg-primary/10";
+  // Accent color logic per portal — docs/brand/05-applications.md:
+  // marketplace/customers→violet (primary), creator studio→ember, partner
+  // console→moss, admin→neutral (no identity accent; colour there is status
+  // only). Creator studio further refines by sub-path (studio/seller/
+  // designer) via creatorPath — fall back to ember when that isn't known yet.
+  const accentClass = isCreator
+    ? creatorPath?.accent || "text-ember"
+    : isPartner
+    ? "text-moss"
+    : isAdmin
+    ? "text-foreground"
+    : "text-primary";
+  const accentBgClass = isCreator
+    ? creatorPath?.accentBg || "bg-ember/10"
+    : isPartner
+    ? "bg-moss/10"
+    : isAdmin
+    ? "bg-secondary"
+    : "bg-primary/10";
 
   return (
     <>

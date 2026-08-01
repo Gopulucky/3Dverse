@@ -67,7 +67,7 @@ export default function AdminDashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-            <ShieldAlert className="text-primary" />
+            <ShieldAlert className="text-foreground" />
             Admin Platform Analytics
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
@@ -101,24 +101,24 @@ export default function AdminDashboard() {
           label="Order Volume"
           value={data?.order_volume || 0}
           icon={Package}
-          iconBg="bg-primary/15"
-          iconColor="text-primary"
+          iconBg="bg-muted"
+          iconColor="text-muted-foreground"
           trend={{ value: "+5.4%", direction: "up" }}
         />
         <StatCard
           label="Active Users"
           value={data?.total_users || 0}
           icon={Users}
-          iconBg="bg-primary/15"
-          iconColor="text-primary"
+          iconBg="bg-muted"
+          iconColor="text-muted-foreground"
           trend={{ value: "+21.1%", direction: "up" }}
         />
         <StatCard
           label="Physical / Digital"
           value={`${data?.physical_orders || 0} / ${data?.digital_orders || 0}`}
           icon={Printer}
-          iconBg="bg-ember/15"
-          iconColor="text-ember"
+          iconBg="bg-muted"
+          iconColor="text-muted-foreground"
         />
       </div>
 
@@ -132,8 +132,8 @@ export default function AdminDashboard() {
               <AreaChart data={data?.chart_data || []}>
                 <defs>
                   <linearGradient id="colorAdminRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="var(--color-slate-9)" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="var(--color-slate-9)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid
@@ -173,7 +173,7 @@ export default function AdminDashboard() {
                 <Area
                   type="monotone"
                   dataKey="revenue"
-                  stroke="var(--color-primary)"
+                  stroke="var(--color-slate-9)"
                   strokeWidth={3}
                   fillOpacity={1}
                   fill="url(#colorAdminRev)"
@@ -221,7 +221,7 @@ export default function AdminDashboard() {
                 />
                 <Bar
                   dataKey="orders"
-                  fill="var(--color-primary)"
+                  fill="var(--color-slate-9)"
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>

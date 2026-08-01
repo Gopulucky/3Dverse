@@ -138,7 +138,7 @@ export default function CreatorSettingsPage() {
       <div className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-            <Settings className="text-primary" />
+            <Settings className="text-ember" />
             Creator Settings
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
@@ -324,8 +324,8 @@ export default function CreatorSettingsPage() {
                   onClick={() => toggleSpec(spec)}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                     isSelected
-                      ? "bg-primary/15 border-primary text-primary"
-                      : "border-border text-muted-foreground hover:border-primary/30"
+                      ? "bg-ember/15 border-ember text-ember"
+                      : "border-border text-muted-foreground hover:border-ember/30"
                   }`}
                 >
                   {spec}

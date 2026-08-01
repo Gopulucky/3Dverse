@@ -49,8 +49,8 @@ const STATUSES = [
 
 const STATUS_TONE: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
-  paid: "bg-primary-surface text-primary-ink",
-  queued: "bg-primary-surface text-primary-ink",
+  paid: "bg-secondary text-secondary-foreground",
+  queued: "bg-secondary text-secondary-foreground",
   printing: "bg-warning-surface text-warning-ink",
   shipped: "bg-success-surface text-success-ink",
   delivered: "bg-success-surface text-success-ink",
@@ -140,7 +140,7 @@ export default function AdminOrdersPage() {
             {
               label: "Open",
               value: all.filter((o) => OPEN_STATUSES.includes(o.status)).length,
-              accent: "text-ember",
+              accent: "text-warning",
             },
             {
               label: "Defects Reported",
@@ -226,7 +226,7 @@ export default function AdminOrdersPage() {
                           <span className="text-destructive text-xs font-semibold">Defect</span>
                         )}
                         {o.reprint_issued && (
-                          <span className="text-moss text-xs font-semibold">
+                          <span className="text-success text-xs font-semibold">
                             Reprinted
                           </span>
                         )}

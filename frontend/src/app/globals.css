@@ -84,6 +84,10 @@
   --color-warning-ink: var(--color-amber-11);
   --color-danger-surface: var(--color-red-3);
   --color-danger-ink: var(--color-red-11);
+  --color-ember-surface: var(--color-ember-3);
+  --color-ember-ink: var(--color-ember-11);
+  --color-moss-surface: var(--color-moss-3);
+  --color-moss-ink: var(--color-moss-11);
 
   /* Audience accents — creators→ember, customers→violet, partners→moss.
      See docs/brand/01-strategy.md — this mapping is a platform-wide rule,
@@ -184,6 +188,10 @@
   --color-warning-ink: var(--color-amber-11);
   --color-danger-surface: var(--color-red-3);
   --color-danger-ink: var(--color-red-11);
+  --color-ember-surface: var(--color-ember-3);
+  --color-ember-ink: var(--color-ember-11);
+  --color-moss-surface: var(--color-moss-3);
+  --color-moss-ink: var(--color-moss-11);
 
   --color-creator-accent: var(--color-ember-9);
   --color-customer-accent: var(--color-violet-9);

@@ -44,7 +44,7 @@ interface RiskFlag {
 
 const STATUS_TONE: Record<string, string> = {
   pending: "bg-warning-surface text-warning-ink",
-  approved: "bg-primary-surface text-primary-ink",
+  approved: "bg-secondary text-secondary-foreground",
   reprinted: "bg-success-surface text-success-ink",
   denied: "bg-danger-surface text-danger-ink",
 };
@@ -114,7 +114,7 @@ export default function TrustSafetyPage() {
             {
               label: "Awaiting Review",
               value: pending.length,
-              accent: "text-ember",
+              accent: "text-warning",
             },
             {
               label: "Active Risk Flags",
@@ -130,11 +130,11 @@ export default function TrustSafetyPage() {
               key={t}
               onClick={() => setTab(t)}
               className={`pb-3 text-sm font-semibold transition-colors relative ${
-                tab === t ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                tab === t ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {t === "defects" ? "Defect Reports" : "Risk Flags"}
-              {tab === t && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />}
+              {tab === t && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground rounded-t" />}
             </button>
           ))}
         </div>
@@ -209,7 +209,7 @@ export default function TrustSafetyPage() {
                   {f.type === "product_defect_rate" ? (
                     <PackageX className="text-destructive shrink-0 mt-0.5" size={18} />
                   ) : (
-                    <AlertTriangle className="text-ember shrink-0 mt-0.5" size={18} />
+                    <AlertTriangle className="text-warning shrink-0 mt-0.5" size={18} />
                   )}
                   <div>
                     <p className="font-semibold text-sm">

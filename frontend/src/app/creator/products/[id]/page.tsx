@@ -223,7 +223,7 @@ export default function ProductDetailPage({
                 Unpublish
               </Button>
             ) : (
-              <Button onClick={handlePublishToggle} variant="secondary" className="bg-primary-surface text-primary-ink hover:bg-primary/20" disabled={saving}>
+              <Button onClick={handlePublishToggle} variant="secondary" className="bg-ember-surface text-ember-ink hover:bg-ember/20" disabled={saving}>
                 {saving && <Loader2 size={16} className="animate-spin mr-2" />}
                 Publish
               </Button>
@@ -328,7 +328,7 @@ export default function ProductDetailPage({
             <Card className="p-6 border-border bg-card shadow-sm">
               <div className="flex justify-between items-center mb-5">
                 <h2 className="text-lg font-bold font-display">Media Hub</h2>
-                <label className="cursor-pointer text-sm font-semibold text-primary hover:underline flex items-center gap-1.5">
+                <label className="cursor-pointer text-sm font-semibold text-ember hover:underline flex items-center gap-1.5">
                   <ImageIcon size={16} />
                   Add Images
                   <input
@@ -582,7 +582,7 @@ export default function ProductDetailPage({
                 <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Geometry Files</h2>
               </div>
               
-              <label className="cursor-pointer flex items-center justify-center gap-2 rounded-lg text-sm font-semibold w-full py-2.5 bg-primary/5 text-primary border border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/10 transition-all mb-4">
+              <label className="cursor-pointer flex items-center justify-center gap-2 rounded-lg text-sm font-semibold w-full py-2.5 bg-ember/5 text-ember border border-dashed border-ember/30 hover:border-ember/60 hover:bg-ember/10 transition-all mb-4">
                 {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                 {uploading ? "Uploading..." : "Upload New STL"}
                 <input type="file" className="hidden" accept=".stl,.obj,.3mf,.step,.fbx,.blend" onChange={(e) => handleFileUpload(e, "model")} disabled={uploading} />

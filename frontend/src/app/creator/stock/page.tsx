@@ -109,7 +109,7 @@ export default function StockPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-            <Boxes className="text-primary" />
+            <Boxes className="text-ember" />
             Stock
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">

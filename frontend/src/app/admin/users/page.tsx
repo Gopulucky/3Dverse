@@ -120,8 +120,8 @@ export default function AdminUsersPage() {
         <AdminStats
           stats={[
             { label: "Total Users", value: all.length },
-            { label: "Creators", value: count("creator"), accent: "text-ember" },
-            { label: "Print Partners", value: count("print_partner"), accent: "text-moss" },
+            { label: "Creators", value: count("creator") },
+            { label: "Print Partners", value: count("print_partner") },
             {
               label: "Suspended",
               value: all.filter((u) => !u.is_active).length,
@@ -166,7 +166,7 @@ export default function AdminUsersPage() {
                       <p className="font-medium text-foreground">
                         {u.full_name || u.email.split("@")[0]}
                         {u.is_self && (
-                          <span className="ml-2 text-[10px] uppercase font-bold text-primary">You</span>
+                          <span className="ml-2 text-[10px] uppercase font-bold text-foreground">You</span>
                         )}
                       </p>
                       <p className="text-xs">{u.email}</p>

@@ -201,7 +201,7 @@ export default function OnboardingPage() {
                     isPast
                       ? "bg-success-surface text-success-ink"
                       : isCurrent
-                      ? "bg-primary-surface text-primary-ink ring-2 ring-primary/30"
+                      ? "bg-ember-surface text-ember-ink ring-2 ring-ember/30"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
@@ -222,7 +222,7 @@ export default function OnboardingPage() {
           {currentStep === 0 && (
             <div className="space-y-5">
               <div className="text-center mb-6">
-                <User size={32} className="mx-auto text-primary mb-2" />
+                <User size={32} className="mx-auto text-ember mb-2" />
                 <h2 className="text-2xl font-bold font-display">Your Profile</h2>
                 <p className="text-sm text-muted-foreground">Basic info about you and your studio</p>
               </div>
@@ -282,7 +282,7 @@ export default function OnboardingPage() {
           {currentStep === 1 && (
             <div className="space-y-5">
               <div className="text-center mb-6">
-                <Printer size={32} className="mx-auto text-primary mb-2" />
+                <Printer size={32} className="mx-auto text-ember mb-2" />
                 <h2 className="text-2xl font-bold font-display">Your Equipment</h2>
                 <p className="text-sm text-muted-foreground">Add at least one 3D printer</p>
               </div>
@@ -343,7 +343,7 @@ export default function OnboardingPage() {
           {currentStep === 2 && (
             <div className="space-y-5">
               <div className="text-center mb-6">
-                <Beaker size={32} className="mx-auto text-primary mb-2" />
+                <Beaker size={32} className="mx-auto text-ember mb-2" />
                 <h2 className="text-2xl font-bold font-display">Your Materials</h2>
                 <p className="text-sm text-muted-foreground">Select the materials you have in stock</p>
               </div>
@@ -363,8 +363,8 @@ export default function OnboardingPage() {
                       }
                       className={`p-4 rounded-lg border text-left transition-all ${
                         isSelected
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/30"
+                          ? "border-ember bg-ember/10"
+                          : "border-border hover:border-ember/30"
                       }`}
                     >
                       <p className="font-semibold text-sm">{mat.name}</p>
@@ -390,7 +390,7 @@ export default function OnboardingPage() {
           {currentStep === 3 && (
             <div className="space-y-5">
               <div className="text-center mb-6">
-                <Image size={32} className="mx-auto text-primary mb-2" />
+                <Image size={32} className="mx-auto text-ember mb-2" />
                 <h2 className="text-2xl font-bold font-display">Portfolio Preview</h2>
                 <p className="text-sm text-muted-foreground">
                   Upload photos of your best prints to build trust with customers.
@@ -415,7 +415,7 @@ export default function OnboardingPage() {
           {currentStep === 4 && (
             <div className="space-y-5">
               <div className="text-center mb-6">
-                <Rocket size={32} className="mx-auto text-primary mb-2" />
+                <Rocket size={32} className="mx-auto text-ember mb-2" />
                 <h2 className="text-2xl font-bold font-display">Almost There!</h2>
                 <p className="text-sm text-muted-foreground">
                   Choose your specializations and accept the terms
@@ -439,8 +439,8 @@ export default function OnboardingPage() {
                         }
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                           isSelected
-                            ? "bg-primary/15 border-primary text-primary"
-                            : "border-border text-muted-foreground hover:border-primary/30"
+                            ? "bg-ember/15 border-ember text-ember"
+                            : "border-border text-muted-foreground hover:border-ember/30"
                         }`}
                       >
                         {spec}

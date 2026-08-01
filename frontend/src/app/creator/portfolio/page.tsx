@@ -134,7 +134,7 @@ export default function CreatorPortfolioPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-              <ImageIcon className="text-primary" />
+              <ImageIcon className="text-ember" />
               Portfolio
             </h1>
             <p className="text-muted-foreground mt-2 text-sm">
@@ -275,8 +275,8 @@ export default function CreatorPortfolioPage() {
                       onClick={() => toggleSpec(s)}
                       className={
                         specializations.includes(s)
-                          ? "px-3 py-1 rounded-full text-xs font-semibold bg-primary text-primary-foreground border border-primary"
-                          : "px-3 py-1 rounded-full text-xs font-semibold bg-card text-muted-foreground border border-border hover:border-primary/40"
+                          ? "px-3 py-1 rounded-full text-xs font-semibold bg-ember-surface text-ember-ink border border-ember"
+                          : "px-3 py-1 rounded-full text-xs font-semibold bg-card text-muted-foreground border border-border hover:border-ember/40"
                       }
                     >
                       {s}
@@ -341,7 +341,7 @@ export default function CreatorPortfolioPage() {
               <Card className="p-6 border-border bg-card">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold font-display flex items-center gap-2">
-                    <Eye size={16} className="text-primary" />
+                    <Eye size={16} className="text-ember" />
                     Your Storefront
                   </h3>
                   <span className="text-xs text-muted-foreground font-data">
@@ -400,7 +400,7 @@ export default function CreatorPortfolioPage() {
                     </p>
                     <Link
                       href="/creator/products/new"
-                      className="text-primary text-sm font-semibold hover:underline"
+                      className="text-ember text-sm font-semibold hover:underline"
                     >
                       Upload your first design →
                     </Link>

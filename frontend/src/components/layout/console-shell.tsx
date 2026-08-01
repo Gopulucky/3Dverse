@@ -13,9 +13,11 @@ const consoleLinks: SidebarLink[] = [
 ];
 
 /**
- * ConsoleShell — dark-first layout for Print Partner Console.
- * Graphite background, Calibration Cyan accent, sidebar + top nav, no footer.
- * Uses data-portal="partner" to switch primary color to Calibration Cyan.
+ * ConsoleShell — Print Partner Console layout.
+ * Sidebar + top nav, no footer. Accent is Moss (Calibration Green) per
+ * docs/brand/05-applications.md — job-queue status, capacity indicators and
+ * the active nav item carry it; the shell itself stays on the shared
+ * light/dark token system, no forced-dark background.
  */
 export function ConsoleShell({ children }: { children: React.ReactNode }) {
   return (

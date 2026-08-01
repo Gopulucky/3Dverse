@@ -20,12 +20,23 @@ interface SidebarProps {
 }
 
 /**
- * Collapsible sidebar for Creator Studio and Partner Console.
+ * Collapsible sidebar for Creator Studio, Partner Console and Admin.
  * 72px collapsed / 240px expanded per spec.
+ *
+ * Active-state colour follows the audience-accent rule in
+ * docs/brand/05-applications.md: studio→ember, console→moss, admin→neutral
+ * (admin carries no identity accent — colour there means status only).
  */
+const PORTAL_ACTIVE_CLASS: Record<SidebarProps["portal"], string> = {
+  studio: "bg-ember-surface text-ember-ink",
+  console: "bg-moss-surface text-moss-ink",
+  admin: "bg-secondary text-foreground",
+};
+
 export function Sidebar({ links, portal }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const activeClass = PORTAL_ACTIVE_CLASS[portal];
 
   return (
     <aside
@@ -49,7 +60,7 @@ export function Sidebar({ links, portal }: SidebarProps) {
                 "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-150",
                 collapsed ? "justify-center px-3 py-3" : "px-3 py-2.5",
                 isActive
-                  ? "bg-primary-surface text-primary-ink"
+                  ? activeClass
                   : "text-muted-foreground hover:text-foreground hover:bg-accent"
               )}
             >

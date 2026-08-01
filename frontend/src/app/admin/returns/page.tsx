@@ -33,7 +33,7 @@ interface AdminReturn {
 
 const STATUS_TONE: Record<string, string> = {
   requested: "bg-warning-surface text-warning-ink",
-  approved: "bg-primary-surface text-primary-ink",
+  approved: "bg-secondary text-secondary-foreground",
   rejected: "bg-danger-surface text-danger-ink",
   received: "bg-success-surface text-success-ink",
   refunded: "bg-success-surface text-success-ink",
@@ -107,7 +107,7 @@ export default function AdminReturnsPage() {
             {
               label: "Awaiting Review",
               value: all.filter((r) => r.status === "requested").length,
-              accent: "text-ember",
+              accent: "text-warning",
             },
             {
               label: "Refunded",

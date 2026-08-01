@@ -254,7 +254,7 @@ export default function NewProductPage() {
                         i < step
                           ? "bg-success-surface text-success-ink"
                           : i === step
-                          ? "bg-primary-surface text-primary-ink"
+                          ? "bg-ember-surface text-ember-ink"
                           : "bg-muted text-muted-foreground"
                       )}
                     >
@@ -292,7 +292,7 @@ export default function NewProductPage() {
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl mx-auto">
               <div className="mb-12">
                 <div className="flex flex-wrap items-center gap-2 mb-6">
-                  <div className="inline-flex items-center gap-2 bg-primary-surface text-primary-ink text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full">
+                  <div className="inline-flex items-center gap-2 bg-ember-surface text-ember-ink text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full">
                     <Sparkles size={12} />
                     Step 1 of {STEPS.length}
                   </div>
@@ -358,7 +358,7 @@ export default function NewProductPage() {
           {step === 1 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl mx-auto">
               <div className="mb-12">
-                <div className="inline-flex items-center gap-2 bg-primary-surface text-primary-ink text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full mb-6">
+                <div className="inline-flex items-center gap-2 bg-ember-surface text-ember-ink text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full mb-6">
                   <Sparkles size={12} />
                   Step 2 of {STEPS.length}
                 </div>
@@ -376,12 +376,12 @@ export default function NewProductPage() {
                 className={cn(
                   "relative border-2 border-dashed rounded-3xl transition-all duration-300 cursor-pointer overflow-hidden",
                   uploadStage !== "idle"
-                    ? "border-primary bg-muted/50 cursor-default"
+                    ? "border-ember bg-muted/50 cursor-default"
                     : dragActive
-                    ? "border-primary bg-primary/5 scale-[1.01] shadow-[0_0_0_4px_rgba(168,85,247,0.1)]"
+                    ? "border-ember bg-ember/5 scale-[1.01] shadow-[0_0_0_4px_rgba(234,88,12,0.1)]"
                     : file
                     ? "border-success/60 bg-success/5"
-                    : "border-border hover:border-primary/50 hover:bg-muted/30 group"
+                    : "border-border hover:border-ember/50 hover:bg-muted/30 group"
                 )}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
@@ -401,7 +401,7 @@ export default function NewProductPage() {
                   {uploadStage !== "idle" ? (
                     <div className="space-y-6 max-w-sm mx-auto">
                       <div className="flex items-center justify-between font-bold font-display text-lg">
-                        <span className="capitalize text-primary">
+                        <span className="capitalize text-ember">
                           {uploadStage === "uploading" && "Uploading..."}
                           {uploadStage === "verifying" && "Saving on server..."}
                           {uploadStage === "analyzing" && "Analyzing Printability..."}
@@ -411,12 +411,12 @@ export default function NewProductPage() {
                         <span>{uploadProgress}%</span>
                       </div>
                       <div className="h-4 w-full bg-border rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary transition-all duration-300 ease-out"
+                        <div
+                          className="h-full bg-ember transition-all duration-300 ease-out"
                           style={{ width: `${uploadProgress}%` }}
                         />
                       </div>
-                      <div className="flex justify-center text-primary">
+                      <div className="flex justify-center text-ember">
                         {uploadStage === "ready" ? (
                           <CheckCircle2 size={40} className="text-success" />
                         ) : (
@@ -445,8 +445,8 @@ export default function NewProductPage() {
                         className={cn(
                           "w-20 h-20 rounded-3xl flex items-center justify-center mx-auto border-2 transition-all duration-300",
                           dragActive
-                            ? "border-primary bg-primary/10 scale-110"
-                            : "border-dashed border-border group-hover:border-primary/50 group-hover:bg-primary/5"
+                            ? "border-ember bg-ember/10 scale-110"
+                            : "border-dashed border-border group-hover:border-ember/50 group-hover:bg-ember/5"
                         )}
                       >
                         <UploadCloud
@@ -454,8 +454,8 @@ export default function NewProductPage() {
                           className={cn(
                             "transition-colors duration-300",
                             dragActive
-                              ? "text-primary"
-                              : "text-muted-foreground/50 group-hover:text-primary/60"
+                              ? "text-ember"
+                              : "text-muted-foreground/50 group-hover:text-ember/60"
                           )}
                         />
                       </div>
@@ -465,7 +465,7 @@ export default function NewProductPage() {
                         </p>
                         <p className="text-muted-foreground mt-1">
                           or{" "}
-                          <span className="text-primary font-semibold underline underline-offset-2">
+                          <span className="text-ember font-semibold underline underline-offset-2">
                             click to browse
                           </span>
                         </p>

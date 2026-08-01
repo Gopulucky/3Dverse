@@ -105,7 +105,7 @@ export default function AdminSettingsPage() {
       <div className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-            <Settings className="text-primary" />
+            <Settings className="text-foreground" />
             Admin Settings
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">

@@ -23,7 +23,7 @@ export function AdminPageHeader({
     <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-          <Icon className="text-primary" />
+          <Icon className="text-foreground" />
           {title}
         </h1>
         <p className="text-muted-foreground mt-2 text-sm">{description}</p>
@@ -94,8 +94,8 @@ export function AdminToolbar({
             className={cn(
               "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap",
               activeFilter === f.value
-                ? "bg-primary/15 border-primary text-primary"
-                : "border-border text-muted-foreground hover:border-primary/30"
+                ? "bg-secondary border-border text-foreground"
+                : "border-border text-muted-foreground hover:text-foreground"
             )}
           >
             {f.label}

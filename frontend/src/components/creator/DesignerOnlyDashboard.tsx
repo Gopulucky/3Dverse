@@ -41,7 +41,7 @@ import { formatDate } from "@/lib/utils";
 
 const statusVariant: Record<string, string> = {
   paid: "bg-success-surface text-success-ink",
-  queued: "bg-primary-surface text-primary-ink",
+  queued: "bg-ember-surface text-ember-ink",
   printing: "bg-warning-surface text-warning-ink",
   shipped: "bg-success-surface text-success-ink",
   delivered: "bg-success-surface text-success-ink",
@@ -111,7 +111,7 @@ export default function DesignerOnlyDashboard() {
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
             Est. Payout
           </p>
-          <p className="text-3xl font-bold font-data text-primary">${data?.estimated_payout ? (data.estimated_payout * 0.15).toFixed(2) : "0.00"}</p>
+          <p className="text-3xl font-bold font-data text-ember">${data?.estimated_payout ? (data.estimated_payout * 0.15).toFixed(2) : "0.00"}</p>
         </div>
       </div>
 
@@ -119,7 +119,7 @@ export default function DesignerOnlyDashboard() {
       <div className="border border-border rounded-sm bg-card mb-6">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-            <BarChart3 size={14} className="text-primary" /> Royalties Over Time
+            <BarChart3 size={14} className="text-ember" /> Royalties Over Time
           </h2>
         </div>
         <div className="px-4 py-6">
@@ -128,8 +128,8 @@ export default function DesignerOnlyDashboard() {
               <AreaChart data={data?.chart_data || []}>
                 <defs>
                   <linearGradient id="colorRevenueFinDesigner" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="var(--color-ember-9)" stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor="var(--color-ember-9)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
@@ -146,7 +146,7 @@ export default function DesignerOnlyDashboard() {
                   }}
                   formatter={(value: any) => [`$${(Number(value)*0.15).toFixed(2)}`, "Royalties"]}
                 />
-                <Area type="monotone" dataKey="revenue" stroke="var(--color-primary)" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenueFinDesigner)" />
+                <Area type="monotone" dataKey="revenue" stroke="var(--color-ember-9)" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenueFinDesigner)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

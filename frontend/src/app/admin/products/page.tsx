@@ -152,7 +152,7 @@ export default function AdminProductsPage() {
             {
               label: "Needs Safety Review",
               value: all.filter((p) => p.safety_review_status === "pending").length,
-              accent: "text-ember",
+              accent: "text-warning",
             },
           ]}
         />
@@ -193,7 +193,7 @@ export default function AdminProductsPage() {
                     <td className="px-4 py-4 max-w-xs">
                       <p className="font-medium text-foreground flex items-center gap-1.5 truncate">
                         {p.is_featured && (
-                          <Star size={12} className="text-ember shrink-0 fill-current" />
+                          <Star size={12} className="text-foreground shrink-0 fill-current" />
                         )}
                         <span className="truncate">{p.title}</span>
                       </p>

@@ -124,15 +124,15 @@ export default function PartnerSettingsPage() {
   const chipClass = (selected: boolean) =>
     `px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
       selected
-        ? "bg-primary/15 border-primary text-primary"
-        : "border-border text-muted-foreground hover:border-primary/30"
+        ? "bg-moss/15 border-moss text-moss"
+        : "border-border text-muted-foreground hover:border-moss/30"
     }`;
 
   const content = (
     <div className="max-w-4xl mx-auto px-6 pt-10 pb-20">
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-          <Settings className="text-primary" />
+          <Settings className="text-moss" />
           Print Partner Settings
         </h1>
         <p className="text-muted-foreground mt-2 text-sm">

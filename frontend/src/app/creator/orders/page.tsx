@@ -21,7 +21,7 @@ import { cn, formatDate } from "@/lib/utils";
 
 const STATUS_STYLES: Record<string, string> = {
   paid: "bg-success-surface text-success-ink",
-  queued: "bg-primary-surface text-primary-ink",
+  queued: "bg-ember-surface text-ember-ink",
   printing: "bg-warning-surface text-warning-ink",
   qc: "bg-warning-surface text-warning-ink",
   packed: "bg-warning-surface text-warning-ink",
@@ -61,7 +61,7 @@ export default function CreatorOrdersPage() {
       <div className="max-w-6xl mx-auto px-6 pt-24 pb-20">
         <div className="mb-8">
           <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-            <ClipboardList className="text-primary" />
+            <ClipboardList className="text-ember" />
             Orders
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
@@ -79,8 +79,8 @@ export default function CreatorOrdersPage() {
               className={cn(
                 "px-4 py-1.5 rounded-full text-sm font-semibold border transition-all",
                 status === f.value
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-primary/40"
+                  ? "bg-ember-surface text-ember-ink border-ember"
+                  : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-ember/40"
               )}
             >
               {f.label}

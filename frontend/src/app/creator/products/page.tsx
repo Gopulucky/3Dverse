@@ -36,7 +36,7 @@ export default function CreatorProductsPage() {
       <div className="flex justify-between items-center mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-            <Package className="text-primary" />
+            <Package className="text-ember" />
             My Products
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Manage your models, pricing, and inventory.</p>

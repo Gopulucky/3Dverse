@@ -137,7 +137,7 @@ export default function PartnerDashboard() {
       <div className="w-px h-12 bg-border hidden md:block" />
       <div className="flex-1 min-w-[120px]">
         <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5">
-          <CheckCircle2 size={12} className="text-primary" /> Completed
+          <CheckCircle2 size={12} className="text-moss" /> Completed
         </p>
         <p className="text-3xl font-bold font-display text-foreground">9</p>
       </div>
@@ -163,7 +163,7 @@ export default function PartnerDashboard() {
           const currentStepIndex = STATUS_FLOW.indexOf(job.status);
           
           let borderColor = "border-l-border";
-          if (job.status === "queued") borderColor = "border-l-primary";
+          if (job.status === "queued") borderColor = "border-l-moss";
           else if (job.status === "printing") borderColor = "border-l-warning";
           else if (job.status === "shipped" || job.status === "delivered") borderColor = "border-l-success";
 
@@ -194,7 +194,7 @@ export default function PartnerDashboard() {
                           <div
                             className={cn(
                               "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap",
-                              isPast ? "bg-success-surface text-success-ink" : isCurrent ? "bg-primary-surface text-primary-ink ring-2 ring-primary/30" : "bg-muted text-muted-foreground"
+                              isPast ? "bg-success-surface text-success-ink" : isCurrent ? "bg-moss-surface text-moss-ink ring-2 ring-moss/30" : "bg-muted text-muted-foreground"
                             )}
                           >
                             {isPast && <CheckCircle2 size={12} />}
@@ -208,7 +208,7 @@ export default function PartnerDashboard() {
                 </div>
 
                 {currentStepIndex === 0 ? (
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-8 text-center animate-in fade-in zoom-in-95 duration-500 mt-4">
+                  <div className="bg-moss/5 border border-moss/20 rounded-xl p-8 text-center animate-in fade-in zoom-in-95 duration-500 mt-4">
                     <h3 className="font-bold font-display text-2xl mb-2 text-foreground">New Job Request</h3>
                     <p className="text-sm text-muted-foreground mb-8">Review the requirements and accept the job to begin printing.</p>
                     
@@ -269,7 +269,7 @@ export default function PartnerDashboard() {
                               onClick={() => updateStatus(job.id, status)}
                               variant={isPast ? "secondary" : isCurrent ? "glow" : isNext ? "outline" : "ghost"}
                               size="sm"
-                              className={cn(isPast && "opacity-50", isCurrent && "ring-2 ring-primary/30", isNext && "border-primary text-primary hover:bg-primary hover:text-primary-ink")}
+                              className={cn(isPast && "opacity-50", isCurrent && "ring-2 ring-moss/30", isNext && "border-moss text-moss hover:bg-moss hover:text-moss-ink")}
                             >
                               {status.toUpperCase()}
                             </Button>
@@ -294,7 +294,7 @@ export default function PartnerDashboard() {
                       {job.tracking_url && (
                         <Card className="mt-6 p-4 border-border">
                           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 font-bold font-display">Shiprocket Info</p>
-                          <a href={job.tracking_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center text-sm gap-2 font-semibold">
+                          <a href={job.tracking_url} target="_blank" rel="noopener noreferrer" className="text-moss hover:underline flex items-center text-sm gap-2 font-semibold">
                             <Truck size={14} /> Track Shipment
                           </a>
                           <p className="text-xs text-muted-foreground mt-2 font-data">AWB / Order: {job.shiprocket_order_id}</p>
@@ -377,7 +377,7 @@ export default function PartnerDashboard() {
   const content = (
     <div className="max-w-6xl mx-auto px-6 pt-24 pb-20">
       <h1 className="text-3xl font-bold mb-8 flex items-center gap-3 font-display">
-        <Settings className="text-primary" />
+        <Settings className="text-moss" />
         Print Partner Dashboard
       </h1>
 
@@ -388,42 +388,42 @@ export default function PartnerDashboard() {
           onClick={() => setActiveTab("jobs")}
           className={cn(
             "pb-3 text-sm font-semibold transition-colors relative",
-            activeTab === "jobs" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            activeTab === "jobs" ? "text-moss" : "text-muted-foreground hover:text-foreground"
           )}
         >
           <div className="flex items-center gap-2">
             <Package size={16} /> Job Queue
           </div>
-          {activeTab === "jobs" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />}
+          {activeTab === "jobs" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-moss rounded-t" />}
         </button>
         <button
           onClick={() => setActiveTab("tickets")}
           className={cn(
             "pb-3 text-sm font-semibold transition-colors relative",
-            activeTab === "tickets" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            activeTab === "tickets" ? "text-moss" : "text-muted-foreground hover:text-foreground"
           )}
         >
           <div className="flex items-center gap-2">
             <Inbox size={16} /> Ticket Inbox
             {pendingTickets.length > 0 && (
-              <span className="bg-primary-surface text-primary-ink text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+              <span className="bg-moss-surface text-moss-ink text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                 {pendingTickets.length}
               </span>
             )}
           </div>
-          {activeTab === "tickets" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />}
+          {activeTab === "tickets" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-moss rounded-t" />}
         </button>
         <button
           onClick={() => setActiveTab("fleet")}
           className={cn(
             "pb-3 text-sm font-semibold transition-colors relative",
-            activeTab === "fleet" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            activeTab === "fleet" ? "text-moss" : "text-muted-foreground hover:text-foreground"
           )}
         >
           <div className="flex items-center gap-2">
             <Printer size={16} /> Fleet Management
           </div>
-          {activeTab === "fleet" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />}
+          {activeTab === "fleet" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-moss rounded-t" />}
         </button>
       </div>
 

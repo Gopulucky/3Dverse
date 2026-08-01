@@ -91,7 +91,7 @@ ${formData.description}
 
         <Card className="p-8 border-border bg-card">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+            <div className="w-10 h-10 rounded-lg bg-ember/10 flex items-center justify-center text-ember">
               <Sparkles size={20} />
             </div>
             <h1 className="text-2xl font-bold font-display">
