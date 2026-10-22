@@ -23,9 +23,15 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useRequireAuth } from "@/stores/auth-store";
-import ModelViewer from "@/components/ModelViewer";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { StudioShell } from "@/components/layout/studio-shell";
+
+// Load the three.js viewer on demand (client only) rather than in the page bundle.
+const ModelViewer = dynamic(() => import("@/components/ModelViewer"), {
+  ssr: false,
+  loading: () => <div className="h-full w-full animate-pulse bg-muted" aria-label="Loading 3D viewer" />,
+});
 
 export default function ProductDetailPage({
   params,

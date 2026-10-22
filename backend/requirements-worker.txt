@@ -1,0 +1,11 @@
+# Extra dependencies for the Celery *worker* only (the service that computes
+# product embeddings). The web API does not need these: it asks the worker for
+# embeddings instead of loading the model itself. Keeping them out of
+# requirements.txt avoids installing PyTorch plus ~3GB of CUDA libraries on the
+# web service, which makes builds much faster and the image far smaller.
+#
+# To compute embeddings on the web process instead (small demos with no worker),
+# install this file there too and set ENABLE_LOCAL_EMBEDDINGS=true -- but note
+# the model needs ~400MB of RAM.
+-r requirements.txt
+sentence-transformers

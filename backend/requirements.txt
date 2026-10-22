@@ -62,6 +62,5 @@ vine==5.1.0
 wcwidth==0.8.2
 stripe
 reportlab
-sentence-transformers
 openpyxl
 Pillow==12.1.1

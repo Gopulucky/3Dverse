@@ -79,8 +79,10 @@ export function ProductCard({
         {mainImg ? (
           <img 
             src={api.mediaUrl(mainImg)} 
-            alt={p.title} 
-            className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-110" 
+            alt={p.title}
+            loading="lazy"
+            decoding="async"
+            className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-110"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm font-medium">

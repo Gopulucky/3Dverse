@@ -41,7 +41,8 @@ services:
     runtime: python
     plan: starter
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
+    # Only the worker computes embeddings, so only it installs sentence-transformers.
+    buildCommand: pip install -r requirements-worker.txt
     startCommand: celery -A app.core.celery_app worker --loglevel=info
     envVars:
       - key: ENVIRONMENT

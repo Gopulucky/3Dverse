@@ -85,6 +85,11 @@ async def no_sniff(request, call_next):
     # Content-Type says (the classic route to stored XSS via file upload).
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
+    # Public uploads are saved under a random uuid4 filename, so a given URL
+    # never changes content: browsers and the CDN can keep it for a year instead
+    # of re-downloading every image on every visit.
+    if request.url.path.startswith("/uploads/") and response.status_code == 200:
+        response.headers.setdefault("Cache-Control", "public, max-age=31536000, immutable")
     return response
 
 # Only genuinely public assets are served statically. Model files, submitted

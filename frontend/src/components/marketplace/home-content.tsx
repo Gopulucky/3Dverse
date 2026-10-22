@@ -189,8 +189,12 @@ export function MarketplaceHomeContent() {
                     <div className="group relative h-48 rounded-2xl overflow-hidden cursor-pointer">
                       <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors z-10" />
                       <img
-                        src={category.image}
+                        // mediaUrl: a locally stored image is a bare "/uploads/..."
+                        // path that must be fetched from the API, not this site.
+                        src={api.mediaUrl(category.image)}
                         alt={category.name}
+                        loading="lazy"
+                        decoding="async"
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
                       <div className="absolute inset-0 flex items-center justify-center z-20">
