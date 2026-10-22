@@ -26,6 +26,8 @@ export function CreatorProductCard({ product }: { product: any }) {
           <img 
             src={api.mediaUrl(mainImg)} 
             alt={product.title}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
         ) : (

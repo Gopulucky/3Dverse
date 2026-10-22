@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -250,7 +251,7 @@ export default function CustomerSettingsPage() {
           </div>
         </div>
         <Button variant="outline" asChild>
-          <a href="/orders">View Orders</a>
+          <Link href="/orders">View Orders</Link>
         </Button>
       </Card>
 

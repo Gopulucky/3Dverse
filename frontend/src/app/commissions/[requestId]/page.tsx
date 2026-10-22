@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, use } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -671,9 +672,9 @@ export default function CommissionDetailPage({
                 {request.print_order_id && (
                   <p className="text-xs text-moss pt-2 border-t border-border">
                     Print order placed — see it in your{" "}
-                    <a href="/orders" className="underline font-semibold">
+                    <Link href="/orders" className="underline font-semibold">
                       order history
-                    </a>
+                    </Link>
                     .
                   </p>
                 )}

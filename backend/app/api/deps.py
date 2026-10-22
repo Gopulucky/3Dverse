@@ -5,19 +5,15 @@ from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.database import SessionLocal
+# Single source of truth for the session dependency. The previous copy here
+# created the session *inside* the try block, so if SessionLocal() itself raised
+# the finally clause hit an unbound `db` (NameError) and hid the real error.
+from app.core.database import get_db  # noqa: F401  (re-exported for routers)
 from app.models.user import User
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"/api/auth/login/access-token"
 )
-
-def get_db() -> Generator:
-    try:
-        db = SessionLocal()
-        yield db
-    finally:
-        db.close()
 
 def get_current_user(
     db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)

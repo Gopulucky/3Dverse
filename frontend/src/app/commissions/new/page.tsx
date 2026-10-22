@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Wand2, ImagePlus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -40,7 +41,7 @@ function NewCommissionForm() {
         <div className="max-w-lg mx-auto px-6 pt-24 text-center">
           <p className="text-muted-foreground mb-4">No creator selected.</p>
           <Button asChild>
-            <a href="/commissions/browse">Browse creators</a>
+            <Link href="/commissions/browse">Browse creators</Link>
           </Button>
         </div>
       </MarketplaceShell>

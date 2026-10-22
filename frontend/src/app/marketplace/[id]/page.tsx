@@ -42,9 +42,18 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useCartStore } from "@/stores/cart-store";
 import { cn, formatDate } from "@/lib/utils";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { MarketplaceShell } from "@/components/layout/marketplace-shell";
 
-import { Advanced3DViewer } from "@/components/shared/advanced-3d-viewer";
+// three.js is several hundred KB. Load the viewer on demand (client only) so the
+// product title, price and photos paint first instead of waiting on the 3D engine.
+const Advanced3DViewer = dynamic(
+  () => import("@/components/shared/advanced-3d-viewer").then((m) => m.Advanced3DViewer),
+  {
+    ssr: false,
+    loading: () => <div className="h-full w-full animate-pulse rounded-xl bg-muted" aria-label="Loading 3D viewer" />,
+  }
+);
 // --- Review Schema ---
 const reviewSchema = z.object({
   rating: z.number().min(1).max(5),

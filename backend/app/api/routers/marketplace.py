@@ -1,15 +1,65 @@
-from typing import Any, List, Optional
+import time
+from typing import Any, Callable, List, Optional
 from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer, selectinload
 from sqlalchemy import or_, desc, func
 
 from app.api import deps
-from app.models.product import Product, ProductStatus
+from app.models.product import Product, ProductMedia, ProductStatus, ProductVersion
 from app.models.review import Review
 from app.models.user import User
 from app.schemas.product import PublicProduct as ProductSchema
 
 router = APIRouter()
+
+
+# --- Small in-process TTL cache ----------------------------------------------
+# The marketplace read endpoints are public and identical for every visitor, but
+# the database sits in another region from the API, so each query costs a
+# network round trip (~200ms+). Serving a result for a few seconds turns a burst
+# of visitors into one database hit. In-process on purpose: it works with no
+# Redis, and a stale entry lives at most MARKETPLACE_CACHE_TTL seconds.
+MARKETPLACE_CACHE_TTL = 30
+_CACHE_MAX_ENTRIES = 200
+_cache: dict[str, tuple[float, Any]] = {}
+
+
+def _cached(key: str, build: Callable[[], Any]) -> Any:
+    now = time.monotonic()
+    hit = _cache.get(key)
+    if hit and hit[0] > now:
+        return hit[1]
+    value = build()
+    if len(_cache) >= _CACHE_MAX_ENTRIES:
+        # Drop expired entries first, then everything if that wasn't enough.
+        for k in [k for k, (exp, _) in _cache.items() if exp <= now]:
+            _cache.pop(k, None)
+        if len(_cache) >= _CACHE_MAX_ENTRIES:
+            _cache.clear()
+    _cache[key] = (now + MARKETPLACE_CACHE_TTL, value)
+    return value
+
+
+def clear_marketplace_cache() -> None:
+    """Call after a change that must show up immediately (tests, admin tools)."""
+    _cache.clear()
+
+
+def _public_product_loading():
+    """Load everything PublicProduct serializes in a fixed handful of queries.
+
+    Relationships are lazy by default, so serializing N products used to fire
+    several extra queries *per product* (media, creator, versions, each
+    version's printability report). Across regions that was seconds of pure
+    latency. The 384-float embedding is deferred: no marketplace response uses
+    it, and it would otherwise be shipped for every row.
+    """
+    return (
+        selectinload(Product.media),
+        selectinload(Product.creator),
+        selectinload(Product.versions).selectinload(ProductVersion.printability_report),
+        defer(Product.embedding),
+    )
 
 
 def enrich_products(db: Session, products: List[Product]) -> List[Product]:
@@ -34,10 +84,13 @@ def enrich_products(db: Session, products: List[Product]) -> List[Product]:
             p.creator_avatar = p.creator.avatar_url
     return products
 
-@router.get("/homepage")
-def get_homepage(db: Session = Depends(deps.get_db)) -> Any:
-    from app.models.user import User, UserRole
-    
+
+FALLBACK_CATEGORY_IMAGE = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=500"
+
+
+def _build_homepage(db: Session) -> dict:
+    from app.models.user import UserRole
+
     # 1. Fetch real popular creators
     creators = db.query(User).filter(User.role == UserRole.creator).limit(5).all()
     popular_creators = []
@@ -47,7 +100,7 @@ def get_homepage(db: Session = Depends(deps.get_db)) -> Any:
             role_label = c.specializations[0]
         elif c.business_type:
             role_label = c.business_type.value.capitalize()
-            
+
         popular_creators.append({
             "name": c.company_name or c.full_name or c.email.split("@")[0],
             "role": role_label,
@@ -59,41 +112,65 @@ def get_homepage(db: Session = Depends(deps.get_db)) -> Any:
             "image": c.avatar_url or None,
         })
 
-    # 2. Fetch real categories and their images
-    distinct_categories = db.query(Product.category).filter(Product.category != None, Product.status == ProductStatus.published).distinct().all()
-    categories = []
-    for (cat_name,) in distinct_categories:
-        # Get an image from a product in this category
-        product = db.query(Product).filter(Product.category == cat_name, Product.status == ProductStatus.published).first()
-        image_url = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=500"
-        if product and product.media:
-            primary_media = next((m for m in product.media if m.is_primary), product.media[0])
-            image_url = primary_media.media_url
-            
-        categories.append({
-            "name": cat_name,
-            "image": image_url
-        })
-        
+    # 2. Categories and one image each, in a single query. This used to run one
+    # query per category and then lazy-load that product's media on top.
+    rows = (
+        db.query(Product.category, ProductMedia.media_url)
+        .outerjoin(ProductMedia, ProductMedia.product_id == Product.id)
+        .filter(Product.category != None, Product.status == ProductStatus.published)
+        .order_by(Product.category, ProductMedia.is_primary.desc(), ProductMedia.id)
+        .all()
+    )
+    category_images: dict[str, str] = {}
+    for cat_name, media_url in rows:
+        if cat_name not in category_images or (category_images[cat_name] == FALLBACK_CATEGORY_IMAGE and media_url):
+            category_images[cat_name] = media_url or FALLBACK_CATEGORY_IMAGE
+    categories = [{"name": name, "image": image} for name, image in category_images.items()]
+
     if not categories:
         # Fallback if DB has no products
         categories = [
-            {"name": "Architecture", "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=500"},
-            {"name": "Miniatures", "image": "https://images.unsplash.com/photo-1590483736622-398541ce0ce6?auto=format&fit=crop&q=80&w=500"}
+            {"name": "Architecture", "image": FALLBACK_CATEGORY_IMAGE},
+            {"name": "Miniatures", "image": "https://images.unsplash.com/photo-1590483736622-398541ce0ce6?auto=format&fit=crop&q=80&w=500"},
         ]
-    
-    featured = db.query(Product).filter(Product.status == ProductStatus.published, Product.is_featured == True).limit(4).all()
-    trending = db.query(Product).filter(Product.status == ProductStatus.published).order_by(desc(Product.mock_order_count)).limit(4).all()
-    new_arrivals = db.query(Product).filter(Product.status == ProductStatus.published).order_by(desc(Product.created_at)).limit(4).all()
+
+    # 3. The three product shelves. Pick the ids with three cheap id-only
+    # queries, then load all of those products together so the related rows are
+    # fetched once for the whole page instead of once per shelf.
+    published = Product.status == ProductStatus.published
+    featured_ids = [i for (i,) in db.query(Product.id).filter(published, Product.is_featured == True).limit(4).all()]
+    trending_ids = [i for (i,) in db.query(Product.id).filter(published).order_by(desc(Product.mock_order_count)).limit(4).all()]
+    new_ids = [i for (i,) in db.query(Product.id).filter(published).order_by(desc(Product.created_at)).limit(4).all()]
+
+    wanted = set(featured_ids) | set(trending_ids) | set(new_ids)
+    by_id: dict[int, Product] = {}
+    if wanted:
+        loaded = (
+            db.query(Product)
+            .options(*_public_product_loading())
+            .filter(Product.id.in_(wanted))
+            .all()
+        )
+        by_id = {p.id: p for p in enrich_products(db, loaded)}
+
+    def shelf(ids: List[int]) -> List[dict]:
+        # model_dump(mode="json") so the cached value is plain, immutable-ish data.
+        return [ProductSchema.model_validate(by_id[i]).model_dump(mode="json") for i in ids if i in by_id]
 
     # Pydantic v2 requires explicit serialization if no response_model is provided
     return {
         "categories": categories,
         "popular_creators": popular_creators,
-        "featured": [ProductSchema.model_validate(p).model_dump() for p in enrich_products(db, featured)],
-        "trending": [ProductSchema.model_validate(p).model_dump() for p in enrich_products(db, trending)],
-        "new_arrivals": [ProductSchema.model_validate(p).model_dump() for p in enrich_products(db, new_arrivals)]
+        "featured": shelf(featured_ids),
+        "trending": shelf(trending_ids),
+        "new_arrivals": shelf(new_ids),
     }
+
+
+@router.get("/homepage")
+def get_homepage(db: Session = Depends(deps.get_db)) -> Any:
+    return _cached("homepage", lambda: _build_homepage(db))
+
 
 @router.get("/products", response_model=List[ProductSchema])
 def get_products(
@@ -102,38 +179,46 @@ def get_products(
     category: Optional[str] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
-    skip: int = 0,
-    limit: int = Query(20, le=100),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
 ) -> Any:
-    query = db.query(Product).filter(Product.status == ProductStatus.published)
+    def build() -> list:
+        query = db.query(Product).options(*_public_product_loading()).filter(Product.status == ProductStatus.published)
 
-    if q:
-        search_term = q.strip()
-        from app.core.ai import get_embedding
-        query_embedding = get_embedding(search_term)
+        if q:
+            search_term = q.strip()
+            from app.core.ai import get_embedding
+            query_embedding = get_embedding(search_term)
 
-        text_match = or_(
-            func.to_tsvector('english', Product.title).op('@@')(func.plainto_tsquery('english', search_term)),
-            func.to_tsvector('english', func.coalesce(Product.description, '')).op('@@')(func.plainto_tsquery('english', search_term)),
-        )
+            text_match = or_(
+                func.to_tsvector('english', Product.title).op('@@')(func.plainto_tsquery('english', search_term)),
+                func.to_tsvector('english', func.coalesce(Product.description, '')).op('@@')(func.plainto_tsquery('english', search_term)),
+            )
 
-        if query_embedding is None:
-            query = query.filter(text_match)
-        else:
-            query = query.filter(
-                or_(text_match, Product.embedding.cosine_distance(query_embedding) < 0.7)
-            ).order_by(Product.embedding.cosine_distance(query_embedding))
+            if query_embedding is None:
+                query = query.filter(text_match)
+            else:
+                # The embedding column is deferred above for response payloads;
+                # ordering by it in SQL does not need it loaded into Python.
+                query = query.filter(
+                    or_(text_match, Product.embedding.cosine_distance(query_embedding) < 0.7)
+                ).order_by(Product.embedding.cosine_distance(query_embedding))
 
-    if category:
-        query = query.filter(Product.category == category)
-        
-    if min_price is not None:
-        query = query.filter(Product.price >= min_price)
-        
-    if max_price is not None:
-        query = query.filter(Product.price <= max_price)
+        if category:
+            query = query.filter(Product.category == category)
 
-    return enrich_products(db, query.offset(skip).limit(limit).all())
+        if min_price is not None:
+            query = query.filter(Product.price >= min_price)
+
+        if max_price is not None:
+            query = query.filter(Product.price <= max_price)
+
+        products = enrich_products(db, query.offset(skip).limit(limit).all())
+        return [ProductSchema.model_validate(p).model_dump(mode="json") for p in products]
+
+    key = f"products:{q}:{category}:{min_price}:{max_price}:{skip}:{limit}"
+    return _cached(key, build)
+
 
 @router.get("/suggestions")
 def get_suggestions(
@@ -183,7 +268,12 @@ def get_product(
     id: int,
     db: Session = Depends(deps.get_db),
 ) -> Any:
-    product = db.query(Product).filter(Product.id == id, Product.status == ProductStatus.published).first()
+    product = (
+        db.query(Product)
+        .options(*_public_product_loading())
+        .filter(Product.id == id, Product.status == ProductStatus.published)
+        .first()
+    )
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
@@ -193,16 +283,25 @@ def get_product(
 def get_similar_products(
     id: int,
     db: Session = Depends(deps.get_db),
-    limit: int = 4
+    limit: int = Query(4, ge=1, le=20),
 ) -> Any:
+    # This one needs the source product's embedding, so it is loaded without the
+    # deferral; the candidates it is compared against stay deferred.
     product = db.query(Product).filter(Product.id == id, Product.status == ProductStatus.published).first()
     if not product or product.embedding is None:
         return []
-    
-    similar = db.query(Product).filter(
-        Product.id != id,
-        Product.status == ProductStatus.published,
-        Product.embedding != None
-    ).order_by(Product.embedding.cosine_distance(product.embedding)).limit(limit).all()
+
+    similar = (
+        db.query(Product)
+        .options(*_public_product_loading())
+        .filter(
+            Product.id != id,
+            Product.status == ProductStatus.published,
+            Product.embedding != None,
+        )
+        .order_by(Product.embedding.cosine_distance(product.embedding))
+        .limit(limit)
+        .all()
+    )
 
     return enrich_products(db, similar)
