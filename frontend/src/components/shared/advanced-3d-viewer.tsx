@@ -6,6 +6,7 @@ import { OrbitControls, Stage, Environment, Grid, Html } from "@react-three/drei
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { Maximize, RotateCcw, BoxSelect, Sun, Moon, Orbit, Grid3X3, SunMedium } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -64,6 +65,14 @@ function Model({
       const loader = new OBJLoader();
       loader.load(url, (group) => {
         handleLoaded(group);
+      });
+    } else if (extension === "glb" || extension === "gltf") {
+      // The public preview mesh the server generates for every upload is a .glb.
+      // Without this branch the marketplace viewer showed an empty box for any
+      // product whose preview had been generated.
+      const loader = new GLTFLoader();
+      loader.load(url, (gltf) => {
+        handleLoaded(gltf.scene);
       });
     }
   }, [url, onLoaded]);
