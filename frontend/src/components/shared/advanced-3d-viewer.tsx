@@ -22,6 +22,15 @@ function Model({
 }) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | THREE.Group | null>(null);
 
+  // The parent passes a fresh onLoaded function on every render. Keep the latest
+  // one in a ref so the load effect below depends only on the URL: with it in the
+  // dependency list, reporting the stats re-rendered the parent, which re-ran the
+  // effect and re-downloaded the model, in an endless loop.
+  const onLoadedRef = useRef(onLoaded);
+  useEffect(() => {
+    onLoadedRef.current = onLoaded;
+  });
+
   useEffect(() => {
     if (!url) return;
     const extension = url.split(".").pop()?.toLowerCase();
@@ -51,7 +60,7 @@ function Model({
         });
       }
 
-      onLoaded({ polyCount, vertices });
+      onLoadedRef.current({ polyCount, vertices });
       setGeometry(obj);
     };
 
@@ -72,10 +81,28 @@ function Model({
       // product whose preview had been generated.
       const loader = new GLTFLoader();
       loader.load(url, (gltf) => {
-        handleLoaded(gltf.scene);
+        // The server shrinks every public preview so its longest side is 1 unit
+        // (so it can't be used to recover true dimensions), but this scene's
+        // camera and grid are sized for models tens of units across. Without
+        // rescaling, the model is a speck. Model files are Z-up, three.js is
+        // Y-up, so stand it upright, then scale it to a fixed viewing size.
+        const wrapper = new THREE.Group();
+        gltf.scene.rotation.x = -Math.PI / 2;
+        wrapper.add(gltf.scene);
+        const slate = new THREE.MeshStandardMaterial({ color: "#94a3b8", metalness: 0.3, roughness: 0.7 });
+        wrapper.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) (child as THREE.Mesh).material = slate;
+        });
+        wrapper.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(wrapper);
+        const size = box.getSize(new THREE.Vector3());
+        const k = 60 / (Math.max(size.x, size.y, size.z) || 1);
+        wrapper.scale.setScalar(k);
+        wrapper.position.copy(box.getCenter(new THREE.Vector3())).multiplyScalar(-k);
+        handleLoaded(wrapper);
       });
     }
-  }, [url, onLoaded]);
+  }, [url]);
 
   if (!geometry) return null;
 
