@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api import deps
+from app.core.rate_limit import rate_limit
 from app.core.security import get_password_hash, verify_password
 from app.models.user import User, UserRole
 from app.schemas.user import AccountProfileResponse, AccountProfileUpdate
@@ -41,7 +42,7 @@ class AccountDelete(BaseModel):
     confirm_email: str
 
 
-@router.delete("/me")
+@router.delete("/me", dependencies=[Depends(rate_limit("delete_account", limit=5, window_seconds=3600))])
 def delete_my_account(
     body: AccountDelete,
     db: Session = Depends(deps.get_db),
@@ -80,7 +81,7 @@ class PasswordChange(BaseModel):
     new_password: str
 
 
-@router.put("/me/password")
+@router.put("/me/password", dependencies=[Depends(rate_limit("change_password", limit=10, window_seconds=3600))])
 def change_my_password(
     body: PasswordChange,
     db: Session = Depends(deps.get_db),

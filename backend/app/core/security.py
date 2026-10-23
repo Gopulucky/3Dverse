@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Any, Union
-from jose import jwt
+from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.core.config import settings
 
@@ -24,3 +24,31 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
+
+
+# --- Single-purpose email-link tokens (password reset, email verification) ---
+# Signed with the app secret and tagged with a purpose, so a reset token can't be
+# replayed as a login token (login tokens have no "purpose") or vice versa.
+RESET_TOKEN_MINUTES = 60
+VERIFY_TOKEN_MINUTES = 60 * 48
+
+
+def create_purpose_token(user_id: int, purpose: str, token_version: int, minutes: int) -> str:
+    claims = {
+        "sub": str(user_id),
+        "purpose": purpose,
+        "tv": token_version,
+        "exp": datetime.utcnow() + timedelta(minutes=minutes),
+    }
+    return jwt.encode(claims, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def decode_purpose_token(token: str, purpose: str) -> dict | None:
+    """Return the claims if the token is valid for `purpose`, else None."""
+    try:
+        claims = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+    except JWTError:
+        return None
+    if claims.get("purpose") != purpose:
+        return None
+    return claims

@@ -42,6 +42,21 @@ class Settings(BaseSettings):
     REDIS_DB: int = 0
     REDIS_PASSWORD: str | None = None
 
+    # Public site URL, used to build links in emails (password reset, verify).
+    FRONTEND_URL: str = "http://localhost:3000"
+
+    # Outgoing email over plain SMTP -- works with any provider, including free
+    # tiers (Brevo, Gmail app password, Resend/SES SMTP). Unset = emails are
+    # logged instead of sent, so nothing breaks before a provider is chosen.
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
+    EMAIL_FROM: str = "3DVerse <no-reply@3dverse.local>"
+
+    # Optional error monitoring (free Sentry tier). Unset = disabled.
+    SENTRY_DSN: str | None = None
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property

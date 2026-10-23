@@ -73,6 +73,7 @@ class User(Base):
     capabilities = Column(JSON, nullable=True) # e.g. {"materials": ["PLA", "ABS"], "colors": ["red", "blue"]}
     
     is_active = Column(Boolean, default=True)
+    email_verified = Column(Boolean, default=False, nullable=False, server_default="false")
     # Bumped on password change; embedded in issued JWTs so a token minted
     # before the bump is rejected even though it hasn't expired yet.
     token_version = Column(Integer, default=0, nullable=False)

@@ -99,6 +99,9 @@ export function Footer() {
             <ul className="space-y-2.5">
               {[
                 { href: "/about", label: "About" },
+                { href: "/contact", label: "Contact" },
+                { href: "/shipping", label: "Shipping" },
+                { href: "/refund-policy", label: "Returns & Refunds" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
@@ -120,12 +123,12 @@ export function Footer() {
             © {new Date().getFullYear()} 3DVerse. All rights reserved.
           </p>
           <div className="flex gap-6">
-            <span className="text-xs text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+            <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               Privacy Policy
-            </span>
-            <span className="text-xs text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+            </Link>
+            <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               Terms of Service
-            </span>
+            </Link>
           </div>
         </div>
       </div>

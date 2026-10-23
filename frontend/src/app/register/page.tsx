@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 const registerSchema = z
   .object({
     email: z.string().email("Please enter a valid email"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
     role: z.enum(["customer", "creator", "print_partner"]),
     pincode: z.string().optional(),
@@ -220,6 +220,12 @@ export default function RegisterPage() {
                 )}
               </Button>
             </form>
+
+            <p className="text-center text-xs text-muted-foreground mt-4">
+              By creating an account you agree to our{" "}
+              <Link href="/terms" className="underline hover:text-foreground">Terms</Link> and{" "}
+              <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>.
+            </p>
 
             <p className="text-center text-sm text-muted-foreground mt-6">
               Already have an account?{" "}

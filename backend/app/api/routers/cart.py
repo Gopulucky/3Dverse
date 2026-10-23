@@ -2,6 +2,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.api import deps
+from app.core.rate_limit import rate_limit
 from app.models.user import User
 from app.models.product import Product
 from app.models.cart import Cart, CartItem
@@ -96,7 +97,7 @@ def remove_cart_item(
     db.refresh(cart)
     return cart
 
-@router.post("/apply-coupon")
+@router.post("/apply-coupon", dependencies=[Depends(rate_limit("apply_coupon", limit=15, window_seconds=600))])
 def apply_coupon(
     req: CouponApplyRequest,
     db: Session = Depends(deps.get_db),

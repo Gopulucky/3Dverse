@@ -14,6 +14,21 @@ from contextlib import asynccontextmanager
 
 logger = logging.getLogger("3dverse")
 
+# Optional error monitoring (free Sentry tier). Does nothing unless SENTRY_DSN is
+# set, and a missing sentry-sdk package never stops the API from starting.
+if settings.SENTRY_DSN:
+    try:
+        import sentry_sdk
+
+        sentry_sdk.init(
+            dsn=settings.SENTRY_DSN,
+            environment=settings.ENVIRONMENT,
+            traces_sample_rate=0.0,
+            send_default_pii=False,
+        )
+    except ImportError:
+        logger.warning("SENTRY_DSN is set but sentry-sdk is not installed; monitoring disabled.")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup

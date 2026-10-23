@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.api import deps
+from app.core.rate_limit import rate_limit
 from app.models.user import User
 from app.models.cart import Cart
 from app.models.order import Order, OrderItem
@@ -204,7 +205,7 @@ def list_return_requests(
     ]
 
 
-@router.post("/confirm", response_model=OrderResponse)
+@router.post("/confirm", response_model=OrderResponse, dependencies=[Depends(rate_limit("order_confirm", limit=20, window_seconds=3600))])
 def confirm_order(
     req: OrderCreate,
     db: Session = Depends(deps.get_db),

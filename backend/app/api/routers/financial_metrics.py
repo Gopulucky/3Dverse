@@ -176,8 +176,16 @@ def log_batch(
 def get_units_remaining(
     product_id: int,
     db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
-    """Get whole units remaining for a product (floor of scarcest material)."""
+    """Get whole units remaining for a product (floor of scarcest material).
+
+    Internal stock data: it used to be readable by anyone, including anonymous
+    visitors, for any product id. Now only the product's creator (or an admin).
+    """
+    owner_id = db.query(Product.creator_id).filter(Product.id == product_id).scalar()
+    if owner_id is None or (owner_id != current_user.id and current_user.role.value != "admin"):
+        raise HTTPException(404, "Product not found")
     units = filament.whole_units_remaining(db, product_id)
     return {
         "product_id": product_id,

@@ -70,20 +70,45 @@ def test_spoofed_first_forwarded_for_entry_cannot_dodge_the_limit(monkeypatch):
         run(limiter(make_request(forwarded_for="9.9.9.3, 5.5.5.5")))
 
 
-def test_fails_open_when_redis_is_unavailable(monkeypatch):
+@pytest.fixture(autouse=True)
+def _fresh_memory_counter():
+    rl.memory_counter.reset()
+    yield
+    rl.memory_counter.reset()
+
+
+def test_falls_back_to_memory_limit_when_redis_is_unavailable(monkeypatch):
+    # Production currently runs without Redis; the limit must still apply there.
     monkeypatch.setattr(rl, "redis_client", Holder(None))
-    limiter = rl.rate_limit("login", limit=1, window_seconds=60)
-    for _ in range(5):
-        run(limiter(make_request()))  # must not raise: auth stays up without Redis
+    limiter = rl.rate_limit("login", limit=3, window_seconds=60)
+    req = make_request(peer="3.3.3.3")
+    for _ in range(3):
+        run(limiter(req))
+    with pytest.raises(HTTPException) as exc:
+        run(limiter(req))
+    assert exc.value.status_code == 429
+    run(limiter(make_request(peer="4.4.4.4")))  # other clients unaffected
 
 
-def test_fails_open_when_redis_errors_mid_request(monkeypatch):
+def test_falls_back_to_memory_limit_when_redis_errors_mid_request(monkeypatch):
     class Broken(FakeRedis):
         async def incr(self, key):
             raise ConnectionError("boom")
 
     monkeypatch.setattr(rl, "redis_client", Holder(Broken()))
-    run(rl.rate_limit("login", limit=1, window_seconds=60)(make_request()))
+    limiter = rl.rate_limit("login", limit=1, window_seconds=60)
+    run(limiter(make_request()))  # an erroring Redis must not take login offline
+    with pytest.raises(HTTPException):
+        run(limiter(make_request()))
+
+
+def test_memory_window_expires(monkeypatch):
+    clock = {"now": 100.0}
+    monkeypatch.setattr(rl.time, "monotonic", lambda: clock["now"])
+    assert rl.memory_counter.hit("k", 60) == 1
+    assert rl.memory_counter.hit("k", 60) == 2
+    clock["now"] += 61
+    assert rl.memory_counter.hit("k", 60) == 1
 
 
 # --- reconnect cooldown (the per-request reconnect fix) --------------------------

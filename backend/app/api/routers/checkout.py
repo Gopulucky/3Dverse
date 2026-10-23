@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.api import deps
+from app.core.rate_limit import rate_limit
 from app.models.user import User
 from app.models.cart import Cart, CartItem
 from app.services.coupons import InvalidCoupon, compute_discount, get_valid_coupon
@@ -22,7 +23,7 @@ class CheckoutResponse(BaseModel):
     client_secret: str
     total: float
 
-@router.post("/create-payment-intent", response_model=CheckoutResponse)
+@router.post("/create-payment-intent", response_model=CheckoutResponse, dependencies=[Depends(rate_limit("checkout", limit=30, window_seconds=3600))])
 def create_payment_intent(
     req: CheckoutRequest,
     db: Session = Depends(deps.get_db),

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api import deps
+from app.core.rate_limit import rate_limit
 from app.models.user import User
 from app.models.product import Product
 from app.models.review import Review
@@ -19,7 +20,7 @@ def get_reviews(
     reviews = db.query(Review).filter(Review.product_id == product_id).all()
     return reviews
 
-@router.post("/{product_id}", response_model=ReviewResponse)
+@router.post("/{product_id}", response_model=ReviewResponse, dependencies=[Depends(rate_limit("post_review", limit=20, window_seconds=3600))])
 def submit_review(
     product_id: int,
     review_in: ReviewCreate,

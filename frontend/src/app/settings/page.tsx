@@ -131,6 +131,29 @@ export default function CustomerSettingsPage() {
         </p>
       </div>
 
+      {profile && profile.email_verified === false && (
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <span>
+            Please verify your email address ({profile.email}). We sent you a link when you signed up.
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              try {
+                await api.post("/api/auth/resend-verification");
+                toast.success("Verification email sent. Check your inbox.");
+              } catch (err: any) {
+                toast.error(err?.detail || "Could not send the email right now.");
+              }
+            }}
+          >
+            Resend link
+          </Button>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Personal Info */}
         <Card className="p-6 border-border">
