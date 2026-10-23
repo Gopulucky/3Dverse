@@ -376,7 +376,7 @@ export function Navbar() {
                           return (
                             <button
                               key={p.id}
-                              onMouseDown={() => { setShowSuggestions(false); router.push(`/marketplace/products/${p.id}`); }}
+                              onMouseDown={() => { setShowSuggestions(false); router.push(`/marketplace/${p.id}`); }}
                               className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/60 transition-colors", activeIdx === idx && "bg-muted")}
                             >
                               <Search size={13} className="text-muted-foreground shrink-0" />
@@ -571,6 +571,8 @@ export function Navbar() {
                 size="icon"
                 className="md:hidden"
                 onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label={mobileOpen ? "Close menu" : "Open menu"}
+                aria-expanded={mobileOpen}
               >
                 {mobileOpen ? <X size={20} /> : <Menu size={20} />}
               </Button>
