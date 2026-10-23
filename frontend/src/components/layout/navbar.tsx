@@ -416,8 +416,8 @@ export function Navbar() {
                       href={link.href}
                       className={cn(
                         "flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-colors whitespace-nowrap",
-                        isActive 
-                          ? cn(creatorPath?.accentBg || "bg-primary/10", creatorPath?.accent || "text-primary")
+                        isActive
+                          ? cn(creatorPath?.accentBg || "bg-ember/10", creatorPath?.accent || "text-ember")
                           : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >
