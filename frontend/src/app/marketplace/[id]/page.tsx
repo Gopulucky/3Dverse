@@ -280,6 +280,7 @@ export default function ProductDetailPage() {
                     src={api.mediaUrl(m.media_url)}
                     className="w-16 h-16 object-cover rounded-lg border border-border hover:border-primary/50 transition-colors cursor-pointer"
                     alt="thumbnail"
+                    onError={(e) => { e.currentTarget.style.display = "none"; }}
                   />
                 ))}
               </div>

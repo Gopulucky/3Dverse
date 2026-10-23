@@ -38,6 +38,9 @@ export function ProductCard({
   const { isAuthenticated } = useAuthStore();
   const { increment } = useCartStore();
   const [isAdding, setIsAdding] = useState(false);
+  // A listed image can 404 (a file lost from storage); show the placeholder
+  // instead of the browser's broken-image icon.
+  const [imgFailed, setImgFailed] = useState(false);
 
   const mainImg =
     p.media?.find((m) => m.is_primary)?.media_url || p.media?.[0]?.media_url;
@@ -76,12 +79,13 @@ export function ProductCard({
     >
       {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-muted">
-        {mainImg ? (
+        {mainImg && !imgFailed ? (
           <img 
             src={api.mediaUrl(mainImg)} 
             alt={p.title}
             loading="lazy"
             decoding="async"
+            onError={() => setImgFailed(true)}
             className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-110"
           />
         ) : (

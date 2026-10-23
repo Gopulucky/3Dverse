@@ -30,6 +30,14 @@ services:
         sync: false
       - key: AWS_BUCKET_NAME
         sync: false
+      # Any S3-compatible store (e.g. Supabase Storage). The public bucket holds
+      # images shown on the site; AWS_BUCKET_NAME stays private for paid models.
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_PUBLIC_BUCKET_NAME
+        sync: false
+      - key: AWS_PUBLIC_BASE_URL
+        sync: false
       - key: REDIS_URL
         fromService:
           type: redis

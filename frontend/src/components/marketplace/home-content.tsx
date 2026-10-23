@@ -199,6 +199,8 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: any }) {
                         alt={category.name}
                         loading="lazy"
                         decoding="async"
+                        // A category image that 404s just hides; the dark tile and title remain.
+                        onError={(e) => { e.currentTarget.style.visibility = "hidden"; }}
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
                       <div className="absolute inset-0 flex items-center justify-center z-20">

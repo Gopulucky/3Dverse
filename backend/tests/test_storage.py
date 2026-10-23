@@ -95,3 +95,94 @@ def test_valid_upload_is_saved_with_a_random_name(tmp_path, monkeypatch):
     assert url.startswith("/uploads/images/") and url.endswith(".png")
     assert ".." not in url and "evil" not in url, "the user's filename must never reach the stored name"
     assert (tmp_path / "images" / url.rsplit("/", 1)[1]).read_bytes() == payload
+
+
+# --- public vs private bucket routing -----------------------------------------
+class FakeS3:
+    def __init__(self):
+        self.uploads = []
+
+    def upload_file(self, path, bucket, key, ExtraArgs=None):
+        self.uploads.append((bucket, key))
+
+
+def _configure_buckets(monkeypatch, *, public=True):
+    fake = FakeS3()
+    monkeypatch.setattr(storage, "get_s3_client", lambda: fake)
+    monkeypatch.setattr(storage, "AWS_BUCKET_NAME", "private-models")
+    monkeypatch.setattr(storage, "AWS_S3_ENDPOINT_URL", "https://x.supabase.co/storage/v1/s3")
+    monkeypatch.setattr(storage, "AWS_PUBLIC_BUCKET_NAME", "public-media" if public else None)
+    monkeypatch.setattr(
+        storage, "AWS_PUBLIC_BASE_URL",
+        "https://x.supabase.co/storage/v1/object/public/public-media" if public else None,
+    )
+    return fake
+
+
+@pytest.mark.parametrize("folder", ["media", "images", "avatars", "portfolio", "media/previews"])
+def test_public_folders_use_the_public_bucket_and_a_plain_url(monkeypatch, folder):
+    _configure_buckets(monkeypatch)
+    bucket, url = storage.storage_target(folder, f"{folder}/abc.jpg")
+    assert bucket == "public-media"
+    assert url == f"https://x.supabase.co/storage/v1/object/public/public-media/{folder}/abc.jpg"
+
+
+@pytest.mark.parametrize("folder", ["models", "designs", "certifications", "commission_deliveries"])
+def test_private_folders_never_use_the_public_bucket(monkeypatch, folder):
+    _configure_buckets(monkeypatch)
+    bucket, url = storage.storage_target(folder, f"{folder}/abc.stl")
+    assert bucket == "private-models"
+    assert "/object/public/" not in url
+
+
+def test_without_a_public_bucket_everything_uses_the_private_one(monkeypatch):
+    _configure_buckets(monkeypatch, public=False)
+    bucket, _ = storage.storage_target("media", "media/abc.jpg")
+    assert bucket == "private-models"
+
+
+def test_no_object_storage_means_local_disk(monkeypatch):
+    monkeypatch.setattr(storage, "get_s3_client", lambda: None)
+    assert storage.storage_target("media", "media/abc.jpg") is None
+
+
+def test_image_upload_goes_to_the_public_bucket_and_leaves_no_local_copy(tmp_path, monkeypatch):
+    fake = _configure_buckets(monkeypatch)
+    monkeypatch.setattr(storage, "LOCAL_UPLOADS_DIR", str(tmp_path))
+    payload = b"\x89PNG\r\n\x1a\n" + b"0" * 100
+
+    url, size = asyncio.run(
+        storage.save_upload_file(UploadFile(filename="a.png", file=io.BytesIO(payload)), subfolder="media")
+    )
+    assert url.startswith("https://x.supabase.co/storage/v1/object/public/public-media/media/")
+    assert fake.uploads and fake.uploads[0][0] == "public-media"
+    assert list((tmp_path / "media").glob("*")) == []
+
+
+def test_model_upload_goes_to_the_private_bucket(tmp_path, monkeypatch):
+    fake = _configure_buckets(monkeypatch)
+    monkeypatch.setattr(storage, "LOCAL_UPLOADS_DIR", str(tmp_path))
+
+    url, _ = asyncio.run(
+        storage.save_upload_file(UploadFile(filename="m.stl", file=io.BytesIO(b"solid x")), subfolder="models")
+    )
+    assert fake.uploads[0][0] == "private-models"
+    assert "/object/public/" not in url
+
+
+def test_failed_cloud_upload_falls_back_to_local_disk(tmp_path, monkeypatch):
+    from botocore.exceptions import BotoCoreError
+
+    class Broken(FakeS3):
+        def upload_file(self, *a, **k):
+            raise BotoCoreError()
+
+    _configure_buckets(monkeypatch)
+    monkeypatch.setattr(storage, "get_s3_client", lambda: Broken())
+    monkeypatch.setattr(storage, "LOCAL_UPLOADS_DIR", str(tmp_path))
+    payload = b"\x89PNG\r\n\x1a\n" + b"0" * 10
+
+    url, _ = asyncio.run(
+        storage.save_upload_file(UploadFile(filename="a.png", file=io.BytesIO(payload)), subfolder="media")
+    )
+    assert url.startswith("/uploads/media/")

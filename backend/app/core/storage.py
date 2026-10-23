@@ -32,6 +32,20 @@ AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 # other -- and vanishes entirely on the next deploy.
 AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL") or None
 
+# Optional second, *public* bucket for images and other files the whole site shows
+# (product photos, avatars, portfolio, preview meshes). A browser <img> tag cannot
+# authenticate, so these need a plain public URL -- an S3-API address such as
+# Supabase's /storage/v1/s3/... endpoint requires credentials and would show as a
+# broken image. Paid model files stay in AWS_BUCKET_NAME, which must be private.
+#   AWS_PUBLIC_BUCKET_NAME  the public bucket's name
+#   AWS_PUBLIC_BASE_URL     the URL prefix that serves it publicly, e.g. Supabase:
+#                           https://<ref>.supabase.co/storage/v1/object/public/<bucket>
+AWS_PUBLIC_BUCKET_NAME = os.getenv("AWS_PUBLIC_BUCKET_NAME") or None
+AWS_PUBLIC_BASE_URL = (os.getenv("AWS_PUBLIC_BASE_URL") or "").rstrip("/") or None
+
+# Top-level upload folders that are public (matches the static mounts in main.py).
+PUBLIC_SUBFOLDERS = {"media", "images", "avatars", "portfolio"}
+
 # Local fallback directory
 LOCAL_UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 
@@ -101,6 +115,21 @@ def object_url(object_name: str) -> str:
     return f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{object_name}"
 
 
+def storage_target(subfolder: str, object_name: str):
+    """Where an object goes and how it is addressed afterwards.
+
+    Returns (bucket, url), or None if no object storage is configured (the file
+    then stays on local disk). Public folders use the public bucket when one is
+    configured; everything else uses the private bucket."""
+    if get_s3_client() is None:
+        return None
+    if AWS_PUBLIC_BUCKET_NAME and AWS_PUBLIC_BASE_URL and subfolder.split("/")[0] in PUBLIC_SUBFOLDERS:
+        return AWS_PUBLIC_BUCKET_NAME, f"{AWS_PUBLIC_BASE_URL}/{object_name}"
+    if AWS_BUCKET_NAME:
+        return AWS_BUCKET_NAME, object_url(object_name)
+    return None
+
+
 def s3_key_for(url: str) -> str:
     """Recover an object key from a stored URL, for either addressing style.
 
@@ -159,21 +188,23 @@ async def save_upload_file(
         _remove_quietly(file_path)
         raise
 
-    s3_client = get_s3_client()
-    if s3_client and AWS_BUCKET_NAME:
-        object_name = f"{subfolder}/{unique_filename}"
+    object_name = f"{subfolder}/{unique_filename}"
+    target = storage_target(subfolder, object_name)
+    if target:
+        bucket, public_url = target
+        s3_client = get_s3_client()
         try:
             await run_in_threadpool(
                 s3_client.upload_file,
                 file_path,
-                AWS_BUCKET_NAME,
+                bucket,
                 object_name,
                 ExtraArgs={
                     "ContentType": upload_file.content_type or "application/octet-stream"
                 },
             )
             _remove_quietly(file_path)
-            return object_url(object_name), file_size
+            return public_url, file_size
         except (ClientError, BotoCoreError) as e:
             # Keep the file we already streamed to disk and serve it from there
             # rather than failing an upload the user has already waited for.
@@ -243,13 +274,14 @@ def store_local_file(source_path: str, subfolder: str, extension: str) -> str:
     """Publish a file the worker generated (e.g. a preview mesh) into shared
     storage and return its URL. Synchronous — this runs inside Celery tasks."""
     unique_filename = f"{uuid.uuid4()}.{extension.lstrip('.')}"
-    s3_client = get_s3_client()
+    object_name = f"{subfolder}/{unique_filename}"
+    target = storage_target(subfolder, object_name)
 
-    if s3_client and AWS_BUCKET_NAME:
-        object_name = f"{subfolder}/{unique_filename}"
+    if target:
+        bucket, public_url = target
         try:
-            s3_client.upload_file(source_path, AWS_BUCKET_NAME, object_name)
-            return object_url(object_name)
+            get_s3_client().upload_file(source_path, bucket, object_name)
+            return public_url
         except (ClientError, BotoCoreError) as e:
             logger.warning("S3 upload of generated file failed: %s", e)
 
