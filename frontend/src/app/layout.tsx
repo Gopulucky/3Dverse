@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { preconnect } from "react-dom";
 import { BRAND } from "@/lib/brand";
+import { API_URL } from "@/lib/api";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://3dverse.com";
 
@@ -11,7 +13,7 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-space-grotesk",
   display: "swap",
-  weight: ["400", "500", "600", "700"],
+  weight: ["500", "600", "700"],
 });
 
 // Body — paragraphs, UI labels, buttons, nav
@@ -27,7 +29,9 @@ const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   variable: "--font-ibm-plex-mono",
   display: "swap",
-  weight: ["400", "500", "600"],
+  weight: ["400", "500"],
+  // Only prices/IDs use it; don't spend first-paint bandwidth preloading it.
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -64,6 +68,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Open the TCP/TLS connection to the API while the HTML is still parsing, so
+  // the first data request (and product images) skip the handshake.
+  try {
+    preconnect(new URL(API_URL).origin);
+  } catch {}
   return (
     <html lang="en" suppressHydrationWarning>
       <body

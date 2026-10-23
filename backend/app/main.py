@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.api.routers import auth, products, marketplace, wishlist, reviews, cart, checkout, orders, partner, analytics, notifications, creator, creator_materials, financial_metrics, admin_metrics, ads, export, admin, onboarding, designer, collaboration, commissions, users, downloads, stock
 from app.core.config import settings
@@ -76,6 +77,20 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+class ApiGZipMiddleware(GZipMiddleware):
+    """gzip for JSON/API responses only. Uploaded images/models are already
+    compressed formats; re-gzipping them burns CPU for no size win."""
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["path"].startswith("/uploads/"):
+            await self.app(scope, receive, send)
+            return
+        await super().__call__(scope, receive, send)
+
+
+# JSON product lists compress ~5-10x; added after CORS so it wraps it (outermost).
+app.add_middleware(ApiGZipMiddleware, minimum_size=1024, compresslevel=5)
 
 @app.middleware("http")
 async def no_sniff(request, call_next):

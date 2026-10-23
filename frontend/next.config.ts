@@ -13,6 +13,11 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Don't advertise the framework/version in an X-Powered-By header.
   poweredByHeader: false,
+  compress: true,
+  // Import only the icons/charts actually used instead of whole barrel files.
+  experimental: {
+    optimizePackageImports: ["lucide-react", "recharts", "@radix-ui/react-dropdown-menu", "@radix-ui/react-select", "@radix-ui/react-tabs"],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

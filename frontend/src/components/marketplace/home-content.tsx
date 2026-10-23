@@ -82,10 +82,14 @@ function ProductSection({
  * (the canonical portal destination after login) so there is exactly one
  * implementation to keep in sync.
  */
-export function MarketplaceHomeContent() {
+export function MarketplaceHomeContent({ initialData }: { initialData?: any }) {
+  // initialData is fetched on the server (see app/page.tsx) so the product rows
+  // are already in the HTML. Without it the visitor waits for HTML, then JS,
+  // then a round trip to the API before seeing a single product.
   const { data, isLoading } = useQuery({
     queryKey: ["homepage"],
     queryFn: () => api.get<any>("/api/marketplace/homepage"),
+    initialData,
   });
 
   return (
