@@ -110,6 +110,16 @@ The standalone support check assumes an unconfigured destination; pass the expec
 
 These scripts intercept API responses. They do not prove that a deployed backend, Firebase project, card payment or carrier works. They use installed Microsoft Edge by default; set `BROWSER_CHANNEL=chromium` after installing Playwright Chromium on Linux. See CI for the automated commands. Existing frontend lint debt is tracked separately from the critical-flow lint checks.
 
+## Measure website speed
+
+From `frontend/`, run:
+
+```bash
+npm run perf -- --url https://3dverse-tan.vercel.app/ --profile mobile --runs 3
+```
+
+The analyzer writes timing measurements, slow/unfinished requests and improvement leads to ignored `frontend/performance-reports/` as Markdown and JSON. It can also test other website URLs and a specific feature's visible loading time. See the [performance guide](docs/performance.md) for profiles, budgets, interpretation and local tests. These are lab observations, not a Lighthouse score or real-user assessment.
+
 ## Project structure
 
 ```text
