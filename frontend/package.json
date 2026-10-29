@@ -8,8 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "lint:critical": "eslint src/components/auth src/lib/firebase.ts src/lib/api.ts src/lib/currency.ts src/lib/marketplace.ts src/lib/support.ts src/stores/auth-store.ts src/components/shared/product-prices.tsx src/components/settings/delete-account.tsx src/components/layout/auth-card.tsx src/components/layout/footer.tsx src/app/login/page.tsx src/app/register/page.tsx src/app/forgot-password/page.tsx src/app/checkout/page.tsx src/app/partner/page.tsx src/app/sell/page.tsx src/app/support/page.tsx src/app/sitemap.ts scripts/auth-smoke.mjs scripts/partner-smoke.mjs scripts/customer-options-smoke.mjs scripts/browser-check.mjs scripts/support-test.mjs scripts/support-smoke.mjs",
-    "test:unit": "node scripts/currency-test.mjs && node scripts/purchase-options-test.mjs && node scripts/order-download-test.mjs && node scripts/support-test.mjs",
+    "test:unit": "node scripts/currency-test.mjs && node scripts/purchase-options-test.mjs && node scripts/order-download-test.mjs && node scripts/support-test.mjs && node --test scripts/performance/core.test.mjs",
     "test:browser": "node scripts/browser-check.mjs",
+    "perf": "node scripts/performance-audit.mjs",
+    "lint:performance": "eslint scripts/performance scripts/performance-audit.mjs scripts/performance-smoke.mjs",
+    "test:performance": "node scripts/performance-smoke.mjs",
     "ui-scan": "node scripts/ui-scan.mjs"
   },
   "dependencies": {

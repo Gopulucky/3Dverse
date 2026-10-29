@@ -36,6 +36,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint:critical
+      - run: npm run lint:performance
       - run: npm run test:unit
       - run: npx tsc --noEmit
       - run: npm run build
@@ -43,6 +44,9 @@ jobs:
           NEXT_PUBLIC_API_URL: https://example.invalid
           NEXT_PUBLIC_BUG_DETECTOR: "0"
       - run: npx playwright install --with-deps chromium
+      - run: npm run test:performance
+        env:
+          BROWSER_CHANNEL: chromium
       - run: npm run test:browser
         env:
           BROWSER_CHANNEL: chromium
