@@ -1,104 +1,120 @@
 # 3DVerse
 
-3DVerse is a marketplace connecting 3D creators, customers, and manufacturing/print partners.
+**Buy a finished 3D-printed product, or download a 3D file to print yourself.**
 
-## Architecture
+3DVerse is a customer marketplace for independent 3D creators. Customers can browse without an account, choose a printed product or a digital download, and use their account to track orders and access purchased files. Creators manage their listings; print partners handle production and delivery.
 
-- **Frontend:** Next.js + React + TypeScript + Tailwind CSS (in `/frontend`)
-- **Backend:** FastAPI (Python) (in `/backend`)
-- **Database:** PostgreSQL
-- **Cache/Queue:** Redis
+The first launch targets **India, with prices in INR**. The application is under active development. Google sign-in, payments and shipping require the operator setup below before they can serve real customers.
 
-## Setup
+## The customer journey
 
-1. **Infrastructure**:
-   ```bash
-   docker-compose up -d
-   ```
-2. **Backend**:
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   alembic upgrade head
-   uvicorn app.main:app --reload
-   ```
-3. **Frontend**:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+1. Choose **printed products** if you want something delivered. You do not need a 3D printer.
+2. Choose **3D files** if you have access to a printer and want a digital download.
+3. Review the listing, select the purchase option, and add it to your cart.
+4. Sign in when you are ready to order. Google and email sign-in use Firebase Auth when configured; existing password accounts have a migration path.
+5. Payment confirmation comes from the provider. Paid digital files are accessed through authenticated downloads; physical orders show production and delivery progress.
 
-### Optional data scripts (`backend/scripts/`)
+## What is implemented
 
-Not run automatically -- use only if you want this data locally:
-- `seed_demo.py` -- demo creators/products/orders/reviews (logins: `maya@3dverse.demo` / `arjun@3dverse.demo`, password `password123`)
-- `seed_materials.py` -- the platform Material catalog (PLA, ABS, etc.)
-- `seed_collaboration.py` -- sample print-partner collaboration tickets
-- `generate_embeddings.py` -- backfill search embeddings for any product missing one
+| Area | Behaviour |
+| --- | --- |
+| Storefront | Clear print/file entry points, search, format filters, sorting, pagination, and distinct loading, empty and error states |
+| Accounts | Customer-first registration, Firebase Google/email integration, server-owned roles, and explicit linking for existing accounts |
+| Purchasing | Separate digital and physical options; explicit currency; an order snapshot saved before a Stripe payment attempt |
+| Confirmation | Signed, replay-safe webhooks validate the order, customer, intent, amount and currency before granting payment status |
+| Fulfilment | Guarded production status transitions, parcel/contact validation, and shipping failures that remain visible |
+| Files | Authenticated access to purchased/private files, with a corrected partner identity check |
+| Operations | Creator and partner portals, PostgreSQL migrations, Redis/Celery jobs, and CI checks |
 
-Run from `backend/` with the venv active, e.g. `python scripts/seed_demo.py`.
+## Before taking customer payments
 
-## Roles
+This repository is not evidence of a live merchant, shipping or Firebase account. Follow the [launch guide](docs/customer-launch.md) before opening checkout to customers.
 
-- **Creator**: Can upload 3D models and sell digital/physical prints.
-- **Customer**: Can buy models and order prints.
-- **Print Partner**: Fulfills print-on-demand orders.
-- **Admin**: Manages the platform.
+- Create a Firebase project, enable Google and email/password authentication, add the web configuration, and configure server-only Admin credentials.
+- Back up the database and run migrations. Existing USD prices stay USD; creators must explicitly enter INR prices. No automatic currency conversion occurs.
+- Activate and verify the chosen merchant account for the Indian business. The current integration is Stripe; confirm your business can use it before relying on it.
+- Configure signed webhooks, the INR shipping fee, Shiprocket, private/public object storage, and email delivery. Verify the full flow in the deployed environment.
+- Refund settlement and creator/partner payouts remain operator work. The app blocks unsupported refund completion and production commission/collaboration payment shortcuts.
+- Publish accurate business, contact, privacy, delivery and refund information. Complete a real test order, delivery, cancellation/refund procedure and backup restore drill.
 
-## Phase 1 Implementation (Finished)
-- Initial Monorepo Setup
-- Docker-compose for Postgres & Redis
-- FastAPI User Authentication Flow (JWT, Users Table)
-- Next.js scaffolding with Login & Register pages
+## Run locally
 
-## Phase 2 Implementation (Finished)
-- Creator Dashboard UI
-- 3D Model File Uploads (.stl, .obj, .3mf, .step, .fbx, .blend)
-- Live 3D Model Preview using Three.js / React Three Fiber
-- Product Media (Images/Videos) Management
+Requirements: Node.js 22, Python 3.13, Docker Compose, and the services configured in the example environment files. Use a Python virtual environment so project dependencies remain isolated.
 
-## Phase 3 Implementation (Finished)
-- Asynchronous Task Queue using Celery + Redis
-- Automated Printability Analysis for uploaded 3D Models
-- Printability Report generation (Pass/Warning/Fail, volume & dimensions)
+```bash
+docker compose up -d
+```
 
-## Phase 4 Implementation (Finished)
-- Product Publishing Pipeline (requires passing Printability Report)
-- Configurable Product Modes (Digital Downloads, Physical Prints, Customizable Merch)
-- JSON-schema based configuration for Mode 4 (Customizable Fields)
-- Creator UI for toggling modes and configuring product specific settings
+Copy `backend/.env.example` to `backend/.env` and `frontend/.env.example` to `frontend/.env.local`. Keep the local database values unless you intentionally configure another database. Never commit credentials.
 
-## Phase 5 Implementation (Finished)
-- Customer Marketplace Homepage (Featured, Trending, New Arrivals, Categories)
-- Product Listing & Detail Pages with integrated 3D Model Preview
-- Full-text search (Postgres tsvector) with dynamic filtering (Category, Price range)
-- Customer Wishlist API & UI functionality
-- Review System (Ratings & Text), gated to verified purchasers
+```bash
+cd backend
+python -m venv venv
+# macOS/Linux: source venv/bin/activate
+# Windows PowerShell: .\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload
+```
 
-## Phase 6 Implementation (Finished)
-- Cart model and APIs (add, remove, update quantity)
-- Coupon system (flat & percentage discounts, usage limits)
-- Checkout flow with Stripe Payment Intents integration (Test Mode)
-- Order & OrderItem models with automated confirmation logic
-- Simple HTML-to-PDF invoice generation (using reportlab) available in Order History
+In a separate terminal:
 
-## Phase 7 Implementation (Finished)
-- Print Partner role dashboard and incoming job queue
-- Print-partner assignment logic via basic pincode matching
-- Shiprocket API integration (mocked) for generating shipping labels
-- Order status timeline component on the customer order page
+```bash
+cd frontend
+npm ci
+npm run dev
+```
 
-## Phase 8 Implementation (Finished)
-- AI Intelligence Layer integrated with `pgvector`
-- Natural-language product search via hybrid search (keyword + semantic) using `sentence-transformers`
-- "Similar products" AI recommendation engine on the product detail page based on embedding cosine similarity
-- *(Note: Support Chatbot module was intentionally skipped as per project requirements)*
+Open `http://localhost:3000`. Development API documentation is at `http://127.0.0.1:8000/docs`. Start the Celery worker for background analysis and preview jobs:
 
-## Phase 9 Implementation (Finished)
-- Analytics & Business Intelligence Layer tapping live Postgres data
-- Role-specific API endpoints (`/api/analytics/creator` & `/api/analytics/admin`) with dynamic date filtering
-- Interactive Creator BI Dashboard charting live revenue trends over time using `recharts`
-- Dedicated Admin Platform visualising global user growth, physical vs digital sales volume, and overall marketplace health
+```bash
+cd backend
+celery -A app.core.celery_app worker --loglevel=info
+```
+
+Windows users can use a Linux container or WSL for Celery. Optional scripts in `backend/scripts/` seed demonstration data or backfill embeddings. Run them only against an intended development database; demonstration accounts and data are not production inventory.
+
+## Verify changes
+
+```bash
+cd backend
+python -m pytest -q -p no:cacheprovider
+```
+
+```bash
+cd frontend
+node scripts/currency-test.mjs
+node scripts/purchase-options-test.mjs
+npx tsc --noEmit
+npm run build
+```
+
+With the frontend running, the Playwright fixture checks cover browsing, purchase choices, sign-in clarity and the partner queue:
+
+```bash
+node scripts/marketplace-smoke.mjs http://127.0.0.1:3000
+node scripts/customer-options-smoke.mjs http://127.0.0.1:3000
+node scripts/auth-smoke.mjs http://127.0.0.1:3000
+node scripts/partner-smoke.mjs http://127.0.0.1:3000
+```
+
+These scripts intercept API responses. They do not prove that a deployed backend, Firebase project, card payment or carrier works. They use installed Microsoft Edge by default; set `BROWSER_CHANNEL=chromium` after installing Playwright Chromium on Linux. See CI for the automated commands. Existing frontend lint debt is tracked separately from the critical-flow lint checks.
+
+## Project structure
+
+```text
+frontend/     Next.js, React, TypeScript and Tailwind customer/operations UI
+backend/      FastAPI, SQLAlchemy, Alembic, Stripe, Firebase Admin and Celery
+docs/         Launch and implementation notes
+.github/      Continuous integration
+```
+
+PostgreSQL stores marketplace accounts, products and orders. Firebase handles authentication only; it does not replace the marketplace database. Redis supports cache and background jobs. Paid files belong in private object storage, separate from public catalogue images.
+
+## Contributing and security
+
+Useful contributions improve customer understanding, accessibility, purchasing reliability or operations. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and [SECURITY.md](SECURITY.md) for private vulnerability reporting. A useful product and honest documentation can earn interest; no repository change can guarantee GitHub Trending placement.
+
+## License
+
+Project source is available under the [MIT License](LICENSE). Third-party dependencies keep their own licenses. Customer uploads, creator designs and trademarks are not granted a license by this repository.

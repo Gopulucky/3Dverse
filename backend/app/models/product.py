@@ -35,6 +35,7 @@ class Product(Base):
     category = Column(String, index=True, nullable=True)
     tags = Column(JSON, nullable=True)
     price = Column(Float, nullable=False, default=0.0)
+    currency = Column(String(3), nullable=False, default="INR", server_default="INR")
     license_type = Column(String, nullable=True)
     status = Column(Enum(ProductStatus), default=ProductStatus.draft, nullable=False)
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)

@@ -1,246 +1,91 @@
 "use client";
 
-import { useEffect, useState, Suspense, useCallback } from "react";
+import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
-import { Search, SlidersHorizontal, PackageX, ChevronRight } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { type ProductCardData } from "@/lib/marketplace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/auth-store";
 import { MarketplaceShell } from "@/components/layout/marketplace-shell";
 import { ProductCard } from "@/components/shared/product-card";
 
-const CATEGORIES = [
-  "Tabletop",
-  "Jewelry",
-  "Cosplay",
-  "Miniatures",
-  "Home Decor",
-  "Gadgets",
-];
+const CATEGORIES = ["Tabletop", "Jewelry", "Cosplay", "Miniatures", "Home Decor", "Gadgets", "Architecture", "Engineering", "Medical", "Gaming"];
+const PAGE_SIZE = 20;
 
 function MarketplaceContent() {
-  const searchParams = useSearchParams();
-  const initialQuery = searchParams.get("q") || "";
-  const initialCategory = searchParams.get("category") || "";
+  const search = useSearchParams();
+  const router = useRouter();
   const { isAuthenticated } = useAuthStore();
-
-  const [query, setQuery] = useState(initialQuery);
-  const [category, setCategory] = useState(initialCategory);
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [sortBy, setSortBy] = useState("featured");
-  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
-  const [filtersKey, setFiltersKey] = useState(0);
-
-  // Sync state with URL changes
-  useEffect(() => {
-    setQuery(initialQuery);
-    setDebouncedQuery(initialQuery);
-  }, [initialQuery]);
-
-  useEffect(() => {
-    setCategory(initialCategory);
-  }, [initialCategory]);
-
-  const buildParams = useCallback(() => {
-    const params: Record<string, string> = {};
-    if (debouncedQuery) params.q = debouncedQuery;
-    if (category) params.category = category;
-    if (minPrice) params.min_price = minPrice;
-    if (maxPrice) params.max_price = maxPrice;
-    if (sortBy) params.sort = sortBy;
-    return params;
-  }, [debouncedQuery, category, minPrice, maxPrice, sortBy]);
-
-  const {
-    data: products = [],
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ["marketplace-products", debouncedQuery, category, minPrice, maxPrice, sortBy, filtersKey],
-    queryFn: () =>
-      api.get<any[]>("/api/marketplace/products", buildParams()),
+  const format = search.get("format") || "";
+  const page = Math.max(1, Number.parseInt(search.get("page") || "1", 10) || 1);
+  const params: Record<string, string> = { skip: String((page - 1) * PAGE_SIZE), limit: "21" };
+  for (const key of ["q", "category", "format", "currency", "sort", "min_price", "max_price"]) {
+    const value = search.get(key);
+    if (value) params[key] = value;
+  }
+  const { data = [], isLoading, isError, isFetching, refetch } = useQuery({
+    queryKey: ["marketplace-products", params],
+    queryFn: () => api.get<ProductCardData[]>("/api/marketplace/products", params),
+    retry: false,
   });
-
-  const handleAddToWishlist = async (productId: number) => {
-    if (!isAuthenticated) {
-      toast.error("Please login to add to wishlist");
-      return;
-    }
-
-    try {
-      await api.post(`/api/wishlist/${productId}`);
-      toast.success("Added to wishlist!");
-    } catch {
-      toast.error("Failed to add to wishlist");
-    }
+  const products = data.slice(0, PAGE_SIZE);
+  const hasNext = data.length > PAGE_SIZE;
+  const goToPage = (next: number) => {
+    const nextParams = new URLSearchParams(search.toString());
+    nextParams.set("page", String(next));
+    router.push(`/marketplace?${nextParams}`);
   };
-
-  const applyFilters = () => {
-    setFiltersKey((prev) => prev + 1);
+  const handleAddToWishlist = async (id: number) => {
+    if (!isAuthenticated) { toast.error("Sign in to save products to your wishlist."); return; }
+    try { await api.post(`/api/wishlist/${id}`); toast.success("Saved to wishlist."); }
+    catch { toast.error("Could not save this product. Try again."); }
   };
-
+  const control = "min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm";
   return (
-    <div className="w-full mx-auto px-4 md:px-8 pt-6 pb-20 flex flex-col md:flex-row gap-8">
-      {/* Sidebar Filters */}
-      <div className="w-full md:w-[220px] shrink-0">
-        <div className="sticky top-[128px] pr-4 border-r border-border/50 min-h-[calc(100vh-8rem)]">
-          <div className="mb-8">
-            <h3 className="font-bold text-[12px] mb-3 text-muted-foreground tracking-widest uppercase">Category</h3>
-            <div className="flex flex-col space-y-1.5">
-              <button
-                onClick={() => { setCategory(""); applyFilters(); }}
-                className={cn("text-[14px] text-left w-full transition-colors", category === "" ? "font-bold text-foreground" : "text-muted-foreground hover:text-foreground")}
-              >
-                All Categories
-              </button>
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => { setCategory(c); applyFilters(); }}
-                  className={cn("text-[14px] text-left w-full transition-colors", category === c ? "font-bold text-foreground" : "text-muted-foreground hover:text-foreground")}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <h3 className="font-bold text-[12px] mb-3 text-muted-foreground tracking-widest uppercase">Price</h3>
-            <div className="flex flex-col space-y-1.5 mb-4">
-              <button
-                onClick={() => { setMinPrice(""); setMaxPrice("25"); applyFilters(); }}
-                className={cn("text-[14px] text-left w-full transition-colors", minPrice === "" && maxPrice === "25" ? "font-bold text-foreground" : "text-muted-foreground hover:text-foreground")}
-              >
-                Under $25
-              </button>
-              <button
-                onClick={() => { setMinPrice("25"); setMaxPrice("50"); applyFilters(); }}
-                className={cn("text-[14px] text-left w-full transition-colors", minPrice === "25" && maxPrice === "50" ? "font-bold text-foreground" : "text-muted-foreground hover:text-foreground")}
-              >
-                $25 to $50
-              </button>
-              <button
-                onClick={() => { setMinPrice("50"); setMaxPrice("100"); applyFilters(); }}
-                className={cn("text-[14px] text-left w-full transition-colors", minPrice === "50" && maxPrice === "100" ? "font-bold text-foreground" : "text-muted-foreground hover:text-foreground")}
-              >
-                $50 to $100
-              </button>
-              <button
-                onClick={() => { setMinPrice("100"); setMaxPrice(""); applyFilters(); }}
-                className={cn("text-[14px] text-left w-full transition-colors", minPrice === "100" && maxPrice === "" ? "font-bold text-foreground" : "text-muted-foreground hover:text-foreground")}
-              >
-                $100 & Above
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                placeholder="$ Min"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                className="h-9 text-[13px] w-20 px-2 bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-primary rounded-md"
-              />
-              <span className="text-muted-foreground/50">-</span>
-              <Input
-                type="number"
-                placeholder="$ Max"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                className="h-9 text-[13px] w-20 px-2 bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-primary rounded-md"
-              />
-              <Button onClick={applyFilters} size="sm" variant="secondary" className="h-9 px-3 text-[13px] rounded-md font-semibold hover:bg-primary hover:text-primary-foreground transition-colors">Go</Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-2 border-b border-border/50 gap-4">
-          <div className="text-sm font-medium">
-            {isLoading ? (
-              <span className="text-muted-foreground">Searching...</span>
-            ) : (
-              <>
-                Showing {products.length > 0 ? "1-" + products.length : "0"} of {products.length} results
-                {debouncedQuery && <span> for <span className="font-bold text-primary">&quot;{debouncedQuery}&quot;</span></span>}
-              </>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => { setSortBy(e.target.value); applyFilters(); }}
-              className="text-sm border border-border/50 rounded-md bg-muted/30 px-2 py-1.5 focus:outline-none focus:border-primary shadow-sm cursor-pointer"
-            >
-              <option value="featured">Featured</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
-              <option value="newest">Newest Arrivals</option>
-            </select>
-          </div>
-        </div>
-
-        {isLoading ? (
-          <ProductGridSkeleton count={6} />
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6">
-              {products.map((p: any) => (
-                <ProductCard key={p.id} p={p} onWishlist={handleAddToWishlist} />
-              ))}
-            </div>
-
-            {products.length === 0 && (
-              <div className="text-center py-24 flex flex-col items-center">
-                <PackageX size={64} className="text-muted-foreground/30 mb-6" />
-                <h3 className="font-bold text-xl mb-2">No results for {debouncedQuery ? `"${debouncedQuery}"` : "your criteria"}</h3>
-                <p className="text-muted-foreground text-sm mb-6 max-w-md">
-                  Try checking your spelling or use more general terms. You can also try clearing your filters to see more results.
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setQuery("");
-                    setDebouncedQuery("");
-                    setCategory("");
-                    setMinPrice("");
-                    setMaxPrice("");
-                    setFiltersKey((prev) => prev + 1);
-                  }}
-                >
-                  Clear all filters
-                </Button>
-              </div>
-            )}
-          </>
-        )}
+    <div className="store-container py-8 pb-20">
+      <header className="mb-8 max-w-3xl">
+        <h1 className="text-3xl sm:text-4xl font-display font-semibold mb-3">{format === "physical" ? "Printed products" : format === "digital" ? "Digital models" : "Shop 3D models and prints"}</h1>
+        <p className="text-muted-foreground">{format === "physical" ? "Finished 3D prints made and shipped to you. No printer needed. Check each listing for available options." : format === "digital" ? "Downloadable model files for your own 3D printer. These purchases do not include a physical product." : "Choose a delivered physical product or a digital model file for your own printer. Each listing offers its own formats."}</p>
+      </header>
+      <div className="flex flex-col md:flex-row gap-8">
+        <aside className="md:w-56 shrink-0">
+          <form key={search.toString()} className="space-y-5" aria-label="Catalogue filters" onSubmit={event => {
+            event.preventDefault();
+            const values = new FormData(event.currentTarget);
+            const next = new URLSearchParams();
+            for (const [key, value] of values) if (String(value).trim()) next.set(key, String(value).trim());
+            // Prices in different currencies cannot be compared without conversion.
+            if ((next.get("sort")?.startsWith("price_") || next.has("min_price") || next.has("max_price")) && !next.has("currency")) next.set("currency", "INR");
+            router.push(`/marketplace?${next}`);
+          }}>
+            <div><Label htmlFor="catalogue-search">Search products</Label><Input id="catalogue-search" name="q" type="search" defaultValue={search.get("q") || ""} className="mt-2 min-h-11" placeholder="Try miniatures or home decor" /></div>
+            <div><Label htmlFor="catalogue-format">What would you like?</Label><select id="catalogue-format" name="format" defaultValue={format} className={`${control} mt-2`}><option value="">All formats</option><option value="physical">Physical prints · delivered</option><option value="digital">Digital files · download</option></select></div>
+            <div><Label htmlFor="catalogue-category">Category</Label><select id="catalogue-category" name="category" defaultValue={search.get("category") || ""} className={`${control} mt-2`}><option value="">All categories</option>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select></div>
+            <div><Label htmlFor="catalogue-currency">Listing currency</Label><select id="catalogue-currency" name="currency" defaultValue={search.get("currency") || ""} className={`${control} mt-2`}><option value="">All currencies</option><option value="INR">INR · Indian rupees</option><option value="USD">USD · legacy listings</option></select><p className="text-xs text-muted-foreground mt-2">No currency conversion. Price filters and price sorting use INR unless you choose USD.</p></div>
+            <div><Label htmlFor="catalogue-sort">Sort by</Label><select id="catalogue-sort" name="sort" defaultValue={search.get("sort") || "featured"} className={`${control} mt-2`}><option value="featured">Featured</option><option value="newest">Newest arrivals</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option></select></div>
+            <fieldset><legend className="text-sm font-medium mb-2">Price range</legend><div className="grid grid-cols-2 gap-2"><div><Label htmlFor="min-price">Minimum</Label><Input id="min-price" name="min_price" type="number" min="0" step="0.01" defaultValue={search.get("min_price") || ""} /></div><div><Label htmlFor="max-price">Maximum</Label><Input id="max-price" name="max_price" type="number" min="0" step="0.01" defaultValue={search.get("max_price") || ""} /></div></div></fieldset>
+            <Button type="submit" className="w-full min-h-11">Apply filters</Button>
+            <Button type="button" variant="outline" className="w-full min-h-11" onClick={() => router.push("/marketplace")}>Clear filters</Button>
+          </form>
+        </aside>
+        <section className="flex-1 min-w-0" aria-label="Catalogue results" aria-busy={isLoading}>
+          {isLoading ? <><p role="status" className="mb-5">Loading products…</p><ProductGridSkeleton count={6} /></> : isError ? <div role="alert" className="store-state"><h2>The catalogue couldn’t load.</h2><p>Please try again. Your filters have been kept.</p><Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>{isFetching ? "Trying again…" : "Try again"}</Button></div> : <>
+            <p role="status" className="text-sm text-muted-foreground mb-6">{products.length ? `Showing ${(page - 1) * PAGE_SIZE + 1}–${(page - 1) * PAGE_SIZE + products.length}` : "No matching products"}{search.get("q") ? ` for “${search.get("q")}”` : ""}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">{products.map(p => <ProductCard key={p.id} p={p} format={format} onWishlist={handleAddToWishlist} />)}</div>
+            {!products.length && <div className="store-state"><h2>No products match these filters.</h2><p>Try another format, currency or category. New designs appear as creators publish them.</p></div>}
+            <nav aria-label="Catalogue pages" className="flex items-center gap-4 mt-8"><Button variant="outline" onClick={() => goToPage(page - 1)} disabled={page === 1}>Previous page</Button><span className="text-sm">Page {page}</span><Button variant="outline" onClick={() => goToPage(page + 1)} disabled={!hasNext}>Next page</Button></nav>
+          </>}
+        </section>
       </div>
     </div>
   );
 }
 
 export default function MarketplacePage() {
-  return (
-    <MarketplaceShell>
-      <Suspense
-        fallback={
-          <div className="max-w-7xl mx-auto px-6 pt-24 pb-20">
-            <ProductGridSkeleton count={6} />
-          </div>
-        }
-      >
-        <MarketplaceContent />
-      </Suspense>
-    </MarketplaceShell>
-  );
+  return <MarketplaceShell><Suspense fallback={<div className="store-container py-8"><ProductGridSkeleton count={6} /></div>}><MarketplaceContent /></Suspense></MarketplaceShell>;
 }

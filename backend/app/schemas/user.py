@@ -12,9 +12,8 @@ class UserBase(BaseModel):
 # Properties to receive via API on creation
 class UserCreate(UserBase):
     password: str
-    # Self-registration must never grant admin: restrict to the roles the
-    # register form actually offers (customer/creator/print_partner).
-    role: Literal[UserRole.customer, UserRole.creator, UserRole.print_partner] = UserRole.customer
+    # Seller onboarding is explicit; partner/admin roles require operator approval.
+    role: Literal[UserRole.customer] = UserRole.customer
 
     @field_validator("password")
     @classmethod
@@ -32,6 +31,7 @@ class UserUpdate(UserBase):
     password: str | None = None
 
 class UserInDBBase(UserBase):
+    auth_provider: str = "password"
     id: int
     is_active: bool
     email_verified: bool = False
@@ -122,6 +122,7 @@ class AccountProfileUpdate(BaseModel):
 
 
 class AccountProfileResponse(BaseModel):
+    auth_provider: str = "password"
     id: int
     email: str
     email_verified: bool = False

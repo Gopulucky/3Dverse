@@ -24,6 +24,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { formatMoney } from "@/lib/currency";
+import { availableFormats, purchasePrice, type PurchaseType } from "@/lib/marketplace";
+import { ProductPrices } from "@/components/shared/product-prices";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -89,7 +92,11 @@ export default function ProductDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
-  const { increment } = useCartStore();
+  const { setItemCount } = useCartStore();
+  const [purchaseType, setPurchaseType] = useState<PurchaseType | "">("");
+  const [selectedConfig, setSelectedConfig] = useState<Record<string, string>>({});
+  const [adding, setAdding] = useState(false);
+  const [cartMessage, setCartMessage] = useState("");
 
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ["product", id],
@@ -156,41 +163,36 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleAddToCart = async () => {
+  const addToCart = async (checkout = false) => {
+    if (adding || !product || purchasePrice(product, purchaseType) == null) return;
     if (!isAuthenticated) {
-      toast.error("Please login to add to cart");
+      router.push(`/login?next=${encodeURIComponent(`/marketplace/${id}`)}`);
       return;
     }
+    setAdding(true);
+    setCartMessage("");
     try {
-      await api.post("/api/cart/items", {
-        product_id: Number(id),
-        quantity: 1,
-        selected_config: {},
+      const cart = await api.post<{ items: unknown[] }>("/api/cart/items", {
+        product_id: Number(id), quantity: 1,
+        selected_config: {
+          ...(purchaseType === "physical" ? {
+            material: product.available_materials?.[0] || "",
+            color: product.available_colors?.[0] || "",
+            size: product.available_sizes?.[0] || "",
+            ...selectedConfig,
+          } : {}),
+          purchase_type: purchaseType,
+        },
       });
-      increment();
-      toast.success("Added to cart!");
+      setItemCount(cart.items.length);
+      setCartMessage("Added to cart.");
+      if (checkout) router.push("/checkout");
     } catch {
-      toast.error("Failed to add to cart");
-    }
+      setCartMessage("Could not add this product. Please try again.");
+    } finally { setAdding(false); }
   };
-
-  const handleBuyNow = async () => {
-    if (!isAuthenticated) {
-      toast.error("Please login to purchase");
-      return;
-    }
-    try {
-      await api.post("/api/cart/items", {
-        product_id: Number(id),
-        quantity: 1,
-        selected_config: {},
-      });
-      increment();
-      router.push("/checkout");
-    } catch {
-      toast.error("Failed to process Buy It Now");
-    }
-  };
+  const handleAddToCart = () => void addToCart();
+  const handleBuyNow = () => void addToCart(true);
 
   if (productLoading) {
     return (
@@ -221,6 +223,9 @@ export default function ProductDetailPage() {
     );
   }
 
+  const offeredFormats = availableFormats(product);
+  const selectedPrice = purchasePrice(product, purchaseType);
+  const canPurchase = selectedPrice != null;
   const latestVersion =
     product.versions && product.versions.length > 0
       ? product.versions[product.versions.length - 1]
@@ -315,12 +320,12 @@ export default function ProductDetailPage() {
               
               <div className="flex flex-wrap gap-2 mb-4">
                 <Badge variant="secondary">{product.category}</Badge>
-                {product.is_mode_2_active && (
+                {product.is_mode_2_active && product.digital_download_enabled && (
                   <Badge variant="outline" className="gap-1 bg-background">
                     <Download size={12} className="text-primary" /> Digital
                   </Badge>
                 )}
-                {product.is_mode_3_active && (
+                {(product.is_mode_3_active || product.is_mode_4_active) && (
                   <Badge variant="outline" className="gap-1 bg-background">
                     <Printer size={12} className="text-moss" /> Physical
                   </Badge>
@@ -410,18 +415,27 @@ export default function ProductDetailPage() {
               <Card className="p-5 border-border bg-card shadow-lg flex flex-col relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-moss" />
                 <p className="text-4xl font-bold text-foreground mb-6 font-data">
-                  <span className="text-xl align-top text-muted-foreground mr-1">$</span>
-                  {product.price?.toFixed(2)}
+                  {selectedPrice == null ? "Choose a format" : formatMoney(selectedPrice, product.currency)}
                 </p>
 
+                <div className="mb-6">
+                  <Label htmlFor="purchase-format">What are you buying?</Label>
+                  <select id="purchase-format" value={purchaseType} onChange={event => { setPurchaseType(event.target.value as PurchaseType | ""); setCartMessage(""); }} className="mt-2 w-full min-h-11 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="">Choose a format</option>
+                    {offeredFormats.map(format => <option key={format} value={format}>{format === "digital" ? "Digital model file · download" : "Finished physical print · delivered"}</option>)}
+                  </select>
+                  <p className="text-sm text-muted-foreground mt-3">{purchaseType === "digital" ? "A downloadable file for your own 3D printer. No physical product is included." : purchaseType === "physical" ? "A finished 3D printed product shipped to you. Shipping is calculated at checkout." : "Choose a downloadable file or a delivered print from the formats offered by this creator."}</p>
+                  {purchaseType && !canPurchase && <p role="status" className="text-sm mt-2">This format does not have a purchasable price yet.</p>}
+                  {product.currency === "USD" && <p className="text-sm mt-2">Legacy USD listing. INR checkout requires the creator to reprice it.</p>}
+                </div>
                 {/* Order Form */}
                 <div className="space-y-6 mb-6">
-                  {product.is_mode_3_active && (
+                  {purchaseType === "physical" && (
                     <div className="space-y-4 pb-5 border-b border-border/50">
                       {product.available_materials?.length > 0 && (
                         <div>
                           <Label className="mb-1.5 block text-xs font-bold text-muted-foreground uppercase tracking-wider">Material</Label>
-                          <select className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
+                          <select aria-label="Material" value={selectedConfig.material || product.available_materials?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, material: event.target.value })} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
                             {product.available_materials.map((m: string) => (
                               <option key={m}>{m}</option>
                             ))}
@@ -431,7 +445,7 @@ export default function ProductDetailPage() {
                       {product.available_colors?.length > 0 && (
                         <div>
                           <Label className="mb-1.5 block text-xs font-bold text-muted-foreground uppercase tracking-wider">Color</Label>
-                          <select className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
+                          <select aria-label="Color" value={selectedConfig.color || product.available_colors?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, color: event.target.value })} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
                             {product.available_colors.map((c: string) => (
                               <option key={c}>{c}</option>
                             ))}
@@ -441,7 +455,7 @@ export default function ProductDetailPage() {
                       {product.available_sizes?.length > 0 && (
                         <div>
                           <Label className="mb-1.5 block text-xs font-bold text-muted-foreground uppercase tracking-wider">Size</Label>
-                          <select className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
+                          <select aria-label="Size" value={selectedConfig.size || product.available_sizes?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, size: event.target.value })} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
                             {product.available_sizes.map((s: string) => (
                               <option key={s}>{s}</option>
                             ))}
@@ -451,7 +465,7 @@ export default function ProductDetailPage() {
                     </div>
                   )}
 
-                  {product.is_mode_4_active &&
+                  {purchaseType === "physical" && product.is_mode_4_active &&
                     product.mode_4_config &&
                     Object.keys(product.mode_4_config).length > 0 && (
                       <div className="space-y-4 pb-5 border-b border-border/50">
@@ -464,6 +478,9 @@ export default function ProductDetailPage() {
                               <Input
                                 placeholder={config.description || ""}
                                 maxLength={config.maxLength}
+                                aria-label={key.replaceAll("_", " ")}
+                                value={selectedConfig[key] || ""}
+                                onChange={event => setSelectedConfig({ ...selectedConfig, [key]: event.target.value })}
                                 className="h-9"
                               />
                             </div>
@@ -476,13 +493,16 @@ export default function ProductDetailPage() {
                 <div className="space-y-3 mb-5">
                   <Button
                     onClick={handleAddToCart}
+                    disabled={!canPurchase || adding}
+                    aria-busy={adding}
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-sm"
                     size="lg"
                   >
-                    Add to Cart
+                    {adding ? "Adding…" : "Add to cart"}
                   </Button>
                   <Button
                     onClick={handleBuyNow}
+                    disabled={!canPurchase || adding}
                     className="w-full bg-ember hover:bg-ember/90 text-primary-foreground rounded-full shadow-sm transition-all duration-300"
                     size="lg"
                   >
@@ -490,24 +510,11 @@ export default function ProductDetailPage() {
                   </Button>
                 </div>
 
-                {/* Trust & Security Signals */}
-                <div className="flex flex-col gap-2 pt-4 border-t border-border/50 text-xs text-muted-foreground">
-                  <div className="grid grid-cols-[1fr_2fr] gap-2 items-center">
-                    <span className="text-muted-foreground">Payment</span>
-                    <span className="flex items-center gap-1 font-medium text-foreground"><ShieldCheck size={14} className="text-success" /> Secure transaction</span>
-                  </div>
-                  <div className="grid grid-cols-[1fr_2fr] gap-2 items-center">
-                    <span className="text-muted-foreground">Ships from</span>
-                    <span className="font-medium text-foreground">3DVerse Partner</span>
-                  </div>
-                  <div className="grid grid-cols-[1fr_2fr] gap-2 items-center">
-                    <span className="text-muted-foreground">Sold by</span>
-                    <span className="font-medium text-foreground text-primary hover:underline cursor-pointer">{product.creator_name || "Creator"}</span>
-                  </div>
-                  <div className="grid grid-cols-[1fr_2fr] gap-2 items-center">
-                    <span className="text-muted-foreground">Returns</span>
-                    <span className="font-medium text-foreground">Eligible for Return</span>
-                  </div>
+                <p role="status" className="text-sm text-muted-foreground">{cartMessage}</p>
+                <div className="flex flex-col gap-2 pt-4 border-t border-border/50 text-sm text-muted-foreground">
+                  <p>Sold by {product.creator_name || "the listing creator"}</p>
+                  <Link href="/shipping" className="underline min-h-11 inline-flex items-center">Shipping information</Link>
+                  <Link href="/refund-policy" className="underline min-h-11 inline-flex items-center">Returns and refunds</Link>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-border/50 flex justify-center">
@@ -663,7 +670,7 @@ export default function ProductDetailPage() {
                         {p.title}
                       </h3>
                       <p className="text-primary font-bold mt-1 font-data">
-                        ${p.price?.toFixed(2)}
+                        <ProductPrices product={p} />
                       </p>
                     </div>
                   </Link>

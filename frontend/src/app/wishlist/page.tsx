@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Trash2, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { ProductPrices } from "@/components/shared/product-prices";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -93,7 +94,7 @@ export default function WishlistPage() {
                     </Link>
                   </h3>
                   <p className="text-muted-foreground font-data font-semibold mt-1">
-                    ${p.price?.toFixed(2)}
+                    <ProductPrices product={p} />
                   </p>
                 </div>
                 <Button

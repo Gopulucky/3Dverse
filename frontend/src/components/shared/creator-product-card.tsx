@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Star, Eye, ShoppingCart, DollarSign, Edit, Copy, Trash2, MoreVertical } from "lucide-react";
 import { api } from "@/lib/api";
+import { formatMoney } from "@/lib/currency";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,7 +59,7 @@ export function CreatorProductCard({ product }: { product: any }) {
           
           <div className="text-right">
             <span className="text-xl font-bold font-data text-foreground">
-              ${product.price?.toFixed(2) || "0.00"}
+              {formatMoney(product.price || 0, product.currency)}
             </span>
           </div>
         </div>

@@ -13,7 +13,7 @@ export function AuthCard({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 bg-background">
+    <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-background">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-3xl font-bold tracking-tight font-display inline-block">
@@ -23,7 +23,7 @@ export function AuthCard({
         </div>
         <Card className="border-border/50">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">{title}</CardTitle>
+            <CardTitle><h1 className="text-2xl">{title}</h1></CardTitle>
             {description && <CardDescription>{description}</CardDescription>}
           </CardHeader>
           <CardContent>{children}</CardContent>

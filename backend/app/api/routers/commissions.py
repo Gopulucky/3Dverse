@@ -220,6 +220,9 @@ def pay_brief_fee(
     req = _load(db, request_id, current_user)
     _require_customer(req, current_user)
 
+    if settings.is_production or not settings.ALLOW_MOCK_PAYMENTS:
+        raise HTTPException(status_code=503, detail="Custom design payments are not available yet")
+
     if req.payment_status == PaymentStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="The brief fee is already paid")
 
@@ -551,6 +554,9 @@ def pay_design_fee(
     on this, so the creator isn't handing over a file on trust."""
     req = _load(db, request_id, current_user)
     _require_customer(req, current_user)
+
+    if settings.is_production or not settings.ALLOW_MOCK_PAYMENTS:
+        raise HTTPException(status_code=503, detail="Custom design payments are not available yet")
 
     agreement = (
         db.query(CustomDesignAgreement).filter(CustomDesignAgreement.request_id == req.id).first()

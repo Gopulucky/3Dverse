@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Any
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -23,6 +23,30 @@ from app.models.user import User
 from app.schemas.user import UserCreate, User as UserSchema, Token
 
 router = APIRouter()
+
+
+class FirebaseSignIn(BaseModel):
+    id_token: str = Field(min_length=1, max_length=16000)
+
+
+class FirebaseLink(FirebaseSignIn):
+    previous_password: str = Field(min_length=1, max_length=128)
+
+
+@router.post("/firebase", response_model=UserSchema,
+             dependencies=[Depends(rate_limit("firebase_login", limit=30, window_seconds=300))])
+def firebase_sign_in(body: FirebaseSignIn, db: Session = Depends(get_db)):
+    from app.core.firebase_auth import verify_token
+    from app.services.firebase_identity import resolve_identity
+    return resolve_identity(db, verify_token(body.id_token), create=True)
+
+
+@router.post("/firebase/link", response_model=UserSchema,
+             dependencies=[Depends(rate_limit("firebase_link", limit=5, window_seconds=300))])
+def firebase_link(body: FirebaseLink, db: Session = Depends(get_db)):
+    from app.core.firebase_auth import verify_token
+    from app.services.firebase_identity import link_identity
+    return link_identity(db, verify_token(body.id_token), body.previous_password)
 
 @router.post(
     "/register",
@@ -49,7 +73,7 @@ def register(*, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
     user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
-        role=user_in.role,
+        role="customer",
         pincode=user_in.pincode,
     )
     db.add(user)
@@ -76,6 +100,8 @@ def login_access_token(
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
+    elif user.firebase_uid:
+        raise HTTPException(status_code=400, detail="Use Google or your current email sign-in for this account")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -111,7 +137,7 @@ def forgot_password(
     """Email a single-use reset link. Always answers the same way, so the
     endpoint can't be used to find out which emails have accounts."""
     user = db.query(User).filter(User.email == body.email).first()
-    if user and user.is_active and user.deleted_at is None:
+    if user and user.is_active and user.deleted_at is None and not user.firebase_uid:
         background_tasks.add_task(
             send_password_reset_email,
             user.email,
@@ -134,7 +160,7 @@ def reset_password(body: ResetPassword, db: Session = Depends(get_db)) -> Any:
     user = db.query(User).filter(User.id == int(claims["sub"])).first()
     # token_version is bumped below, so the link works exactly once -- and so
     # does any older session: a reset signs the account out everywhere.
-    if not user or not user.is_active or claims.get("tv") != user.token_version:
+    if not user or not user.is_active or user.firebase_uid or claims.get("tv") != user.token_version:
         raise invalid
     user.hashed_password = get_password_hash(body.new_password)
     user.token_version += 1

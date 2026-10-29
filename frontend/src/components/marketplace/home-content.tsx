@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ArrowUpRight, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { ProductPrices } from "@/components/shared/product-prices";
 import { productImage, type HomepageData, type ProductCardData } from "@/lib/marketplace";
 import { Button } from "@/components/ui/button";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
@@ -46,7 +47,7 @@ function ProductSection({ title, products, rail = false }: { title: string; prod
         <div className="store-section-head">
           <h2 id={titleId}>{title}</h2>
           <div className="store-rail-actions">
-            <Link href="/marketplace" className="market-text-link">Browse all models</Link>
+            <Link href="/marketplace" className="market-text-link">Browse all products</Link>
             {rail && <>
               <Button type="button" variant="ghost" size="icon" aria-label={`Previous ${title.toLowerCase()}`} disabled={!edges.left} onClick={() => scroll("left")}><ChevronLeft size={20} aria-hidden="true" /></Button>
               <Button type="button" variant="ghost" size="icon" aria-label={`Next ${title.toLowerCase()}`} disabled={!edges.right} onClick={() => scroll("right")}><ChevronRight size={20} aria-hidden="true" /></Button>
@@ -87,6 +88,14 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: Homepage
   return (
     <div className="storefront">
       <HomeHero product={heroProduct} />
+      <section className="store-section store-container" aria-labelledby="how-it-works">
+        <div className="store-section-head"><h2 id="how-it-works">How shopping works</h2></div>
+        <ol className="store-how-it-works">
+          <li><span>01</span><h3>Choose your format</h3><p>Physical prints are made and shipped to you. Digital models are files for your own printer.</p></li>
+          <li><span>02</span><h3>Check the listing</h3><p>See the offered formats, material options and price. Availability varies by design.</p></li>
+          <li><span>03</span><h3>Order and follow along</h3><p>Sign in to buy and track your order. Purchased digital files appear in your orders.</p></li>
+        </ol>
+      </section>
       <div id="featured" className="scroll-mt-20">
         {isLoading ? (
           <section className="store-section store-container" aria-label="Loading models" aria-busy="true">
@@ -109,7 +118,7 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: Homepage
                 <div className="store-state">
                   <h2 id="catalogue-empty">No models yet.</h2>
                   <p>New designs will appear here as creators publish them.</p>
-                  <Link href="/creator/products/new" className="market-text-link">Publish a design</Link>
+                  <Link href="/marketplace" className="market-text-link">Browse the catalogue</Link>
                 </div>
               </section>
             ) : <ProductSection title="Featured models" products={featured} />}
@@ -131,13 +140,13 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: Homepage
               <div className="store-arrivals">
                 <div className="store-section-head">
                   <h2 id="arrivals-title">New arrivals</h2>
-                  <Link href="/marketplace" className="market-text-link">Browse all models</Link>
+                  <Link href="/marketplace" className="market-text-link">Browse all products</Link>
                 </div>
                 <div>
                   {arrivals.map(product => <Link key={product.id} href={`/marketplace/${product.id}`} className="store-arrival">
                     <span className="store-arrival-image"><ProductImage src={productImage(product)} title={product.title} /></span>
                     <div><h3>{product.title}</h3>{product.creator_name && <p>By {product.creator_name}</p>}</div>
-                    {product.price != null && <span className="market-price">${product.price.toFixed(2)}</span>}
+                    <ProductPrices product={product} />
                   </Link>)}
                 </div>
               </div>
@@ -160,6 +169,7 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: Homepage
           </>
         )}
       </div>
+      <section className="store-section store-container store-seller-note"><h2>Make or print designs?</h2><p>Bring your work to the marketplace.</p><Link href="/sell" className="market-text-link">Sell with 3DVerse</Link></section>
     </div>
   );
 }

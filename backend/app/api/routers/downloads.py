@@ -4,6 +4,7 @@ from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from app.api import deps
 from app.models.user import User, UserRole
@@ -11,9 +12,9 @@ from app.models.order import Order, OrderItem, UNPAID_STATUSES
 from app.models.product import Product, ProductVersion
 from app.models.collaboration import CollaborationTicket, CertificationReport, PaymentStatus
 from app.models.commission import CustomDesignRequest
-from app.models.print_partner import PrintPartner
 from app.core.storage import LOCAL_UPLOADS_DIR, get_s3_client, s3_key_for, AWS_BUCKET_NAME
 from app.services.entitlements import has_purchased
+from app.services.partner_identity import is_ticket_party
 
 router = APIRouter()
 
@@ -56,6 +57,7 @@ def _is_assigned_partner(db: Session, user_id: int, product_id: int) -> bool:
             Order.print_partner_id == user_id,
             OrderItem.product_id == product_id,
             Order.status.notin_(UNPAID_STATUSES),
+            or_(Order.currency == "USD", Order.payment_verified_at.is_not(None)),
         )
         .first()
         is not None
@@ -77,7 +79,7 @@ def download_product_model(
     allowed = (
         product.creator_id == current_user.id
         or current_user.role == UserRole.admin
-        or has_purchased(db, current_user.id, product_id)
+        or has_purchased(db, current_user.id, product_id, digital_only=True)
         or _is_assigned_partner(db, current_user.id, product_id)
     )
     if not allowed:
@@ -112,10 +114,7 @@ def download_invoice(
 
 
 def _ticket_party(db: Session, ticket: CollaborationTicket, user: User) -> bool:
-    if user.role == UserRole.admin or ticket.creator_id == user.id:
-        return True
-    partner = db.query(PrintPartner).filter(PrintPartner.id == ticket.print_partner_id).first()
-    return partner is not None and ticket.print_partner_id == user.id
+    return user.role == UserRole.admin or is_ticket_party(db, ticket, user)
 
 
 @router.get("/tickets/{ticket_id}/design")

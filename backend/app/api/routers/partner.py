@@ -1,4 +1,5 @@
 from typing import Any, List
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.api import deps
@@ -7,12 +8,19 @@ from app.models.order import Order
 from app.models.printer import PrinterProfile
 from app.schemas.order import OrderResponse
 from pydantic import BaseModel
-from app.core.shiprocket import create_shiprocket_order, generate_awb
+from app.core.shiprocket import create_shiprocket_order, generate_awb, shipment_payload, ShippingPackage, ensure_carrier_configured
+from app.core.config import settings
+from app.services.stock import ship_order
 
 router = APIRouter()
 
 class StatusUpdateRequest(BaseModel):
     status: str
+    shipping_package: ShippingPackage | None = None
+
+
+NEXT_STATUS = {"paid": "queued", "queued": "printing", "printing": "qc",
+               "qc": "packed", "packed": "shipped", "shipped": "delivered"}
 
 @router.get("/jobs", response_model=List[OrderResponse])
 def get_jobs(
@@ -35,7 +43,7 @@ def update_job_status(
     if current_user.role != UserRole.print_partner:
         raise HTTPException(status_code=403, detail="Not enough permissions")
         
-    order = db.query(Order).filter(Order.id == order_id, Order.print_partner_id == current_user.id).first()
+    order = db.query(Order).filter(Order.id == order_id, Order.print_partner_id == current_user.id).with_for_update().first()
     if not order:
         raise HTTPException(status_code=404, detail="Job not found")
         
@@ -43,21 +51,73 @@ def update_job_status(
     if req.status not in valid_statuses:
         raise HTTPException(status_code=400, detail="Invalid status")
         
-    order.status = req.status
-    
-    # If packed, generate shiprocket label and tracking
-    if req.status == "packed" and not order.shiprocket_order_id:
+    if order.currency == "INR" and not order.payment_verified_at:
+        raise HTTPException(status_code=409, detail="Payment must be confirmed before fulfilment")
+    if settings.is_production and (
+        any(str(value or "").startswith("SR_") for value in (order.shiprocket_order_id, order.shiprocket_shipment_id))
+        or "tracking.mock.com" in (order.tracking_url or "")
+    ):
+        raise HTTPException(status_code=409, detail="Replace the development shipment before production fulfilment")
+    if order.status == req.status:
+        return order
+    if NEXT_STATUS.get(order.status) != req.status:
+        raise HTTPException(status_code=409, detail="Complete the current fulfilment step before proceeding")
+
+    if req.status == "packed":
+        if req.shipping_package:
+            package = req.shipping_package.model_dump()
+            if order.shiprocket_shipment_id and package != order.shipping_package:
+                raise HTTPException(status_code=409, detail="A shipment already exists with different parcel measurements")
+            order.shipping_package = package
         try:
-            sr_data = create_shiprocket_order(order)
-            order.shiprocket_order_id = sr_data["order_id"]
-            order.shiprocket_shipment_id = sr_data["shipment_id"]
-            
-            tracking_url = generate_awb(sr_data["shipment_id"])
-            order.tracking_url = tracking_url
-        except Exception as e:
-            # We log it but do not fail the status update completely
-            print(f"Shiprocket integration failed: {e}")
-            
+            shipment_payload(order)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        try:
+            if not order.shiprocket_shipment_id:
+                if settings.is_production:
+                    ensure_carrier_configured()
+                    if any(entry.get("event") == "shipment_creation_started" for entry in (order.status_history or [])):
+                        raise HTTPException(status_code=409, detail="A previous shipment request needs operator reconciliation in Shiprocket before retrying")
+                    # A timeout can mean the carrier accepted the request but its
+                    # response was lost. Persist the attempt before the side effect
+                    # so neither a retry nor process restart creates a duplicate.
+                    order.status_history = [*(order.status_history or []), {
+                        "status": order.status, "event": "shipment_creation_started",
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }]
+                    db.add(order)
+                    db.commit()
+                    order = db.query(Order).filter(Order.id == order_id, Order.print_partner_id == current_user.id).with_for_update().first()
+                sr_data = create_shiprocket_order(order)
+                order.shiprocket_order_id = sr_data["order_id"]
+                order.shiprocket_shipment_id = sr_data["shipment_id"]
+                # Persist the confirmed carrier identity before AWB assignment.
+                # A failed label request can then be retried without recreating it.
+                db.add(order)
+                db.commit()
+                order = db.query(Order).filter(Order.id == order_id, Order.print_partner_id == current_user.id).with_for_update().first()
+                if order.status == req.status:
+                    return order
+                if NEXT_STATUS.get(order.status) != req.status:
+                    raise HTTPException(status_code=409, detail="The job changed while creating its shipment; reload before continuing")
+            if not order.tracking_url:
+                order.tracking_url = generate_awb(order.shiprocket_shipment_id)
+        except HTTPException:
+            raise
+        except Exception as error:
+            raise HTTPException(status_code=503, detail="Shipping could not be confirmed. Check Shiprocket, then retry this step.") from error
+
+    if req.status in {"shipped", "delivered"} and not (order.shiprocket_shipment_id and order.tracking_url):
+        raise HTTPException(status_code=409, detail="A confirmed shipment and label are required")
+    if req.status == "shipped":
+        ship_order(db, order)
+    now = datetime.utcnow()
+    order.status = req.status
+    order.status_history = [*(order.status_history or []), {"status": req.status, "timestamp": now.isoformat()}]
+    if req.status == "delivered" and not order.delivered_at:
+        order.delivered_at = now
+
     db.add(order)
     db.commit()
     db.refresh(order)

@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "lint:critical": "eslint src/components/auth src/lib/firebase.ts src/lib/api.ts src/lib/currency.ts src/lib/marketplace.ts src/stores/auth-store.ts src/components/shared/product-prices.tsx src/components/settings/delete-account.tsx src/components/layout/auth-card.tsx src/app/login/page.tsx src/app/register/page.tsx src/app/forgot-password/page.tsx src/app/checkout/page.tsx src/app/partner/page.tsx src/app/sell/page.tsx scripts/auth-smoke.mjs scripts/partner-smoke.mjs scripts/customer-options-smoke.mjs scripts/browser-check.mjs",
+    "test:unit": "node scripts/currency-test.mjs && node scripts/purchase-options-test.mjs && node scripts/order-download-test.mjs",
+    "test:browser": "node scripts/browser-check.mjs",
     "ui-scan": "node scripts/ui-scan.mjs"
   },
   "dependencies": {
@@ -27,6 +30,7 @@
     "@tanstack/react-query": "^5.101.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "firebase": "12.10.0",
     "lucide-react": "^1.24.0",
     "next": "16.4.2",
     "next-themes": "^0.4.6",
@@ -37,8 +41,11 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
     "three": "^0.185.1",
-    "zod": "^4.4.3",
+    "zod": "^4.6.6",
     "zustand": "^5.0.14"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.13.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

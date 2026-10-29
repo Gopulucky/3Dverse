@@ -13,7 +13,7 @@ const imagePath = process.env.UI_SCAN_PRODUCT_IMAGE || '../sample_images/3d-benc
 const image = existsSync(imagePath) ? readFileSync(imagePath) : Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lZkAAAAASUVORK5CYII=', 'base64');
 const contentType = existsSync(imagePath) ? 'image/jpeg' : 'image/png';
 const product = {
-  id: 9001, title: 'Sample bench', category: 'Home Decor', price: 12,
+  id: 9001, title: 'Sample bench', category: 'Home Decor', price: 120, base_print_price: 450, currency: 'INR', digital_download_enabled: true, is_mode_3_active: true,
   creator_name: 'QA catalogue', avg_rating: 4.5, review_count: 2,
   is_mode_2_active: true, is_featured: true,
   media: [{ media_url: '/qa-bench.jpg', is_primary: true }],
@@ -32,7 +32,7 @@ async function visit({ state = 'full', authenticated = false, colorScheme = 'lig
   // The production CSP deliberately blocks a cross-port HTTP API on localhost.
   // Bypass it only inside this isolated fixture browser; deployment uses HTTPS.
   const context = await browser.newContext({ reducedMotion: 'reduce', colorScheme, viewport, bypassCSP: true });
-  const current = { state, posts: [], homepageRequests: 0 };
+  const current = { state, posts: [], homepageRequests: 0, catalogueRequests: [] };
   if (authenticated) await context.addInitScript(() => {
     localStorage.setItem('token', 'qa-only-token');
     localStorage.setItem('user', JSON.stringify({ id: 99, email: 'qa@example.test', role: 'customer' }));
@@ -50,7 +50,10 @@ async function visit({ state = 'full', authenticated = false, colorScheme = 'lig
       return send(current.state === 'empty' ? empty : full);
     }
     if (path.endsWith('/suggestions')) return send({ products: [product], categories: ['Home Decor'] });
-    if (path.endsWith('/products')) return send(products);
+    if (path.endsWith('/products')) {
+      current.catalogueRequests.push(Object.fromEntries(new URL(request.url()).searchParams));
+      return send(products);
+    }
     if (/\/products\/\d+$/.test(path)) return send(product);
     if (path.endsWith('/users/me')) return send({ id: 99, email: 'qa@example.test', role: 'customer' });
     if (path.endsWith('/cart/items') && request.method() === 'POST') {
@@ -88,17 +91,27 @@ try {
   assert.equal(await page.locator('.market-product-reviews').first().innerText(), '4.5\n2 reviews\nPrintability passed');
   assert.equal(await page.getByRole('button', { name: 'Follow', exact: true }).count(), 0);
   assert.equal(await page.locator('.market-product a button').count(), 0);
-  assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'View model', exact: true }).getAttribute('href'), '/marketplace/9001');
-  const add = page.getByRole('button', { name: 'Add Sample bench to cart', exact: true }).first();
+  assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'View product', exact: true }).getAttribute('href'), '/marketplace/9001');
+  assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'Choose options', exact: true }).getAttribute('href'), '/marketplace/9001');
+  assert.equal(await page.locator('.market-product').first().getByRole('button', { name: 'Add Sample bench to cart', exact: true }).count(), 0);
+  assert.match(await page.locator('h1').innerText(), /Buy 3D models\s*or finished prints\./);
+  assert.equal(await page.getByRole('link', { name: 'Shop printed products', exact: true }).getAttribute('href'), '/marketplace?format=physical');
+  await page.getByRole('link', { name: 'Browse digital models', exact: true }).click();
+  await page.waitForURL('**/marketplace?format=digital');
+  await visible(page.getByRole('heading', { name: 'Digital models', exact: true }));
+  const add = page.getByRole('button', { name: 'Add Sample bench to cart', exact: true });
   await add.click();
   await visible(page.locator('.market-cart-message').filter({ hasText: 'Added to cart.' }).first());
-  assert.deepEqual(current.posts, [{ product_id: 9001, quantity: 1, selected_config: {} }]);
+  assert.deepEqual(current.posts, [{ product_id: 9001, quantity: 1, selected_config: { purchase_type: 'digital' } }]);
+  assert.equal(current.catalogueRequests.at(-1).format, 'digital');
   await visible(page.getByRole('link', { name: 'Cart, 1 item', exact: true }));
   await add.click();
   await page.waitForFunction(() => !document.querySelector('[aria-label="Add Sample bench to cart"]').disabled);
   assert.equal(current.posts.length, 2);
   await visible(page.getByRole('link', { name: 'Cart, 1 item', exact: true }));
-  checks.push('Separate model link and cart action; correct request; duplicate additions preserve unique-item cart count; honest review/report labels.');
+  await page.goto(base, { waitUntil: 'domcontentloaded' });
+  await visible(page.getByRole('link', { name: 'Explore Sample bench' }));
+  checks.push('Buyer-first headline and format links; generic cards require options; digital catalogue sends explicit purchase_type; duplicate additions preserve unique-item cart count.');
 
   for (const [width, height] of [[320,812], [375,812], [768,1024], [1280,800], [1440,900], [1920,1080]]) {
     await page.setViewportSize({width,height});
@@ -106,10 +119,12 @@ try {
     const metrics = await page.evaluate(() => ({ width: innerWidth, page: document.documentElement.scrollWidth,
       top: document.querySelector('.store-primary').getBoundingClientRect().top,
       cta: document.querySelector('.store-primary').getBoundingClientRect().bottom,
+      digitalCta: document.querySelector('.store-actions a[href="/marketplace?format=digital"]').getBoundingClientRect().bottom,
       h1: document.querySelector('h1').getBoundingClientRect().bottom,
       font: getComputedStyle(document.querySelector('h1')).fontFamily }));
     assert.ok(metrics.page <= width, `Horizontal overflow at ${width}: ${JSON.stringify(metrics)}`);
     assert.ok(metrics.top >= 64 && metrics.cta < height && metrics.h1 < height, `Hero action/head off screen at ${width}`);
+    assert.ok(metrics.digitalCta < height, `Digital shopping action off screen at ${width}`);
     assert.match(metrics.font, /Space_Grotesk|Space Grotesk/);
     await page.screenshot({path:`${out}/fixture-home-${width}.png`, fullPage: width === 375 || width === 1440});
   }
@@ -159,7 +174,7 @@ try {
   assert.equal(await loading.page.locator('.market-product').count(), 0);
   await loading.page.screenshot({path:`${out}/empty.png`});
   await loading.context.close();
-  checks.push('Loading announces its state; empty catalogue offers publish action without empty product headings.');
+  checks.push('Loading announces its state; empty catalogue offers browse action without empty product headings.');
 
   const failure = await visit({ state: 'error' });
   await visible(failure.page.getByRole('heading', { name: 'The catalogue couldn’t load.' }));

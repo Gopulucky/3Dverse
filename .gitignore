@@ -3,6 +3,13 @@ __pycache__/
 *.pyc
 venv/
 .env
+.env.*
+!.env.example
+*-firebase-adminsdk-*.json
+service-account*.json
+.pytest_cache/
+.test-tmp*/
+*.tsbuildinfo
 
 # Celery / local artifacts
 backend/celery_broker.sqlite

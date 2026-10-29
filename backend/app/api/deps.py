@@ -23,6 +23,15 @@ def get_current_user(
         detail="Could not validate credentials",
     )
     try:
+        unverified = jwt.get_unverified_claims(token)
+    except JWTError:
+        raise credentials_error
+    if str(unverified.get("iss", "")).startswith("https://securetoken.google.com/"):
+        # Issuer only chooses the verifier; no unverified claim grants access.
+        from app.core.firebase_auth import verify_token
+        from app.services.firebase_identity import resolve_identity
+        return resolve_identity(db, verify_token(token), create=False)
+    try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
@@ -33,8 +42,8 @@ def get_current_user(
     except (JWTError, ValueError, TypeError):
         raise credentials_error
     user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    if not user or user.deleted_at is not None or user.firebase_uid:
+        raise credentials_error
     if payload.get("tv", 0) != user.token_version:
         raise credentials_error
     return user

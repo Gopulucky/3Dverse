@@ -36,7 +36,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useCartStore } from "@/stores/cart-store";
 import { api } from "@/lib/api";
 
-interface SearchProduct { id: number; title: string; category: string; price: number }
+interface SearchProduct { id: number; title: string; category: string; price: number; currency?: string }
 
 export function Navbar() {
   const pathname = usePathname();
@@ -410,7 +410,7 @@ export function Navbar() {
                                 <span className="text-sm font-medium text-foreground truncate block">{p.title}</span>
                                 <span className="text-sm text-muted-foreground">{p.category}</span>
                               </div>
-                              <span className="text-sm font-bold text-primary shrink-0">${p.price.toFixed(2)}</span>
+                              <span className="text-sm text-muted-foreground shrink-0">View options</span>
                             </button>
                           );
                         })}
@@ -542,7 +542,7 @@ export function Navbar() {
                     )}
                     
                     {!isCreator && (
-                      <DropdownMenuItem onClick={() => router.push("/creator")} className="rounded-lg cursor-pointer py-2 text-ember focus:text-ember bg-ember/5 focus:bg-ember/10 mb-1 font-medium">
+                      <DropdownMenuItem onClick={() => router.push("/sell")} className="rounded-lg cursor-pointer py-2 text-ember focus:text-ember bg-ember/5 focus:bg-ember/10 mb-1 font-medium">
                         <Store size={16} className="mr-3" />
                         Sell with 3DVerse
                       </DropdownMenuItem>
@@ -576,7 +576,7 @@ export function Navbar() {
                     size="sm"
                     onClick={() => router.push("/login")}
                   >
-                    Log in
+                    Sign in
                   </Button>
                   <Button
                     variant="default"
@@ -626,8 +626,9 @@ export function Navbar() {
             </form>}
             <nav aria-label="Mobile navigation" className="space-y-1">
               {(isMarketplace ? [
-                { href: "/marketplace", label: "Browse all models", icon: Search },
-                { href: "/creator", label: "Sell with 3DVerse", icon: Store },
+                { href: "/marketplace", label: "Browse all products", icon: Search },
+                { href: "/marketplace?format=physical", label: "Printed products", icon: Printer },
+                { href: "/marketplace?format=digital", label: "Digital models", icon: Search },
                 { href: "/orders", label: "Your orders", icon: Package },
                 { href: "/contact", label: "Help and contact", icon: Shield },
               ] : [

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { firebaseConfigured, firebaseReset, signInError } from "@/lib/firebase";
 import { AuthCard } from "@/components/layout/auth-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,10 +20,12 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      await api.post("/api/auth/forgot-password", { email: email.trim() });
+      const previous = new URLSearchParams(window.location.search).get("previous") === "1";
+      if (firebaseConfigured && !previous) await firebaseReset(email.trim());
+      else await api.post("/api/auth/forgot-password", { email: email.trim() });
       setSent(true);
-    } catch (err: any) {
-      toast.error(err?.detail || "Something went wrong. Please try again.");
+    } catch (err) {
+      toast.error(signInError(err));
     } finally {
       setBusy(false);
     }
@@ -35,7 +38,7 @@ export default function ForgotPasswordPage() {
           <MailCheck className="mx-auto text-success" size={40} />
           <p className="text-sm text-muted-foreground">
             If <span className="text-foreground font-medium">{email}</span> has an account, we have sent a
-            link to reset the password. It works once and expires in an hour.
+            link to reset the password. Follow the instructions in the email.
           </p>
           <Link href="/login" className="text-primary hover:underline text-sm font-medium">
             Back to sign in

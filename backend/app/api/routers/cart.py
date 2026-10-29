@@ -33,20 +33,26 @@ def add_cart_item(
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
+    if item_in.quantity < 1 or item_in.quantity > 100:
+        raise HTTPException(400, "Choose a quantity between 1 and 100")
     cart = get_or_create_cart(db, current_user.id)
+    # Serialize with checkout snapshots and concurrent additions by this buyer.
+    db.query(User).filter(User.id == current_user.id).with_for_update().one()
     product = db.query(Product).filter(Product.id == item_in.product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    existing_item = db.query(CartItem).filter(
+    variants = db.query(CartItem).filter(
         CartItem.cart_id == cart.id, 
         CartItem.product_id == item_in.product_id
-    ).first()
+    ).all()
+    existing_item = next((item for item in variants
+                          if (item.selected_config or {}) == (item_in.selected_config or {})), None)
 
     if existing_item:
+        if existing_item.quantity + item_in.quantity > 100:
+            raise HTTPException(400, "Maximum quantity is 100 per option")
         existing_item.quantity += item_in.quantity
-        if item_in.selected_config:
-            existing_item.selected_config = item_in.selected_config
     else:
         new_item = CartItem(
             cart_id=cart.id,

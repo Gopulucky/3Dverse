@@ -9,8 +9,9 @@ import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/cart-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { toast } from "sonner";
-import { productImage, type ProductCardData } from "@/lib/marketplace";
+import { productImage, purchasePrice, type ProductCardData } from "@/lib/marketplace";
 import { ProductImage } from "@/components/shared/product-image";
+import { ProductPrices } from "@/components/shared/product-prices";
 
 export type { ProductCardData } from "@/lib/marketplace";
 
@@ -18,10 +19,12 @@ export function ProductCard({
   p,
   onWishlist,
   className,
+  format,
 }: {
   p: ProductCardData;
   onWishlist?: (id: number) => void;
   className?: string;
+  format?: string;
 }) {
   const { isAuthenticated } = useAuthStore();
   const { setItemCount } = useCartStore();
@@ -31,7 +34,7 @@ export function ProductCard({
   const printable = latestVersion?.printability_report?.status.toLowerCase() === "pass";
 
   const handleAddToCart = async () => {
-    if (isAdding) return;
+    if (isAdding || purchasePrice(p, format) == null) return;
     setCartMessage("");
     if (!isAuthenticated) {
       toast.error("Please login to add to cart");
@@ -42,7 +45,7 @@ export function ProductCard({
       const cart = await api.post<{ items: unknown[] }>("/api/cart/items", {
         product_id: p.id,
         quantity: 1,
-        selected_config: {},
+        selected_config: { purchase_type: format },
       });
       setItemCount(cart.items.length);
       setCartMessage("Added to cart.");
@@ -53,7 +56,6 @@ export function ProductCard({
     }
   };
 
-  const priceStr = p.price == null ? null : `$${p.price.toFixed(2)}`;
   const reviews = p.review_count ?? 0;
 
   return (
@@ -79,20 +81,20 @@ export function ProductCard({
           {printable && <span className="market-product-verified">Printability passed</span>}
         </div>
         <div className="market-product-modes">
-          {p.is_mode_2_active && <span><Download size={14} aria-hidden="true" /> Digital file</span>}
-          {p.is_mode_3_active && <span><Printer size={14} aria-hidden="true" /> Physical print</span>}
+          {p.is_mode_2_active && p.digital_download_enabled && <span><Download size={14} aria-hidden="true" /> Digital file</span>}
+          {(p.is_mode_3_active || p.is_mode_4_active) && <span><Printer size={14} aria-hidden="true" /> Physical print</span>}
           {p.is_mode_4_active && <span><Wand2 size={14} aria-hidden="true" /> Customizable</span>}
         </div>
         <div className="market-product-footer">
-          <span className="market-price">{priceStr ?? "Price unavailable"}</span>
-          <Link className="market-text-link" href={`/marketplace/${p.id}`}>View model</Link>
+          <ProductPrices product={p} format={format} />
+          <Link className="market-text-link" href={`/marketplace/${p.id}`}>View product</Link>
         </div>
-        <Button type="button" variant="outline" className="market-cart-button"
+        {format && purchasePrice(p, format) != null ? <Button type="button" variant="outline" className="market-cart-button"
           onClick={handleAddToCart} disabled={isAdding} aria-busy={isAdding}
           aria-label={`Add ${p.title} to cart`}>
           {isAdding && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
           {isAdding ? "Adding…" : "Add to cart"}
-        </Button>
+        </Button> : <Link href={`/marketplace/${p.id}`} className="market-text-link market-cart-button">Choose options</Link>}
         <p className="market-cart-message" role="status">{cartMessage}</p>
       </div>
     </article>

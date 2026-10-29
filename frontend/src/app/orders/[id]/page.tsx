@@ -1,4 +1,7 @@
 "use client";
+import { formatMoney } from "@/lib/currency";
+import Link from "next/link";
+import { DownloadModel } from "@/components/shared/download-model";
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -11,6 +14,8 @@ interface ItemPolicy {
   product_id: number;
   quantity: number;
   policy: 'defect_reprint' | 'standard_return' | 'digital_no_return';
+  window_open?: boolean;
+  window_closes_at?: string | null;
 }
 
 interface ReturnPolicy {
@@ -199,7 +204,7 @@ export default function OrderDetailsPage() {
               const alreadyReturned = returnedQty(item.id);
               const canReturn =
                 p?.policy === 'standard_return' &&
-                policy?.window_open &&
+                (p.window_open ?? policy?.window_open) &&
                 alreadyReturned < item.quantity;
               const existing = requestsFor(item.id);
 
@@ -210,9 +215,10 @@ export default function OrderDetailsPage() {
                       <p className="font-medium">{item.product?.title || `Product #${item.product_id}`}</p>
                       <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                     </div>
-                    <p className="text-muted-foreground font-data">${(item.price_at_purchase * item.quantity).toFixed(2)}</p>
+                    <p className="text-muted-foreground font-data">{formatMoney(item.price_at_purchase * item.quantity, order.currency)}</p>
                   </div>
 
+                  <DownloadModel order={order} item={item} />
                   {existing.map((r) => (
                     <p key={r.id} className="text-xs text-muted-foreground mt-1">
                       Return ({r.quantity}) — <span className="capitalize">{r.status}</span>
@@ -271,19 +277,20 @@ export default function OrderDetailsPage() {
           <div className="mt-6 pt-6 border-t border-border space-y-2">
             <div className="flex justify-between text-muted-foreground text-sm">
               <span>Subtotal</span>
-              <span className="font-data">${order.subtotal.toFixed(2)}</span>
+              <span className="font-data">{formatMoney(order.subtotal, order.currency)}</span>
             </div>
             <div className="flex justify-between text-muted-foreground text-sm">
               <span>Shipping</span>
-              <span className="font-data">${order.shipping_cost.toFixed(2)}</span>
+              <span className="font-data">{formatMoney(order.shipping_cost, order.currency)}</span>
             </div>
             <div className="flex justify-between text-foreground font-bold text-lg pt-2 mt-2 border-t border-border/50">
               <span>Total</span>
-              <span className="font-data">${order.total.toFixed(2)}</span>
+              <span className="font-data">{formatMoney(order.total, order.currency)}</span>
             </div>
           </div>
         </div>
 
+        {order.status === 'pending_payment' && <Link href={`/checkout?order_id=${order.id}`} className="market-text-link mt-6">Continue payment</Link>}
         {policy && policy.policy !== 'digital_no_return' && (
           <div className="bg-card border border-border rounded-xl p-6 mt-8">
             <h2 className="text-lg font-semibold mb-2 text-muted-foreground">
@@ -292,12 +299,11 @@ export default function OrderDetailsPage() {
             {policy.policy === 'defect_reprint' ? (
               <p className="text-sm text-muted-foreground mb-4">
                 This item was printed to order, so it isn&apos;t eligible for a general return. If it
-                arrived with a defect, report it within 48 hours of delivery and we&apos;ll print you a
-                free replacement.
+                arrived with a defect, report it within 48 hours of delivery for review and a replacement if approved.
               </p>
             ) : (
               <p className="text-sm text-muted-foreground mb-4">
-                This item ships from existing stock, so you can return it within 7 days for a refund
+                This item ships from existing stock, so you can request a return within 7 days of delivery
                 if it&apos;s unused and in its original condition — use &quot;Request a return&quot; on
                 the line item above.
               </p>
@@ -307,6 +313,8 @@ export default function OrderDetailsPage() {
               <p className="text-sm text-success">
                 Reported — we&apos;re reviewing it and will arrange your reprint.
               </p>
+            ) : !policy.window_closes_at ? (
+              <p className="text-sm text-muted-foreground">The return deadline is unavailable until delivery is recorded. If you have received this order, contact support with delivery evidence.</p>
             ) : !policy.window_open ? (
               <p className="text-sm text-muted-foreground">
                 This window has closed{policy.window_closes_at ? ` (${new Date(policy.window_closes_at).toLocaleDateString()})` : ''}.

@@ -47,6 +47,8 @@ Hallmark's Puppeteer render transport timed out, including an attempted pipe tra
 
 ## Remaining limits and material
 
+Customer launch follow-up (2026-10-29): retained the violet/type system while replacing the opening copy with explicit printed-product versus digital-file choices. Added working format entry points and a short buying explanation. Customer sign-in now explains orders/file access, offers guest browsing and keeps seller onboarding secondary. New catalogue, sign-in, downloads and partner fixture suites pass against the production build; existing homepage width/theme/focus checks still pass. Firebase/provider activation and deployed networking remain external verification steps.
+
 The backend was unavailable locally. No real inventory, accounts, purchases or fulfilment were exercised; functional browser checks used intercepted API fixtures. No production sample catalogue data or image asset was added. A live API with real listing images will populate the hero automatically.
 
 No empty image slots were introduced. Hero imagery uses a square presentation up to 576px high; product cards use square images. Actual print photography attached to catalogue listings would improve the page most.

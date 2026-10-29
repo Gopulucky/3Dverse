@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BRAND } from "@/lib/brand";
+import { ProductPrices } from "@/components/shared/product-prices";
 import { productImage, type ProductCardData } from "@/lib/marketplace";
 import { ProductImage } from "@/components/shared/product-image";
 
@@ -9,15 +9,14 @@ export function HomeHero({ product }: { product?: ProductCardData }) {
       <div className="store-container store-hero-layout">
         <div className="store-hero-copy">
           <h1 id="home-title">
-            {BRAND.tagline.split(". ").map((line, index, lines) => (
-              <span key={line}>{line}{index < lines.length - 1 ? "." : ""}</span>
-            ))}
+            <span>Buy 3D models</span><span>or finished prints.</span>
           </h1>
-          <p>Discover 3D designs, download a model, or order a physical print.</p>
+          <p>Choose a finished 3D printed product delivered to you in India, or a digital model file to use with your own 3D printer.</p>
           <div className="store-actions">
-            <a href="#featured" className="store-primary">Browse the marketplace</a>
-            <Link href="/creator" className="market-text-link">Sell with 3DVerse</Link>
+            <Link href="/marketplace?format=physical" className="store-primary">Shop printed products</Link>
+            <Link href="/marketplace?format=digital" className="market-text-link">Browse digital models</Link>
           </div>
+          <p className="store-hero-note">Each listing shows the formats its creator offers. No printer needed for a finished print.</p>
         </div>
         {product && (
           <figure className="store-hero-product">
@@ -29,7 +28,7 @@ export function HomeHero({ product }: { product?: ProductCardData }) {
                 <h2><Link href={`/marketplace/${product.id}`}>{product.title}</Link></h2>
                 {product.creator_name && <p>By {product.creator_name}</p>}
               </div>
-              {product.price != null && <span className="market-price">${product.price.toFixed(2)}</span>}
+              <ProductPrices product={product} />
             </figcaption>
           </figure>
         )}

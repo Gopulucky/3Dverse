@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, JSON, Enum
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, JSON, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -21,10 +21,15 @@ UNPAID_STATUSES = {"pending", "pending_payment", "cancelled", "failed"}
 
 class Order(Base):
     __tablename__ = "orders"
+    __table_args__ = (UniqueConstraint("customer_id", "idempotency_key", name="uq_orders_customer_idempotency_key"),)
 
     id = Column(Integer, primary_key=True, index=True)
     customer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    stripe_payment_intent_id = Column(String, nullable=True)
+    stripe_payment_intent_id = Column(String, nullable=True, unique=True)
+    currency = Column(String(3), nullable=False, default="INR", server_default="INR")
+    amount_minor = Column(Integer, nullable=True)  # immutable gateway amount; legacy rows null
+    payment_verified_at = Column(DateTime, nullable=True)
+    checkout_fingerprint = Column(String(64), nullable=True)
     mode = Column(Enum(OrderMode), nullable=True)  # nullable for backward compat with existing orders
 
     shipping_address = Column(JSON, nullable=True)
@@ -56,6 +61,8 @@ class Order(Base):
     shiprocket_shipment_id = Column(String, nullable=True)
     tracking_url = Column(String, nullable=True)
     estimated_delivery = Column(DateTime, nullable=True)
+    delivered_at = Column(DateTime, nullable=True)
+    shipping_package = Column(JSON, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
 

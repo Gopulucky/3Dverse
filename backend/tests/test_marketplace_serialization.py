@@ -22,7 +22,7 @@ def make_product() -> Product:
     now = datetime(2026, 10, 22, 12, 0, 0)
     p = Product(
         id=7, creator_id=3, title="Dragon", description="A dragon", category="Miniatures",
-        tags=["dragon"], price=19.5, status=ProductStatus.published,
+        tags=["dragon"], price=19.5, currency="USD", status=ProductStatus.published,
         created_at=now, updated_at=now,
         available_materials=["PLA"], available_colors=["red"], available_sizes=["S"],
         mode_4_config={"a": 1}, is_mode_2_active=True,

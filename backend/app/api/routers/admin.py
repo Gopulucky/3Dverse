@@ -410,6 +410,11 @@ def decide_return_request(
     if not request:
         raise HTTPException(status_code=404, detail="Return request not found")
 
+    if body.status == ReturnStatus.REFUNDED:
+        # A database label is not evidence that funds were returned. Keep the
+        # request unresolved until a gateway refund/reconciliation flow exists.
+        raise HTTPException(status_code=503, detail="Refund settlement is unavailable. No refund has been issued; escalate to the payment operator.")
+
     if body.status == ReturnStatus.RECEIVED and request.status != ReturnStatus.RECEIVED:
         stock_service.restock_from_return(
             db, request.order_item, request.quantity, resellable=body.restock, order_id=request.order_id,

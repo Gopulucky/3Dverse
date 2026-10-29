@@ -57,6 +57,15 @@ class Settings(BaseSettings):
     # Optional error monitoring (free Sentry tier). Unset = disabled.
     SENTRY_DSN: str | None = None
 
+    FIREBASE_PROJECT_ID: str | None = None
+    GOOGLE_APPLICATION_CREDENTIALS: str | None = None
+    STRIPE_SECRET_KEY: str | None = None
+    STRIPE_WEBHOOK_SECRET: str | None = None
+    # Never a fallback for checkout. Other local demo flows require opt-in.
+    ALLOW_MOCK_PAYMENTS: bool = False
+    # Operator-set domestic shipping price in INR; unset blocks physical checkout.
+    CHECKOUT_SHIPPING_INR: str | None = None
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property

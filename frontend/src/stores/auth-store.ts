@@ -4,12 +4,17 @@ import { create } from "zustand";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
+import { getQueryClient } from "@/lib/query-client";
+import { useCartStore } from "@/stores/cart-store";
 
-interface User {
+let sessionGeneration = 0;
+
+export interface User {
   id: number;
   email: string;
   role: "creator" | "customer" | "print_partner" | "admin";
   full_name?: string;
+  auth_provider?: "password" | "firebase";
 }
 
 interface AuthState {
@@ -20,7 +25,7 @@ interface AuthState {
    *  must wait for this — otherwise every full page load bounces to /login. */
   hydrated: boolean;
 
-  setAuth: (token: string, user: User) => void;
+  setAuth: (token: string, user: User, provider?: "password" | "firebase") => void;
   logout: () => void;
   hydrate: () => void;
   refreshUser: () => Promise<void>;
@@ -32,20 +37,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   hydrated: false,
 
-  setAuth: (token: string, user: User) => {
+  setAuth: (token: string, user: User, provider = "password") => {
+    sessionGeneration += 1;
+    getQueryClient().clear();
+    useCartStore.getState().setItemCount(0);
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("auth_provider", provider);
     set({ token, user, isAuthenticated: true, hydrated: true });
   },
 
   logout: () => {
+    sessionGeneration += 1;
+    getQueryClient().clear();
+    useCartStore.getState().setItemCount(0);
+    const provider = localStorage.getItem("auth_provider");
+    if (provider === "firebase") void import("@/lib/firebase").then((sdk) => sdk.firebaseSignOut()).catch(() => {});
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("auth_provider");
     set({ token: null, user: null, isAuthenticated: false });
   },
 
   hydrate: () => {
     if (typeof window === "undefined") return;
+    sessionGeneration += 1;
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
     if (token && userStr) {
@@ -68,6 +84,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   refreshUser: async () => {
     const { token } = get();
+    const generation = sessionGeneration;
     if (!token) return;
     try {
       const fresh = await api.get<{
@@ -75,23 +92,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         email: string;
         role: User["role"];
         full_name?: string;
+        auth_provider?: "password" | "firebase";
       }>("/api/users/me");
+      if (generation !== sessionGeneration) return;
       const user: User = {
         id: fresh.id,
         email: fresh.email,
         role: fresh.role,
         full_name: fresh.full_name,
+        auth_provider: fresh.auth_provider,
       };
       localStorage.setItem("user", JSON.stringify(user));
       set({ user });
     } catch (err) {
+      if (generation !== sessionGeneration) return;
       // An expired/invalidated token (e.g. password changed elsewhere,
       // bumping token_version) should sign the user out instead of leaving
       // them stuck with a token the API will keep rejecting.
       if (err instanceof ApiError && err.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        set({ token: null, user: null, isAuthenticated: false });
+        get().logout();
       }
       // Any other failure (offline, backend down) -- keep the cached user,
       // don't fight the user's session over a transient network error.
