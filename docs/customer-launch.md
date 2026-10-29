@@ -73,6 +73,18 @@ Return windows start from the recorded delivery time: 48 hours for a defect repo
 - Configure the actual frontend CORS origin, strong `SECRET_KEY`, HTTPS, restricted object access, backups/retention and a monitored support channel. Review all placeholder business/legal/contact copy. Repository MIT licensing does not license customer uploads or creator designs.
 - Review failed payments, missing webhook events, shipping failures, pending stock reservations, support requests and backups regularly. Do not treat fixture tests or an empty dashboard as evidence that operations are healthy.
 
+## 6. Optional startup support
+
+The public `/support` page offers voluntary, one-time support for maintenance and growth. Contributions do not create marketplace orders, products, shares or account privileges. They are not advertised as charitable tax-deductible donations.
+
+1. Set up a merchant-hosted payment page with a provider that supports your Indian business and this use. The repository does not create or activate a merchant account. [Razorpay Payment Pages](https://razorpay.com/docs/payments/payment-pages/) is one hosted-page option; verify eligibility with the provider.
+2. Configure the actual business/recipient name, INR currency, one-time amount options, contact/refund information and receipts on that page. Confirm those details yourself before publishing the link.
+3. In **Vercel → frontend project → Settings → Environment Variables**, add `SUPPORT_PAYMENT_URL` with the full live **HTTPS** page URL. This is a destination, not an API key. Do not add provider secret keys or service-account credentials. Select the intended deployment environments and redeploy. Locally, use `frontend/.env.local` and restart the server.
+4. Open `/support` as a signed-out visitor and follow **Make a contribution**. Verify the provider's recipient, INR amount and one-time payment before completing a real operator-approved transaction. Check its receipt and support/refund process. A return URL or browser message is never proof of a completed transfer.
+5. Reconcile contributions and any refunds using the provider dashboard and business accounting. There is no contribution ledger, webhook, subscription or automated refund in 3DVerse. Store orders and their Stripe webhooks remain separate.
+
+Missing or invalid configuration removes the payment action and leaves an honest unavailable message. To stop taking contributions, remove the environment value and redeploy. Build/browser fixtures test the UI and URL handling, not a live transfer.
+
 ## Verification limits
 
 Backend tests exercise security/business boundaries and isolated persistence fixtures; they do not apply PostgreSQL migrations to a live production database. Browser scripts intercept API responses and bypass CSP in isolated fixture contexts so local HTTP mocks can run against a production build; they do not verify deployed CSP or networking. CI/build checks do not verify Firebase console settings, merchant access, payouts, SMTP delivery, private cloud storage or a carrier account. Record staging and live-provider evidence separately before opening the store.
