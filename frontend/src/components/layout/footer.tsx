@@ -98,6 +98,7 @@ export function Footer() {
             <ul className="space-y-2.5">
               {[
                 { href: "/about", label: "About" },
+                { href: "/support", label: "Support 3DVerse" },
                 { href: "/contact", label: "Contact" },
                 { href: "/shipping", label: "Shipping" },
                 { href: "/refund-policy", label: "Returns & Refunds" },

@@ -25,6 +25,13 @@ The first launch targets **India, with prices in INR**. The application is under
 | Fulfilment | Guarded production status transitions, parcel/contact validation, and shipping failures that remain visible |
 | Files | Authenticated access to purchased/private files, with a corrected partner identity check |
 | Operations | Creator and partner portals, PostgreSQL migrations, Redis/Celery jobs, and CI checks |
+| Startup support | Optional one-time contributions through an owner-configured hosted payment page at `/support` |
+
+## Support 3DVerse
+
+The footer links to `/support`, where visitors can help with hosting, maintenance and product development. Contributions are optional and separate from shopping; no 3DVerse account is required.
+
+To accept contributions, configure `SUPPORT_PAYMENT_URL` on the **frontend** host with your live HTTPS merchant payment-page URL, then redeploy. Until configured, the page clearly says contributions are unavailable. The provider displays the recipient, amount and currency and handles payment confirmation and receipts. See the [support activation steps](docs/customer-launch.md#6-optional-startup-support) before enabling it.
 
 ## Before taking customer payments
 
@@ -96,7 +103,10 @@ node scripts/marketplace-smoke.mjs http://127.0.0.1:3000
 node scripts/customer-options-smoke.mjs http://127.0.0.1:3000
 node scripts/auth-smoke.mjs http://127.0.0.1:3000
 node scripts/partner-smoke.mjs http://127.0.0.1:3000
+node scripts/support-smoke.mjs http://127.0.0.1:3000
 ```
+
+The standalone support check assumes an unconfigured destination; pass the expected payment URL as its second argument for a configured server. `npm run test:browser` runs both support states with a fixture URL, without opening a provider or transferring money.
 
 These scripts intercept API responses. They do not prove that a deployed backend, Firebase project, card payment or carrier works. They use installed Microsoft Edge by default; set `BROWSER_CHANNEL=chromium` after installing Playwright Chromium on Linux. See CI for the automated commands. Existing frontend lint debt is tracked separately from the critical-flow lint checks.
 

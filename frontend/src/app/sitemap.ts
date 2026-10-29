@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { API_URL } from "@/lib/api";
 import { SITE_URL } from "@/lib/site";
 
-const STATIC_PAGES = ["", "/marketplace", "/about", "/contact", "/privacy", "/terms", "/refund-policy", "/shipping"];
+const STATIC_PAGES = ["", "/marketplace", "/about", "/support", "/contact", "/privacy", "/terms", "/refund-policy", "/shipping"];
 
 export const revalidate = 3600;
 
