@@ -2,6 +2,7 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from app.api import deps
+from app.core.config import settings
 from app.models.user import User, UserRole, CreatorType
 from app.models.print_partner import PrintPartner, PrintPartnerCapability
 from app.models.collaboration import (
@@ -133,7 +134,10 @@ def pay_ticket(
     ticket = db.query(CollaborationTicket).filter(CollaborationTicket.id == ticket_id).first()
     if not ticket or ticket.creator_id != current_user.id:
         raise HTTPException(status_code=404, detail="Ticket not found")
-        
+
+    if settings.is_production or not settings.ALLOW_MOCK_PAYMENTS:
+        raise HTTPException(status_code=503, detail="Collaboration payments are not available yet")
+
     if ticket.payment_status == PaymentStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Ticket is already paid")
         

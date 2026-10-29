@@ -7,6 +7,8 @@ import { useState, useEffect } from "react";
 import { Trash2, ShoppingCart, ArrowRight, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { purchasePrice, type ProductCardData } from "@/lib/marketplace";
+import { formatMoney } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -75,7 +77,7 @@ export default function CartPage() {
 
   const subtotal =
     cart?.items?.reduce(
-      (acc: number, item: any) => acc + item.product.price * item.quantity,
+      (acc: number, item: any) => acc + (purchasePrice(item.product, item.selected_config?.purchase_type) ?? item.product.price ?? 0) * item.quantity,
       0
     ) || 0;
 
@@ -89,8 +91,14 @@ export default function CartPage() {
   }
 
   const total = Math.max(0, subtotal - discountAmount);
+  const currencies = new Set<string>((cart?.items || []).map((item: { product: { currency?: string } }) => item.product.currency || "INR"));
+  const cartCurrency = currencies.values().next().value || "INR";
+  const mixedCurrencies = currencies.size > 1;
+  const needsFormat = (cart?.items || []).some((item: { selected_config?: { purchase_type?: string }; product: ProductCardData }) => purchasePrice(item.product, item.selected_config?.purchase_type) == null);
+  const checkoutBlocked = mixedCurrencies || cartCurrency !== "INR" || needsFormat;
 
   const handleCheckout = () => {
+    if (checkoutBlocked) return;
     if (discountInfo) {
       sessionStorage.setItem("coupon", discountInfo.code);
     } else {
@@ -148,10 +156,11 @@ export default function CartPage() {
 
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold truncate font-display">
-                      {item.product.title}
+                      <Link href={`/marketplace/${item.product.id}`} className="underline">{item.product.title}</Link>
                     </h3>
+                    <p className="text-sm text-muted-foreground">{item.selected_config?.purchase_type === "digital" ? "Digital file · download" : item.selected_config?.purchase_type === "physical" ? "Physical print · delivered" : "Format required · choose on product page"}</p>
                     <p className="text-sm text-muted-foreground font-data mt-0.5">
-                      ${item.product.price?.toFixed(2)}
+                      {purchasePrice(item.product, item.selected_config?.purchase_type) == null ? "Price unavailable until format is chosen" : formatMoney(purchasePrice(item.product, item.selected_config?.purchase_type)!, item.product.currency)}
                     </p>
                   </div>
 
@@ -179,7 +188,7 @@ export default function CartPage() {
                     </div>
 
                     <p className="font-bold w-20 text-right font-data text-foreground">
-                      ${(item.product.price * item.quantity).toFixed(2)}
+                      {purchasePrice(item.product, item.selected_config?.purchase_type) == null ? "—" : formatMoney(purchasePrice(item.product, item.selected_config?.purchase_type)! * item.quantity, item.product.currency)}
                     </p>
 
                     <Button
@@ -203,18 +212,18 @@ export default function CartPage() {
             <div className="space-y-3 mb-6">
               <div className="flex justify-between text-muted-foreground font-data text-sm">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>{mixedCurrencies ? "Mixed currencies" : needsFormat ? "Choose formats first" : formatMoney(subtotal, cartCurrency)}</span>
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-success font-data text-sm">
                   <span>Discount ({discountInfo.code})</span>
-                  <span>-${discountAmount.toFixed(2)}</span>
+                  <span>−{formatMoney(discountAmount, cartCurrency)}</span>
                 </div>
               )}
               <Separator />
               <div className="flex justify-between text-lg font-bold font-data text-foreground">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{mixedCurrencies ? "Mixed currencies" : needsFormat ? "Choose formats first" : formatMoney(total, cartCurrency)}</span>
               </div>
             </div>
 
@@ -239,8 +248,10 @@ export default function CartPage() {
               )}
             </div>
 
+            {checkoutBlocked && <p role="status" className="text-sm mb-4">{mixedCurrencies ? "Your cart contains different currencies. Remove legacy USD items to continue with INR checkout." : cartCurrency !== "INR" ? "These legacy USD listings need the creator to reprice them in INR before checkout." : "Some items need a valid format and price. Remove them and choose a format on the product page."}</p>}
             <Button
               onClick={handleCheckout}
+              disabled={checkoutBlocked}
               className="w-full"
               size="lg"
             >

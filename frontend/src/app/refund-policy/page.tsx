@@ -21,25 +21,24 @@ export default function RefundPolicyPage() {
       <h2>Made-to-order prints</h2>
       <p>
         These are printed only after you order, so they are not returnable for change of mind. If your
-        print arrives defective or damaged, report it within <strong>48 hours</strong> of the order from
+        print arrives defective or damaged, report it within <strong>48 hours of delivery</strong> from
         the order page, with a description and photos if you can. If approved, we reprint it free of
         charge.
       </p>
 
       <h2>Ready-stock items</h2>
       <p>
-        Items a seller ships from existing stock can be returned within <strong>7 days</strong> of the
-        order. Request the return from the order page. Once the item is received and approved, you are
-        refunded and the item goes back into stock.
+        Items a seller ships from existing stock can be returned within <strong>7 days of delivery</strong>.
+        Request the return from the order page. Refunds are subject to review and confirmation by the payment provider.
       </p>
+      <p>If a delivery timestamp is missing, including on an older order, the return deadline is unavailable. Contact support with your order number and delivery evidence so the date can be checked.</p>
 
       <h2>Cancellations</h2>
       <p>You can cancel an order yourself while it is still awaiting payment. After payment, contact us.</p>
 
       <h2>How refunds are paid</h2>
       <p>
-        Approved refunds go back to your original payment method. Timing depends on your bank or
-        payment provider and is usually 5–10 business days.
+        Confirmed refunds go back to your original payment method. Timing depends on your bank or payment provider.
       </p>
 
       <h2>Contact</h2>

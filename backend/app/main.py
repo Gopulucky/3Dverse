@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
         # it be discovered from behaviour.
         logger.warning(
             "ENVIRONMENT=%r -- running in DEVELOPMENT mode. Active in this mode: "
-            "orders self-mark as 'paid' with no payment taken; /docs, /redoc and "
+            "/docs, /redoc and "
             "the OpenAPI schema are publicly served; the SECRET_KEY safety check "
             "is disabled. Set ENVIRONMENT=production for any public deployment.",
             settings.ENVIRONMENT,

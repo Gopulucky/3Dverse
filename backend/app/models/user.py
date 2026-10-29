@@ -33,8 +33,13 @@ class CreatorTier(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
+    @property
+    def auth_provider(self):
+        return "firebase" if self.firebase_uid else "password"
+
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
+    firebase_uid = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String, nullable=False)
     role = Column(Enum(UserRole), default=UserRole.customer, nullable=False)
     

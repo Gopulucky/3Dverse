@@ -6,10 +6,12 @@ import tempfile
 import urllib.parse
 import uuid
 from typing import Iterator, Optional
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException
 from starlette.concurrency import run_in_threadpool
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
+from boto3.exceptions import S3UploadFailedError
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +63,12 @@ ALLOWED_UPLOAD_EXTENSIONS = {
 
 class InvalidUpload(Exception):
     pass
+
+
+class StorageUnavailable(HTTPException):
+    """Durable storage failures propagate to every upload endpoint as 503."""
+    def __init__(self):
+        super().__init__(status_code=503, detail="File storage is temporarily unavailable. Please retry later.")
 
 
 class UploadTooLarge(InvalidUpload):
@@ -205,10 +213,17 @@ async def save_upload_file(
             )
             _remove_quietly(file_path)
             return public_url, file_size
-        except (ClientError, BotoCoreError) as e:
+        except (ClientError, BotoCoreError, S3UploadFailedError) as e:
+            if settings.is_production:
+                _remove_quietly(file_path)
+                raise StorageUnavailable() from e
             # Keep the file we already streamed to disk and serve it from there
             # rather than failing an upload the user has already waited for.
             logger.warning("S3 upload failed, falling back to local storage: %s", e)
+
+    if settings.is_production:
+        _remove_quietly(file_path)
+        raise StorageUnavailable()
 
     # Local storage (dev, or S3 unavailable). Note this is the *web* process's
     # disk; see open_stored_file for how the Celery worker reaches it.
@@ -282,8 +297,13 @@ def store_local_file(source_path: str, subfolder: str, extension: str) -> str:
         try:
             get_s3_client().upload_file(source_path, bucket, object_name)
             return public_url
-        except (ClientError, BotoCoreError) as e:
+        except (ClientError, BotoCoreError, S3UploadFailedError) as e:
+            if settings.is_production:
+                raise StorageUnavailable() from e
             logger.warning("S3 upload of generated file failed: %s", e)
+
+    if settings.is_production:
+        raise StorageUnavailable()
 
     target_dir = os.path.join(LOCAL_UPLOADS_DIR, subfolder)
     os.makedirs(target_dir, exist_ok=True)

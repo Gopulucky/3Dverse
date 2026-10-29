@@ -14,6 +14,35 @@ services:
         sync: false
       - key: BACKEND_CORS_ORIGINS
         sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      # Mount Admin credentials securely or supply workload identity separately.
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: CHECKOUT_SHIPPING_INR
+        sync: false
+      - key: ALLOW_MOCK_PAYMENTS
+        value: "false"
+      - key: SHIPROCKET_EMAIL
+        sync: false
+      - key: SHIPROCKET_PASSWORD
+        sync: false
+      - key: SHIPROCKET_PICKUP_LOCATION
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
       - key: POSTGRES_SERVER
         sync: false
       - key: POSTGRES_USER

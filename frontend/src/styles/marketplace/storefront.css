@@ -8,6 +8,13 @@
 .store-hero h1 { font-family: var(--font-display); font-size: var(--store-display); font-weight: 600; line-height: 1.06; letter-spacing: -0.045em; max-width: 12ch; }
 .store-hero h1 span { display: block; }
 .store-hero-copy > p { max-width: 32rem; margin-top: var(--space-lg); font-size: 1.125rem; color: var(--color-muted-foreground); }
+.store-hero-copy > .store-hero-note { font-size: var(--store-small); max-width: 30rem; }
+.market-price small { display: block; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 400; color: var(--color-muted-foreground); }
+.store-how-it-works { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-xl); list-style: none; padding: 0; }
+.store-how-it-works li { border-top: 1px solid var(--color-border); padding-top: var(--space-lg); }
+.store-how-it-works li > span { font-family: var(--font-mono); color: var(--color-primary-ink); font-size: var(--store-small); }
+.store-how-it-works h3, .store-seller-note h2 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; margin-block: var(--space-sm); }
+.store-how-it-works p, .store-seller-note p { color: var(--color-muted-foreground); }
 .store-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-lg); margin-top: var(--space-xl); }
 .store-primary { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; padding-inline: var(--space-lg); border-radius: var(--radius-md); background: var(--store-action); color: var(--store-action-ink); font-weight: 500; white-space: nowrap; transition: opacity var(--store-duration) var(--store-ease); }
 .store-primary:hover { opacity: 0.9; }
@@ -85,6 +92,7 @@
   .store-arrivals .store-section-head { flex-direction: row; justify-content: space-between; }
 }
 @media (max-width: 48rem) {
+  .store-how-it-works { grid-template-columns: minmax(0, 1fr); }
   .store-hero-layout { grid-template-columns: minmax(0, 1fr); min-height: 0; padding-block: var(--space-2xl); gap: var(--space-2xl); }
   .store-hero h1 { max-width: 17ch; }
   .store-hero-image { max-height: 28rem; }

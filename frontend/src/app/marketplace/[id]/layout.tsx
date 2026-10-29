@@ -11,6 +11,7 @@ type PublicProduct = {
   title: string;
   description?: string | null;
   price?: number;
+  currency?: string;
   avg_rating?: number | null;
   review_count?: number;
   media?: { media_url: string; is_primary?: boolean }[];
@@ -67,8 +68,7 @@ export default async function ProductLayout({ params, children }: Props) {
     offers: {
       "@type": "Offer",
       price: (product.price ?? 0).toFixed(2),
-      priceCurrency: "USD",
-      availability: "https://schema.org/InStock",
+      priceCurrency: product.currency || "INR",
     },
     ...(product.review_count && product.avg_rating
       ? {

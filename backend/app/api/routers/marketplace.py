@@ -1,5 +1,5 @@
 import time
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Literal
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session, defer, selectinload
 from sqlalchemy import or_, desc, func
@@ -172,6 +172,25 @@ def get_homepage(db: Session = Depends(deps.get_db)) -> Any:
     return _cached("homepage", lambda: _build_homepage(db))
 
 
+def _catalogue_filters(query, format=None, sort="featured"):
+    """Apply offer permissions and a deterministic order before pagination."""
+    if format == "digital":
+        query = query.filter(Product.is_mode_2_active.is_(True), Product.digital_download_enabled.is_(True))
+    elif format == "physical":
+        query = query.filter(or_(Product.is_mode_3_active.is_(True), Product.is_mode_4_active.is_(True)))
+    # Explicit catalogue sorting replaces semantic-search order. Every sort has
+    # an id tie-break so equal prices/timestamps cannot repeat across pages.
+    query = query.order_by(None)
+    price = Product.base_print_price if format == "physical" else Product.price
+    if sort == "price_asc":
+        return query.order_by(price.asc(), Product.id.asc())
+    if sort == "price_desc":
+        return query.order_by(price.desc(), Product.id.asc())
+    if sort == "newest":
+        return query.order_by(Product.created_at.desc(), Product.id.desc())
+    return query.order_by(Product.is_featured.desc(), Product.created_at.desc(), Product.id.desc())
+
+
 @router.get("/products", response_model=List[ProductSchema])
 def get_products(
     db: Session = Depends(deps.get_db),
@@ -179,6 +198,9 @@ def get_products(
     category: Optional[str] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
+    format: Optional[Literal["physical", "digital"]] = None,
+    sort: Literal["featured", "newest", "price_asc", "price_desc"] = "featured",
+    currency: Optional[Literal["INR", "USD"]] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
 ) -> Any:
@@ -207,16 +229,22 @@ def get_products(
         if category:
             query = query.filter(Product.category == category)
 
+        if currency:
+            query = query.filter(Product.currency == currency)
+
+        price_column = Product.base_print_price if format == "physical" else Product.price
         if min_price is not None:
-            query = query.filter(Product.price >= min_price)
+            query = query.filter(price_column >= min_price)
 
         if max_price is not None:
-            query = query.filter(Product.price <= max_price)
+            query = query.filter(price_column <= max_price)
+
+        query = _catalogue_filters(query, format=format, sort=sort)
 
         products = enrich_products(db, query.offset(skip).limit(limit).all())
         return [ProductSchema.model_validate(p).model_dump(mode="json") for p in products]
 
-    key = f"products:{q}:{category}:{min_price}:{max_price}:{skip}:{limit}"
+    key = f"products:{q}:{category}:{min_price}:{max_price}:{format}:{sort}:{currency}:{skip}:{limit}"
     return _cached(key, build)
 
 
@@ -238,7 +266,7 @@ def get_suggestions(
 
     # Product title suggestions (fast ilike — no FTS, no embedding)
     product_rows = (
-        db.query(Product.id, Product.title, Product.category, Product.price)
+        db.query(Product.id, Product.title, Product.category, Product.price, Product.currency)
         .filter(
             Product.status == ProductStatus.published,
             Product.title.ilike(pattern),
@@ -257,7 +285,7 @@ def get_suggestions(
 
     return {
         "products": [
-            {"id": r.id, "title": r.title, "category": r.category, "price": float(r.price)}
+            {"id": r.id, "title": r.title, "category": r.category, "price": float(r.price), "currency": r.currency}
             for r in product_rows
         ],
         "categories": matching_categories[:3],

@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
+const source = readFileSync(new URL('../src/lib/marketplace.ts', import.meta.url), 'utf8');
+const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
+const module = await import(`data:text/javascript;base64,${Buffer.from(output).toString('base64')}`);
+const availableFormats = module.availableFormats || (() => []);
+const purchasePrice = module.purchasePrice || (() => undefined);
+const product = { id: 1, title: 'Both', price: 150, base_print_price: 450, currency: 'INR', is_mode_2_active: true, digital_download_enabled: true, is_mode_3_active: true };
+assert.deepEqual(availableFormats(product), ['digital', 'physical']);
+assert.deepEqual(availableFormats({ ...product, digital_download_enabled: false }), ['physical']);
+assert.deepEqual(availableFormats({ ...product, is_mode_3_active: false, is_mode_4_active: true }), ['digital', 'physical']);
+assert.equal(purchasePrice(product, 'digital'), 150);
+assert.equal(purchasePrice(product, 'physical'), 450);
+assert.equal(purchasePrice(product, undefined), undefined, 'unselected format must not silently become digital');
+assert.equal(purchasePrice({ ...product, base_print_price: 0 }, 'physical'), undefined, 'unpriced physical product is not a free print');
+assert.equal(purchasePrice({ ...product, digital_download_enabled: false }, 'digital'), undefined);
+console.log('Purchase option checks passed: permissions, physical price, explicit selection, unpriced print.');

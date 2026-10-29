@@ -34,6 +34,8 @@ def reserve_for_order(db: Session, order: Order) -> None:
     skipped -- they consume material, not countable units.
     """
     for line in order.items:
+        if (line.selected_config or {}).get("purchase_type") == "digital":
+            continue
         item = (
             db.query(StockItem)
             .filter(StockItem.product_id == line.product_id)
@@ -58,6 +60,8 @@ def reserve_for_order(db: Session, order: Order) -> None:
 def release_for_order(db: Session, order: Order, reason: str = "order cancelled") -> None:
     """Return held stock to the shelf when an order is cancelled or expires."""
     for line in order.items:
+        if (line.selected_config or {}).get("purchase_type") == "digital":
+            continue
         item = (
             db.query(StockItem)
             .filter(StockItem.product_id == line.product_id)
@@ -78,6 +82,8 @@ def release_for_order(db: Session, order: Order, reason: str = "order cancelled"
 def ship_order(db: Session, order: Order) -> None:
     """Consume reserved stock once the units physically leave."""
     for line in order.items:
+        if (line.selected_config or {}).get("purchase_type") == "digital":
+            continue
         item = (
             db.query(StockItem)
             .filter(StockItem.product_id == line.product_id)

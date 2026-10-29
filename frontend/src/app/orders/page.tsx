@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { Package, Download, ExternalLink, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { formatMoney } from "@/lib/currency";
+import { DownloadModel } from "@/components/shared/download-model";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -120,7 +122,7 @@ export default function OrdersPage() {
                     Total
                   </p>
                   <p className="text-sm font-bold font-data text-foreground">
-                    ${order.total?.toFixed(2)}
+                    {formatMoney(order.total || 0, order.currency)}
                   </p>
                 </div>
                 <div>
@@ -130,6 +132,7 @@ export default function OrdersPage() {
                   <p className="text-sm font-data">#{order.id}</p>
                 </div>
                 <div className="flex items-center gap-3">
+                  {order.status === "pending_payment" && <Link href={`/checkout?order_id=${order.id}`} className="market-text-link">Continue payment</Link>}
                   <StatusChip
                     status={getStatusType(order.status)}
                     label={order.status?.toUpperCase()}
@@ -187,16 +190,12 @@ export default function OrdersPage() {
                             `Product #${item.product_id}`}
                           <ExternalLink size={12} className="opacity-50" />
                         </Link>
-                        {item.selected_config &&
-                          Object.keys(item.selected_config).length > 0 && (
-                            <p className="text-xs text-muted-foreground mt-1 font-data">
-                              {JSON.stringify(item.selected_config)}
-                            </p>
-                          )}
+                        <p className="text-sm text-muted-foreground mt-1">{item.selected_config?.purchase_type === "digital" ? "Digital file · download" : item.selected_config?.purchase_type === "physical" ? "Physical print · delivered" : "Legacy listing"}</p>
+                        <DownloadModel order={order} item={item} />
                       </div>
                       <div className="text-right shrink-0">
                         <p className="font-bold font-data text-foreground">
-                          ${item.price_at_purchase?.toFixed(2)}
+                          {formatMoney(item.price_at_purchase || 0, order.currency)}
                         </p>
                         <p className="text-xs text-muted-foreground font-data mt-0.5">
                           Qty: {item.quantity}

@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/stores/auth-store";
+import { reauthenticateFirebase, signInError } from "@/lib/firebase";
 
 /**
  * Danger zone — self-service account deletion, shown in every portal's settings.
@@ -27,24 +28,27 @@ export function DeleteAccountCard({
   note?: string;
 }) {
   const router = useRouter();
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
+  const firebase = user?.auth_provider === "firebase";
   const [open, setOpen] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const deleteAccount = useMutation({
-    mutationFn: () =>
-      api.delete("/api/users/me", { password, confirm_email: confirmEmail }),
+    mutationFn: async () => {
+      const firebase_id_token = firebase ? await reauthenticateFirebase(password) : undefined;
+      return api.delete("/api/users/me", { password, confirm_email: confirmEmail, firebase_id_token });
+    },
     onSuccess: () => {
       toast.success("Account deleted. Signing you out…");
       logout();
       router.push("/");
     },
-    onError: (e: any) => toast.error(e?.detail || "Failed to delete account"),
+    onError: (error: unknown) => toast.error(signInError(error)),
   });
 
   const canSubmit =
-    confirmEmail.trim().toLowerCase() === email.toLowerCase() && password.length > 0;
+    confirmEmail.trim().toLowerCase() === email.toLowerCase() && (firebase || password.length > 0);
 
   return (
     <Card className="p-6 border-danger-red/40 mt-8">
@@ -77,13 +81,14 @@ export function DeleteAccountCard({
             />
           </div>
           <div>
-            <Label className="mb-2 block">Your password</Label>
+            <Label className="mb-2 block">{firebase ? "Email password (leave blank for Google sign-in)" : "Your password"}</Label>
             <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
             />
+            {firebase && <p className="text-xs text-muted-foreground mt-2">Confirm your sign-in to delete your account. Google users will see a confirmation window.</p>}
           </div>
           <div className="flex gap-2 justify-end">
             <Button
@@ -103,7 +108,7 @@ export function DeleteAccountCard({
               disabled={!canSubmit || deleteAccount.isPending}
               onClick={() => deleteAccount.mutate()}
             >
-              {deleteAccount.isPending ? "Deleting…" : "Permanently delete"}
+              {deleteAccount.isPending ? "Deleting…" : "Delete my account"}
             </Button>
           </div>
         </div>

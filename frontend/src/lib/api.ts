@@ -83,9 +83,18 @@ function assertApiConfigured() {
   }
 }
 
-function getAuthHeaders(): HeadersInit {
+async function getAuthHeaders(): Promise<Record<string, string>> {
   if (typeof window === "undefined") return {};
-  const token = localStorage.getItem("token");
+  let token = localStorage.getItem("token");
+  if (localStorage.getItem("auth_provider") === "firebase") {
+    try {
+      const { currentFirebaseToken } = await import("./firebase");
+      token = await currentFirebaseToken();
+      localStorage.setItem("token", token);
+    } catch {
+      throw new ApiError(401, "Please sign in again");
+    }
+  }
   if (!token) return {};
   return { Authorization: `Bearer ${token}` };
 }
@@ -121,7 +130,7 @@ async function request<T>(
   }
 
   const headers: HeadersInit = {
-    ...getAuthHeaders(),
+    ...await getAuthHeaders(),
     ...(body ? { "Content-Type": "application/json" } : {}),
     ...customHeaders,
   };
@@ -169,8 +178,8 @@ export const api = {
     request<T>(endpoint, { method: "DELETE", body }),
 
   // For file uploads (FormData, no JSON content-type)
-  upload: <T>(endpoint: string, formData: FormData) => {
-    const headers = getAuthHeaders();
+  upload: async <T>(endpoint: string, formData: FormData) => {
+    const headers = await getAuthHeaders();
     return fetch(`${API_BASE_URL}${endpoint}`, {
       method: "POST",
       headers,
@@ -200,11 +209,10 @@ export const api = {
     formData: FormData,
     onProgress?: (percent: number) => void
   ): Promise<T> =>
-    new Promise<T>((resolve, reject) => {
+    getAuthHeaders().then((headers) => new Promise<T>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", `${API_BASE_URL}${endpoint}`);
 
-      const headers = getAuthHeaders() as Record<string, string>;
       Object.entries(headers).forEach(([k, v]) => xhr.setRequestHeader(k, v));
 
       xhr.upload.onprogress = (e) => {
@@ -246,7 +254,7 @@ export const api = {
       xhr.onabort = () => reject(new ApiError(0, "Upload cancelled."));
 
       xhr.send(formData);
-    }),
+    })),
 
   /** Get the full URL for a media/upload path */
   mediaUrl: (path: string) => {
@@ -261,7 +269,7 @@ export const api = {
    */
   download: async (endpoint: string, filename?: string) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: getAuthHeaders(),
+      headers: await getAuthHeaders(),
     });
     if (!response.ok) {
       let detail = "Download failed";

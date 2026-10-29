@@ -14,8 +14,7 @@ export function Footer() {
               <Wordmark size="sm" />
             </Link>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-              The infrastructure connecting digital creators, AI validation,
-              distributed manufacturing, and global fulfillment.
+              {BRAND.oneLiner}
             </p>
             <p className="mt-2 text-xs text-primary font-semibold">
               {BRAND.tagline}
@@ -29,10 +28,10 @@ export function Footer() {
             </h4>
             <ul className="space-y-2.5">
               {[
-                { href: "/marketplace", label: "Browse All" },
-                { href: "/marketplace?category=Tabletop", label: "Tabletop" },
-                { href: "/marketplace?category=Miniatures", label: "Miniatures" },
-                { href: "/marketplace?category=Home+Decor", label: "Home Decor" },
+                { href: "/marketplace", label: "Browse all products" },
+                { href: "/marketplace?format=physical", label: "Printed products" },
+                { href: "/marketplace?format=digital", label: "Digital models" },
+                { href: "/orders", label: "Your orders" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
@@ -55,7 +54,7 @@ export function Footer() {
               {[
                 { href: "/creator/dashboard", label: "Creator Dashboard" },
                 { href: "/creator/products/new", label: "Upload a Design" },
-                { href: "/register", label: "Become a Creator" },
+                { href: "/sell", label: "Become a Creator" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
@@ -77,7 +76,7 @@ export function Footer() {
             <ul className="space-y-2.5">
               {[
                 { href: "/partner", label: "Partner Console" },
-                { href: "/register", label: "Become a Partner" },
+                { href: "/sell#partners", label: "Become a Partner" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link

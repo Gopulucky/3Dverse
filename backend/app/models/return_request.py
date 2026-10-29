@@ -45,6 +45,7 @@ class ReturnRequest(Base):
     )
     within_window = Column(String, nullable=True)  # retained for audit: the window state at request time
     refund_amount = Column(Float, nullable=True)
+    gateway_refund_id = Column(String, nullable=True, unique=True)
     resolution_note = Column(Text, nullable=True)
     requested_at = Column(DateTime, server_default=func.now())
     resolved_at = Column(DateTime, nullable=True)

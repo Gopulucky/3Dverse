@@ -20,6 +20,7 @@ from app.models.review import Review
 from app.models.cart import Cart, CartItem
 from app.models.coupon import Coupon
 from app.models.order import Order, OrderItem
+from app.models.payment import PaymentEvent
 from app.models.printer import PrinterProfile
 from app.models.material import Material, CreatorMaterial, FinishOption, PostProcessCapability
 from app.models.defect_report import DefectReport

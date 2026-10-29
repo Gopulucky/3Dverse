@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List, Optional, Any
+from pydantic import BaseModel, model_validator
+from typing import List, Optional, Any, Literal
 from datetime import datetime
 from app.models.product import ProductStatus, FulfillmentStatus, SafetyReviewStatus
 
@@ -79,6 +79,7 @@ class ProductBase(BaseModel):
     category: Optional[str] = None
     tags: Optional[List[str]] = []
     price: float = 0.0
+    currency: Literal["INR", "USD"] = "INR"
     license_type: Optional[str] = None
     status: ProductStatus = ProductStatus.draft
     fulfillment_status: Optional[FulfillmentStatus] = FulfillmentStatus.pending_partner
@@ -115,6 +116,13 @@ class ProductUpdate(ProductBase):
     available_sizes: Optional[List[str]] = None
     base_print_price: Optional[float] = None
     mode_4_config: Optional[dict] = None
+
+    @model_validator(mode="after")
+    def explicit_repricing(self):
+        if "currency" in self.model_fields_set:
+            if self.price is None or self.base_print_price is None:
+                raise ValueError("Changing currency requires explicit digital and physical prices")
+        return self
 
 class Product(ProductBase):
     id: int

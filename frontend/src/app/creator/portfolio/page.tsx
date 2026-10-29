@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { formatMoney } from "@/lib/currency";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -379,7 +380,7 @@ export default function CreatorPortfolioPage() {
                             </p>
                             <div className="flex items-center justify-between mt-1">
                               <span className="text-xs font-data text-muted-foreground">
-                                ${p.price?.toFixed(2)}
+                                {formatMoney(p.price || 0, p.currency)}
                               </span>
                               {p.avg_rating != null && (
                                 <span className="flex items-center gap-0.5 text-xs text-ember font-data">

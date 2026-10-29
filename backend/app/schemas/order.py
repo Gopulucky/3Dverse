@@ -22,6 +22,10 @@ class OrderBase(BaseModel):
     shipping_cost: float = 0.0
     subtotal: float = 0.0
     total: float = 0.0
+    currency: str = "INR"
+    delivered_at: Optional[datetime] = None
+    shipping_package: Optional[dict] = None
+    payment_verified_at: Optional[datetime] = None
     status: str = "pending"
     stripe_payment_intent_id: Optional[str] = None
     invoice_url: Optional[str] = None

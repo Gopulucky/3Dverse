@@ -1,4 +1,5 @@
 from datetime import datetime
+import time
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -38,8 +39,9 @@ def update_my_account(
 
 
 class AccountDelete(BaseModel):
-    password: str
+    password: str = ""
     confirm_email: str
+    firebase_id_token: str | None = None
 
 
 @router.delete("/me", dependencies=[Depends(rate_limit("delete_account", limit=5, window_seconds=3600))])
@@ -63,7 +65,15 @@ def delete_my_account(
         )
     if body.confirm_email.strip().lower() != current_user.email.lower():
         raise HTTPException(status_code=400, detail="Confirmation email does not match this account")
-    if not verify_password(body.password, current_user.hashed_password):
+    if current_user.firebase_uid:
+        from app.core.firebase_auth import verify_token
+        claims = verify_token(body.firebase_id_token or "")
+        auth_time = claims.get("auth_time")
+        if (claims.get("uid") != current_user.firebase_uid or
+                not isinstance(auth_time, (int, float)) or
+                not 0 <= time.time() - auth_time <= 300):
+            raise HTTPException(401, "Please confirm your sign-in again before deleting your account")
+    elif not verify_password(body.password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Password is incorrect")
 
     current_user.is_active = False
@@ -88,6 +98,8 @@ def change_my_password(
     current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
     """Change the signed-in user's password."""
+    if current_user.firebase_uid:
+        raise HTTPException(400, "Change your password using your Google or email sign-in settings")
     if not verify_password(body.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     if len(body.new_password) < 8:

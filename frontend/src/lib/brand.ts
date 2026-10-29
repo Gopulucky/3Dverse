@@ -14,10 +14,10 @@ export const BRAND = {
   /** Wordmark split — the two halves are styled differently everywhere. */
   wordmark: { lead: "3D", tail: "Verse" },
   tagline: "Upload Once. Sell Forever. Print Anywhere.",
-  positioning: "The Operating System for 3D Commerce",
+  positioning: "3D models and finished prints",
   /** One sentence. Used for metadata and the about hero. */
   oneLiner:
-    "3DVerse is the infrastructure layer for physical creation — a marketplace, an AI manufacturing assistant, and a distributed print network operating as one system.",
+    "Buy finished 3D printed products delivered in India, or download digital models for your own 3D printer. Explore the formats offered by each creator on 3DVerse.",
 } as const;
 
 /* ================================================================

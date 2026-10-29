@@ -14,6 +14,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { changeFirebasePassword, firebaseVerifyEmail, signInError } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -91,12 +92,14 @@ export default function CustomerSettingsPage() {
   });
 
   const passwordMutation = useMutation({
-    mutationFn: (data: any) => api.put("/api/users/me/password", data),
+    mutationFn: (data: {current_password: string; new_password: string}) => profile?.auth_provider === "firebase"
+      ? changeFirebasePassword(data.current_password, data.new_password)
+      : api.put("/api/users/me/password", data),
     onSuccess: () => {
       toast.success("Password updated!");
       setPasswords({ current_password: "", new_password: "" });
     },
-    onError: (e: any) => toast.error(e.detail || "Failed to update password"),
+    onError: (error: unknown) => toast.error(signInError(error)),
   });
 
   if (!isAuthenticated) return null;
@@ -112,8 +115,8 @@ export default function CustomerSettingsPage() {
 
   function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!passwords.current_password || !passwords.new_password) {
-      toast.error("Enter both your current and new password");
+    if ((!passwords.current_password && profile?.auth_provider !== "firebase") || passwords.new_password.length < 8) {
+      toast.error("Use at least 8 characters for your new password. Email users must enter their current password.");
       return;
     }
     passwordMutation.mutate(passwords);
@@ -142,7 +145,8 @@ export default function CustomerSettingsPage() {
             size="sm"
             onClick={async () => {
               try {
-                await api.post("/api/auth/resend-verification");
+                if (profile?.auth_provider === "firebase") await firebaseVerifyEmail();
+                else await api.post("/api/auth/resend-verification");
                 toast.success("Verification email sent. Check your inbox.");
               } catch (err: any) {
                 toast.error(err?.detail || "Could not send the email right now.");
@@ -242,7 +246,7 @@ export default function CustomerSettingsPage() {
         </h2>
         <form onSubmit={handlePasswordSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="mb-2 block">Current Password</Label>
+            <Label className="mb-2 block">{profile?.auth_provider === "firebase" ? "Current password (leave blank for Google)" : "Current Password"}</Label>
             <Input
               type="password"
               value={passwords.current_password}

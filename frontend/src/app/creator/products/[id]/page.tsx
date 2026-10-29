@@ -79,12 +79,17 @@ export default function ProductDetailPage({
 
   const handleUpdate = async (e?: React.FormEvent, statusOverride?: string) => {
     if (e) e.preventDefault();
+    if (product.price === "" || product.base_print_price === "") {
+      toast.error("Enter the digital and physical prices in the selected currency before saving.");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
         title: product.title,
         description: product.description,
         price: product.price,
+        currency: product.currency || "USD",
         category: product.category,
         status: statusOverride || product.status,
         print_settings: product.print_settings,
@@ -549,6 +554,11 @@ export default function ProductDetailPage({
             {/* PRICING & MODES */}
             <Card className="p-5 border-border bg-card shadow-sm">
               <h2 className="text-xs font-bold mb-4 uppercase tracking-wider text-muted-foreground">Pricing & Fulfillment</h2>
+              <div className="mb-5 space-y-3">
+                <p className="text-sm">Price currency: <strong>{product.currency || "USD"}</strong></p>
+                {(product.currency || "USD") === "USD" && <><p className="text-sm text-muted-foreground">Legacy USD prices stay in USD. To sell at INR checkout, deliberately set new rupee prices. This does not convert your old amounts.</p><Button type="button" variant="outline" onClick={() => setProduct({ ...product, currency: "INR", price: "", base_print_price: "" })}>Reprice this listing in INR</Button></>}
+                {product.currency === "INR" && <p className="text-sm text-muted-foreground">Enter your intended rupee amounts. Digital file price and physical print price are separate.</p>}
+              </div>
               <div className="space-y-5">
                 {/* Mode 2 */}
                 <div className="space-y-3">
@@ -556,10 +566,10 @@ export default function ProductDetailPage({
                     <span className="font-semibold text-sm group-hover:text-primary transition-colors">Digital Download</span>
                     <input type="checkbox" checked={product.is_mode_2_active} onChange={(e) => setProduct({ ...product, is_mode_2_active: e.target.checked })} className="accent-primary w-4 h-4 cursor-pointer" />
                   </label>
-                  {product.is_mode_2_active && (
+                  {(product.is_mode_2_active || product.price === "") && (
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-data">$</span>
-                      <Input type="number" step="0.01" value={product.price} onChange={(e) => setProduct({ ...product, price: parseFloat(e.target.value) })} className="pl-7 font-data" />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-data">{product.currency || "USD"}</span>
+                      <Input type="number" step="0.01" aria-label="Digital file price" min="0" value={product.price} onChange={(e) => setProduct({ ...product, price: e.target.value === "" ? "" : Number(e.target.value) })} className="pl-14 font-data" />
                     </div>
                   )}
                 </div>
@@ -572,10 +582,10 @@ export default function ProductDetailPage({
                     <span className="font-semibold text-sm group-hover:text-primary transition-colors">Physical Print</span>
                     <input type="checkbox" checked={product.is_mode_3_active} onChange={(e) => setProduct({ ...product, is_mode_3_active: e.target.checked })} className="accent-primary w-4 h-4 cursor-pointer" />
                   </label>
-                  {product.is_mode_3_active && (
+                  {(product.is_mode_3_active || product.is_mode_4_active || product.base_print_price === "") && (
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-data">$</span>
-                      <Input type="number" step="0.01" value={product.base_print_price} onChange={(e) => setProduct({ ...product, base_print_price: parseFloat(e.target.value) })} className="pl-7 font-data" />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-data">{product.currency || "USD"}</span>
+                      <Input type="number" step="0.01" aria-label="Physical print price" min="0" value={product.base_print_price} onChange={(e) => setProduct({ ...product, base_print_price: e.target.value === "" ? "" : Number(e.target.value) })} className="pl-14 font-data" />
                     </div>
                   )}
                 </div>
