@@ -74,9 +74,9 @@ export default function RootLayout({
     preconnect(new URL(API_URL).origin);
   } catch {}
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
       <body
-        className={`${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} font-sans min-h-screen bg-background text-foreground flex flex-col antialiased`}
+        className="font-sans min-h-screen bg-background text-foreground flex flex-col antialiased"
       >
         <Providers>{children}</Providers>
       </body>

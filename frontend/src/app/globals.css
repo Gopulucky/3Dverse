@@ -1,4 +1,15 @@
+/* Hallmark · shape: Catalogue · genre: modern-minimal · theme: brand · redesign: full · hero: Stage · nav: search-led · footer: index · signature: a real catalogue object · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E3 S4 R4 V4 · weakest: E, check state transitions and small-screen navigation */
+/* Hallmark · hero-review: subagent ship · finish-review: subagent ship after image recapture · brand exception: existing 3DVerse wordmark gradient retained */
+/* Hallmark · dropped setImgFailed · Image errors now use the shared ProductImage fallback with recovery when the source changes. */
+/* Hallmark · dropped e.currentTarget.style.visibility · Category photos became text links; failed product images retain a labelled fallback. */
+/* Hallmark · dropped onMouseDown={() => handleSearch()} · Search suggestions now use click so keyboard activation works as well as pointer activation. */
+/* Hallmark · dropped onMouseDown={() => { setSearchCategory(cat); · Category selection now uses click and preserves the same destination. */
+/* Hallmark · dropped onMouseDown={() => { setShowSuggestions(false); · Product selection now uses click and preserves the same destination. */
 @import "tailwindcss";
+@import "../styles/marketplace/tokens.css";
+@import "../styles/marketplace/base.css";
+@import "../styles/marketplace/storefront.css";
 
 /* Raw surface values that don't map cleanly onto a 12-step scale step
    (pure white card/popover in light, white-on-solid text). Declared
@@ -20,9 +31,9 @@
 }
 
 /* ================================================================
-   3DVerse Design Token System — see docs/brand/ for the full book.
+   3DVerse Design Token System — see frontend/design.md and src/lib/brand.ts.
 
-   Every brand colour is a 12-step OKLCH scale (docs/brand/04-technical.md).
+   Every brand colour uses the existing 12-step palette.
    Steps: 1-2 background · 3-5 component · 6-8 border · 9-10 solid fill ·
    11-12 text (AA / AAA, contrast-verified against steps 1-3 of the same
    scale). Components must reference the SEMANTIC tokens further down,
@@ -112,7 +123,7 @@
   --color-accent-foreground: var(--color-slate-12);
   --color-destructive-foreground: var(--on-solid-destructive);
   --color-border: var(--color-slate-6);
-  --color-input: var(--color-slate-6);
+  --color-input: var(--color-slate-8);
   --color-ring: var(--color-violet-9);
 
   /* Radius */
@@ -137,86 +148,6 @@
   --animate-scale-in: scale-in 0.2s ease-out;
   --animate-layer-line: layer-line-fill 1.8s ease-in-out infinite;
   --animate-shimmer: shimmer 2s linear infinite;
-}
-
-/* ================================================================
-   Dark mode — a parallel scale, not a per-component override.
-   next-themes toggles the `dark` class on <html> (see providers.tsx).
-   Same semantic tokens, same roles, different lightness ramp — nothing
-   downstream needs a `dark:` variant.
-   ================================================================ */
-.dark {
-  --color-violet-1: #0E101D;  --color-violet-2: #15172B;  --color-violet-3: #1C1E43;
-  --color-violet-4: #212458;  --color-violet-5: #28296B;  --color-violet-6: #30317F;
-  --color-violet-7: #3D3F9D;  --color-violet-8: #5356C9;  --color-violet-9: #6C71FD;
-  --color-violet-10: #7D86FF; --color-violet-11: #A1ADFF; --color-violet-12: #D5DCFF;
-
-  --color-ember-1: #1B0D08;  --color-ember-2: #27130B;  --color-ember-3: #3C1607;
-  --color-ember-4: #4D1701;  --color-ember-5: #5B1C00;  --color-ember-6: #6B2200;
-  --color-ember-7: #852D00;  --color-ember-8: #AE3D00;  --color-ember-9: #F76421;
-  --color-ember-10: #FF7D4A; --color-ember-11: #FE946C; --color-ember-12: #FFD3C3;
-
-  --color-moss-1: #0A130F;  --color-moss-2: #0E1D16;  --color-moss-3: #0C291D;
-  --color-moss-4: #063423;  --color-moss-5: #003E29;  --color-moss-6: #004A32;
-  --color-moss-7: #005D3F;  --color-moss-8: #057B55;  --color-moss-9: #21A173;
-  --color-moss-10: #38B182; --color-moss-11: #7BC7A4; --color-moss-12: #BFEAD4;
-
-  --color-slate-1: #101114;  --color-slate-2: #17191D;  --color-slate-3: #1F232A;
-  --color-slate-4: #262C35;  --color-slate-5: #2C343F;  --color-slate-6: #353E4B;
-  --color-slate-7: #444F5E;  --color-slate-8: #5B697C;  --color-slate-9: #6E7E96;
-  --color-slate-10: #7D8DA5; --color-slate-11: #A9B5C7; --color-slate-12: #D7DFEA;
-
-  --color-red-1: #1C0C0A;   --color-red-3: #3F120F;   --color-red-6: #750E0F;
-  --color-red-9: #E93632;   --color-red-10: #FB4A42;  --color-red-11: #FF9084; --color-red-12: #FFD2CB;
-  --color-amber-1: #180F08; --color-amber-3: #351C06; --color-amber-6: #5E3000;
-  --color-amber-9: #E58220; --color-amber-10: #F69236; --color-amber-11: #EAA268; --color-amber-12: #FFD5B5;
-  --color-green-1: #0A140C; --color-green-3: #0B2A13; --color-green-6: #004B1D;
-  --color-green-9: #2AAE55; --color-green-10: #40BE64; --color-green-11: #79CA89; --color-green-12: #BEECC5;
-
-  --color-primary: var(--color-violet-9);
-  --color-success: var(--color-green-9);
-  --color-warning: var(--color-amber-9);
-  --color-destructive: var(--color-red-9);
-  --color-moss: var(--color-moss-9);
-  --color-ember: var(--color-ember-9);
-
-  --color-primary-surface: var(--color-violet-3);
-  --color-primary-ink: var(--color-violet-11);
-  --color-success-surface: var(--color-green-3);
-  --color-success-ink: var(--color-green-11);
-  --color-warning-surface: var(--color-amber-3);
-  --color-warning-ink: var(--color-amber-11);
-  --color-danger-surface: var(--color-red-3);
-  --color-danger-ink: var(--color-red-11);
-  --color-ember-surface: var(--color-ember-3);
-  --color-ember-ink: var(--color-ember-11);
-  --color-moss-surface: var(--color-moss-3);
-  --color-moss-ink: var(--color-moss-11);
-
-  --color-creator-accent: var(--color-ember-9);
-  --color-customer-accent: var(--color-violet-9);
-  --color-partner-accent: var(--color-moss-9);
-
-  /* --color-card/-popover/-primary-foreground/-destructive-foreground are
-     NOT redeclared here — they alias to --surface-card / --surface-popover
-     / --on-solid-primary / --on-solid-destructive (top of file), which is
-     where their dark-mode values actually live. See the comment there for
-     why: @theme inline only preserves runtime theme-switching through one
-     layer of var() indirection, so the override has to happen at that
-     lower layer, not by redeclaring the alias itself here. */
-  --color-background: var(--color-slate-1);
-  --color-foreground: var(--color-slate-12);
-  --color-card-foreground: var(--color-slate-12);
-  --color-popover-foreground: var(--color-slate-12);
-  --color-secondary: var(--color-slate-3);
-  --color-secondary-foreground: var(--color-slate-12);
-  --color-muted: var(--color-slate-3);
-  --color-muted-foreground: var(--color-slate-11);
-  --color-accent: var(--color-slate-3);
-  --color-accent-foreground: var(--color-slate-12);
-  --color-border: var(--color-slate-6);
-  --color-input: var(--color-slate-6);
-  --color-ring: var(--color-violet-9);
 }
 
 /* ================================================================
@@ -292,13 +223,13 @@
 }
 
 @keyframes accordion-down {
-  from { height: 0; }
-  to { height: var(--radix-accordion-content-height); }
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes accordion-up {
-  from { height: var(--radix-accordion-content-height); }
-  to { height: 0; }
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-4px); }
 }
 
 @keyframes slide-in-from-top {
@@ -342,8 +273,8 @@
 }
 
 @keyframes countdown-bar {
-  from { width: 100%; }
-  to { width: 0%; }
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
 }
 
 @keyframes word-reveal {
@@ -430,17 +361,17 @@ body {
 
 /* Glass morphism — light variant */
 .glass {
-  background: color-mix(in srgb, #FFFFFF 88%, transparent);
+  background: var(--glass-fill);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-subtle);
 }
 
 .glass-strong {
-  background: color-mix(in srgb, #FFFFFF 95%, transparent);
+  background: var(--glass-fill);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-raised);
 }
 
 /* Light surface card — hairline border (for modals/dialogs) */
@@ -453,7 +384,7 @@ body {
 .surface-raised {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-subtle);
 }
 
 
@@ -468,17 +399,11 @@ body {
 }
 
 .text-gradient-accent {
-  background: linear-gradient(135deg, var(--color-moss), var(--color-primary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-moss-ink);
 }
 
 .text-gradient-warm {
-  background: linear-gradient(135deg, var(--color-ember), var(--color-primary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-ember-ink);
 }
 
 

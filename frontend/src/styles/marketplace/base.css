@@ -1,0 +1,14 @@
+﻿/* Hallmark · brand base · focus and capped canvas · v2.0.0 */
+html, body { overflow-x: clip; }
+html { scroll-padding-top: 5rem; scrollbar-color: var(--color-muted-foreground) var(--color-background); }
+:focus-visible { outline: 2px solid var(--store-focus); outline-offset: 4px; }
+input, textarea { caret-color: var(--store-focus); }
+.store-container { width: 100%; max-width: var(--store-container); margin-inline: auto; padding-inline: var(--store-gutter); }
+.storefront h1, .storefront h2, .storefront h3 { min-width: 0; overflow-wrap: break-word; text-wrap: balance; }
+.storefront p { text-wrap: pretty; }
+.storefront button:disabled { cursor: not-allowed; }
+.storefront button[aria-busy="true"] { cursor: progress; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .storefront *, .market-product * { animation: none !important; transition: none !important; }
+}

@@ -6,7 +6,7 @@ import { BRAND } from "@/lib/brand";
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card/50 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="store-container py-12">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">

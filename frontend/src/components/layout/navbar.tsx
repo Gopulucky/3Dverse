@@ -10,44 +10,33 @@ import {
   LogOut,
   Package,
   Palette,
-  LayoutDashboard,
   Store,
-  Heart,
   ChevronDown,
   Printer,
   Shield,
-  Bell,
   Search,
-  MapPin,
-  BarChart3,
-  ClipboardList,
-  Image,
   Settings,
-  Users,
-  Upload,
   Tag,
-  Clock,
   Wand2,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useCreatorType } from "@/lib/creator-nav";
-import { SellWith3DverseLink } from "@/components/creator/sell-with-3dverse";
 import { Wordmark } from "@/components/shared/wordmark";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/stores/auth-store";
 import { useCartStore } from "@/stores/cart-store";
 import { api } from "@/lib/api";
+
+interface SearchProduct { id: number; title: string; category: string; price: number }
 
 export function Navbar() {
   const pathname = usePathname();
@@ -58,18 +47,20 @@ export function Navbar() {
   const { itemCount, setItemCount } = useCartStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
-  const [suggestions, setSuggestions] = useState<{ products: any[]; categories: string[] }>({ products: [], categories: [] });
+  const [suggestions, setSuggestions] = useState<{ products: SearchProduct[]; categories: string[] }>({ products: [], categories: [] });
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleSearch = (overrideQuery?: string) => {
+  const handleSearch = (overrideQuery?: string, overrideCategory?: string) => {
     const q = (overrideQuery ?? searchQuery).trim();
     setShowSuggestions(false);
     const params = new URLSearchParams();
     if (q) params.set("q", q);
-    if (searchCategory) params.set("category", searchCategory);
+    const category = overrideCategory ?? searchCategory;
+    if (category) params.set("category", category);
+    setMobileOpen(false);
     router.push(`/marketplace?${params.toString()}`);
   };
 
@@ -83,7 +74,7 @@ export function Navbar() {
     }
     debounceRef.current = setTimeout(async () => {
       try {
-        const data = await api.get<any>("/api/marketplace/suggestions", { q: value.trim() });
+        const data = await api.get<{ products: SearchProduct[]; categories: string[] }>("/api/marketplace/suggestions", { q: value.trim() });
         setSuggestions(data);
         setShowSuggestions(true);
         setActiveIdx(-1);
@@ -105,8 +96,8 @@ export function Navbar() {
   }, []);
 
   const allSuggestions = [
-    ...suggestions.categories.map((c) => ({ type: "category", label: c })),
-    ...suggestions.products.map((p) => ({ type: "product", label: p.title, sub: p.category, price: p.price, id: p.id })),
+    ...suggestions.categories.map((c) => ({ type: "category" as const, label: c })),
+    ...suggestions.products.map((p) => ({ type: "product" as const, label: p.title, sub: p.category, price: p.price, id: p.id })),
   ];
 
   // Determine portal context — /collaboration is a Creator Studio surface
@@ -138,6 +129,40 @@ export function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflowY;
+    document.body.style.overflowY = "hidden";
+    const desktop = window.matchMedia("(min-width: 768px)");
+    const closeOnDesktop = () => { if (desktop.matches) setMobileOpen(false); };
+    desktop.addEventListener("change", closeOnDesktop);
+    const panel = document.getElementById("mobile-navigation");
+    const toggle = document.getElementById("mobile-menu-toggle");
+    const focusable = () => [toggle, ...Array.from(panel?.querySelectorAll<HTMLElement>("input, button, a[href]") ?? [])].filter((element): element is HTMLElement => Boolean(element));
+    focusable()[1]?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+        document.getElementById("mobile-menu-toggle")?.focus();
+      } else if (event.key === "Tab") {
+        const elements = focusable();
+        const first = elements[0];
+        const last = elements[elements.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault(); last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault(); first?.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflowY = previousOverflow;
+      desktop.removeEventListener("change", closeOnDesktop);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileOpen]);
 
   // Hide navbar on auth pages
   if (isAuth) return null;
@@ -218,9 +243,6 @@ export function Navbar() {
     ? "/admin/settings"
     : "/settings";
 
-  // Studio/Console/Admin don't show nav links in the top bar (they use sidebar)
-  const navLinks = [];
-
   // Accent color logic per portal — docs/brand/05-applications.md:
   // marketplace/customers→violet (primary), creator studio→ember, partner
   // console→moss, admin→neutral (no identity accent; colour there is status
@@ -245,14 +267,14 @@ export function Navbar() {
     <>
       <nav
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-200",
+          "fixed top-0 left-0 right-0 z-50 h-16 transition-colors duration-200",
           scrolled
-            ? "glass-strong shadow-lg shadow-black/5"
-            : "bg-background/80 backdrop-blur-md border-b border-border/50"
+            ? "bg-background border-b border-border"
+            : "bg-background border-b border-border/50"
         )}
       >
-        <div className="h-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-full items-center">
+        <div className="store-container h-full">
+          <div className="flex justify-between h-full items-center gap-3">
             {/* Left Section: Logo & Location */}
             <div className="flex items-center gap-4">
               <Link
@@ -274,7 +296,7 @@ export function Navbar() {
                   title={creatorPath.tagline}
                 >
                   <creatorPath.icon size={13} />
-                  <span className="text-[11px] font-bold uppercase tracking-wider">
+                  <span className="text-sm font-medium">
                     {creatorPath.label}
                   </span>
                 </div>
@@ -284,13 +306,13 @@ export function Navbar() {
 
             {/* Central Search Bar (Marketplace only) */}
             {isMarketplace && (
-              <div ref={searchRef} className="hidden md:flex flex-1 max-w-4xl px-4 lg:px-8 relative">
-                <div className="relative w-full shadow-sm rounded-md flex focus-within:ring-2 focus-within:ring-primary/80 transition-shadow bg-card overflow-hidden h-10">
+              <div ref={searchRef} className="hidden md:flex flex-1 max-w-3xl px-4 lg:px-8 relative">
+                <form role="search" onSubmit={(event) => { event.preventDefault(); handleSearch(); }} className="relative w-full rounded-md flex bg-card border border-input h-11">
                   <select
+                    aria-label="Search category"
                     value={searchCategory}
                     onChange={(e) => setSearchCategory(e.target.value)}
-                    className="hidden sm:flex items-center h-full px-3 bg-muted border-r border-border hover:bg-muted/80 cursor-pointer transition-colors text-[13px] font-medium text-foreground appearance-none pr-6 focus:outline-none"
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
+                    className="hidden lg:block min-w-0 max-w-32 h-full px-3 bg-muted border-r border-border rounded-l-md cursor-pointer text-sm text-foreground"
                   >
                     <option value="">All</option>
                     <option value="Tabletop">Tabletop</option>
@@ -305,9 +327,10 @@ export function Navbar() {
                     <option value="Gaming">Gaming</option>
                   </select>
                   <input
-                    type="text"
+                    type="search"
+                    aria-label="Search 3DVerse"
                     placeholder="Search 3DVerse"
-                    className="flex-1 h-full pl-4 pr-4 bg-transparent text-[15px] focus:outline-none focus:ring-0"
+                    className="flex-1 min-w-0 h-full px-4 bg-transparent text-base"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -324,13 +347,15 @@ export function Navbar() {
                       } else if (e.key === "Escape") {
                         setShowSuggestions(false);
                       } else if (e.key === "Enter") {
+                        e.preventDefault();
                         if (activeIdx >= 0 && allSuggestions[activeIdx]) {
                           const s = allSuggestions[activeIdx];
                           if (s.type === "category") {
                             setSearchCategory(s.label);
-                            handleSearch("");
+                            handleSearch("", s.label);
                           } else {
-                            handleSearch(s.label);
+                            setShowSuggestions(false);
+                            router.push(`/marketplace/${s.id}`);
                           }
                         } else {
                           handleSearch();
@@ -338,26 +363,27 @@ export function Navbar() {
                       }
                     }}
                   />
-                  <div
-                    onClick={() => handleSearch()}
-                    className="w-12 h-full flex items-center justify-center bg-ember hover:bg-ember-10 cursor-pointer text-foreground transition-colors"
+                  <button
+                    type="submit"
+                    aria-label="Search"
+                    className="w-12 shrink-0 h-full flex items-center justify-center rounded-r-md bg-primary-surface hover:bg-muted text-primary-ink transition-colors cursor-pointer"
                   >
-                    <Search size={20} />
-                  </div>
-                </div>
+                    <Search size={20} aria-hidden="true" />
+                  </button>
+                </form>
 
                 {/* Suggestions Dropdown */}
                 {showSuggestions && allSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-sm z-50 overflow-hidden">
                     {suggestions.categories.length > 0 && (
                       <div>
-                        <div className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Categories</div>
+                        <div className="px-4 pt-3 pb-1 text-sm font-medium text-muted-foreground">Categories</div>
                         {suggestions.categories.map((cat, i) => {
                           const idx = i;
                           return (
                             <button
                               key={cat}
-                              onMouseDown={() => { setSearchCategory(cat); setSearchQuery(""); setSuggestions({ products: [], categories: [] }); setShowSuggestions(false); router.push(`/marketplace?category=${encodeURIComponent(cat)}`); }}
+                              onClick={() => { setSearchCategory(cat); setSearchQuery(""); setSuggestions({ products: [], categories: [] }); setShowSuggestions(false); router.push(`/marketplace?category=${encodeURIComponent(cat)}`); }}
                               className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted/60 transition-colors", activeIdx === idx && "bg-muted")} 
                             >
                               <Tag size={13} className="text-primary shrink-0" />
@@ -370,19 +396,19 @@ export function Navbar() {
 
                     {suggestions.products.length > 0 && (
                       <div>
-                        <div className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Products</div>
+                        <div className="px-4 pt-3 pb-1 text-sm font-medium text-muted-foreground">Products</div>
                         {suggestions.products.map((p, i) => {
                           const idx = suggestions.categories.length + i;
                           return (
                             <button
                               key={p.id}
-                              onMouseDown={() => { setShowSuggestions(false); router.push(`/marketplace/${p.id}`); }}
+                              onClick={() => { setShowSuggestions(false); router.push(`/marketplace/${p.id}`); }}
                               className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/60 transition-colors", activeIdx === idx && "bg-muted")}
                             >
                               <Search size={13} className="text-muted-foreground shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <span className="text-sm font-medium text-foreground truncate block">{p.title}</span>
-                                <span className="text-[11px] text-muted-foreground">{p.category}</span>
+                                <span className="text-sm text-muted-foreground">{p.category}</span>
                               </div>
                               <span className="text-sm font-bold text-primary shrink-0">${p.price.toFixed(2)}</span>
                             </button>
@@ -393,8 +419,8 @@ export function Navbar() {
 
                     <div className="border-t border-border px-4 py-2.5">
                       <button
-                        onMouseDown={() => handleSearch()}
-                        className="w-full flex items-center gap-2 text-[13px] text-primary font-semibold hover:underline"
+                        onClick={() => handleSearch()}
+                        className="w-full flex items-center gap-2 text-sm text-primary-ink font-medium hover:underline whitespace-nowrap overflow-hidden"
                       >
                         <Search size={13} />
                         Search for &ldquo;{searchQuery}&rdquo;
@@ -430,35 +456,33 @@ export function Navbar() {
             )}
 
             {/* Right side */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               {/* Creator Orders (Creator only) */}
               {isCreator && isAuthenticated && (
                 <Link href="/creator/orders" className="hidden lg:flex flex-col leading-none hover:border-border border border-transparent px-2 py-1 rounded transition-colors cursor-pointer">
-                  <span className="text-[10px] text-muted-foreground font-medium">Customer</span>
-                  <span className="text-xs font-bold text-foreground">Orders</span>
+                  <span className="text-sm font-medium text-foreground">Orders</span>
                 </Link>
               )}
 
               {/* Returns & Orders (Marketplace only) */}
               {isMarketplace && isAuthenticated && (
                 <Link href="/orders" className="hidden lg:flex flex-col leading-none hover:border-border border border-transparent px-2 py-1 rounded transition-colors cursor-pointer">
-                  <span className="text-[10px] text-muted-foreground font-medium">Returns</span>
-                  <span className="text-xs font-bold text-foreground">& Orders</span>
+                  <span className="text-sm font-medium text-foreground">Orders</span>
                 </Link>
               )}
 
               {/* Cart (marketplace only) */}
               {isMarketplace && (
-                <Link href="/cart" className="relative group flex items-end gap-1 hover:border-border border border-transparent px-2 py-1 rounded transition-colors cursor-pointer">
+                <Link href="/cart" aria-label={`Cart${itemCount ? `, ${itemCount} ${itemCount === 1 ? "item" : "items"}` : ""}`} className="relative flex items-center justify-center gap-2 min-h-11 min-w-11 rounded-md px-2 hover:bg-muted transition-colors">
                   <div className="relative">
                     <ShoppingCart size={24} />
                     {itemCount > 0 && (
-                      <span className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground animate-scale-in">
+                      <span className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
                         {itemCount}
                       </span>
                     )}
                   </div>
-                  <span className="text-xs font-bold text-foreground hidden sm:block mb-0.5">Cart</span>
+                  <span className="text-sm font-medium text-foreground hidden lg:block">Cart</span>
                 </Link>
               )}
 
@@ -466,11 +490,10 @@ export function Navbar() {
               {isAuthenticated && user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <div className="flex items-center gap-2 hover:border-border border border-transparent px-2 py-1 rounded transition-colors cursor-pointer select-none">
+                    <button type="button" aria-label="Account and portals" className="flex min-h-11 min-w-11 items-center gap-2 hover:bg-muted px-2 py-1 rounded-md transition-colors cursor-pointer">
                       <div className="flex flex-col items-start leading-none hidden sm:flex">
-                        <span className="text-[10px] text-muted-foreground font-medium">Hello, {user.email?.split('@')[0]}</span>
-                        <span className="text-xs font-bold text-foreground flex items-center gap-1">
-                          Account & Portals <ChevronDown size={12} className="text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground flex items-center gap-1">
+                          Account <ChevronDown size={14} className="text-muted-foreground" />
                         </span>
                       </div>
                       <Avatar className="h-8 w-8 sm:hidden">
@@ -478,9 +501,9 @@ export function Navbar() {
                           {getInitials(user.email)}
                         </AvatarFallback>
                       </Avatar>
-                    </div>
+                    </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-72 p-2 rounded-xl border border-border shadow-2xl">
+                  <DropdownMenuContent align="end" className="w-72 p-2 rounded-xl border border-border shadow-sm">
                     {/* Active Account Card */}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/50 mb-2 border border-border/50">
                       <Avatar className="h-10 w-10 shadow-sm border border-border">
@@ -491,7 +514,7 @@ export function Navbar() {
                       <div className="flex flex-col overflow-hidden">
                         <p className="text-sm font-bold truncate text-foreground">{user.email?.split('@')[0]}</p>
                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                        <p className={cn("text-[10px] uppercase font-bold mt-0.5 tracking-wider", accentClass)}>{portalLabel} (Active)</p>
+                        <p className={cn("text-sm font-medium mt-0.5", accentClass)}>{portalLabel} (active)</p>
                       </div>
                     </div>
                     
@@ -501,14 +524,14 @@ export function Navbar() {
                     {switchablePortals.length > 0 && (
                     <>
                     <div className="py-1">
-                      <p className="text-xs font-semibold text-muted-foreground px-3 mb-2 uppercase tracking-wider">Switch Portal</p>
+                      <p className="text-sm font-medium text-muted-foreground px-3 mb-2">Switch portal</p>
 
                       {switchablePortals.map((portal) => (
                       <DropdownMenuItem key={portal.key} onClick={() => router.push(portal.href)} className="rounded-lg cursor-pointer py-2">
                         <portal.icon size={18} className={cn("mr-3", portal.iconClass)} />
                         <div className="flex flex-col">
                           <span className="font-medium">{portal.label}</span>
-                          <span className="text-[10px] text-muted-foreground">{portal.description}</span>
+                          <span className="text-sm text-muted-foreground">{portal.description}</span>
                         </div>
                       </DropdownMenuItem>
                       ))}
@@ -558,6 +581,7 @@ export function Navbar() {
                   <Button
                     variant="default"
                     size="sm"
+                    className="hidden sm:inline-flex"
                     onClick={() => router.push("/register")}
                   >
                     Sign up
@@ -567,12 +591,14 @@ export function Navbar() {
 
               {/* Mobile menu button */}
               <Button
+                id="mobile-menu-toggle"
                 variant="ghost"
                 size="icon"
                 className="md:hidden"
                 onClick={() => setMobileOpen(!mobileOpen)}
                 aria-label={mobileOpen ? "Close menu" : "Open menu"}
                 aria-expanded={mobileOpen}
+                aria-controls="mobile-navigation"
               >
                 {mobileOpen ? <X size={20} /> : <Menu size={20} />}
               </Button>
@@ -586,16 +612,24 @@ export function Navbar() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div
-            className="fixed inset-0 bg-ink/40 backdrop-blur-sm"
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-label="Close menu backdrop"
+            className="fixed inset-0 bg-ink/40"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="fixed right-0 top-0 bottom-0 w-72 bg-card border-l border-border p-6 pt-20 animate-slide-in-from-right">
-            <nav className="space-y-1">
+          <div id="mobile-navigation" className="fixed right-0 top-16 bottom-0 w-full max-w-sm bg-card border-l border-border p-6 overflow-y-auto">
+            {isMarketplace && <form role="search" aria-label="Mobile catalogue search" className="flex gap-2 mb-6" onSubmit={(event) => { event.preventDefault(); handleSearch(); }}>
+              <input type="search" aria-label="Search models" placeholder="Search models" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="w-full min-w-0 h-11 rounded-md border border-input bg-background px-3 text-base" />
+              <Button type="submit" variant="outline" className="min-h-11" aria-label="Search catalogue"><Search size={18} aria-hidden="true" /></Button>
+            </form>}
+            <nav aria-label="Mobile navigation" className="space-y-1">
               {(isMarketplace ? [
-                { href: "/marketplace?category=All", label: "All", icon: Search },
-                { href: "/marketplace?category=Deals", label: "Today's Deals", icon: Package },
-                { href: "/marketplace?category=CustomerService", label: "Customer Service", icon: Shield },
+                { href: "/marketplace", label: "Browse all models", icon: Search },
+                { href: "/creator", label: "Sell with 3DVerse", icon: Store },
+                { href: "/orders", label: "Your orders", icon: Package },
+                { href: "/contact", label: "Help and contact", icon: Shield },
               ] : [
                 ...(isCreator ? creatorLinks : []),
                 ...(isPartner ? [
@@ -624,6 +658,7 @@ export function Navbar() {
                   </Link>
                 );
               })}
+              {!isAuthenticated && <Link href="/register" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center px-4 text-sm font-medium">Create an account</Link>}
             </nav>
           </div>
         </div>

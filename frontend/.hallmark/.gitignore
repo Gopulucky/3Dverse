@@ -1,0 +1,11 @@
+before/
+shots/
+verification/
+*.png
+before.json
+before.txt
+compare.html
+browser-probe.mjs
+capture-hero.mjs
+renderer-pipe.mjs
+log-build.mjs

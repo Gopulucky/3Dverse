@@ -1,218 +1,162 @@
-"use client";
+﻿"use client";
 
-import { useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Star, Tag, Clock, ChevronLeft, ChevronRight, Users, LayoutGrid } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowUpRight, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
-import { BRAND } from "@/lib/brand";
+import { productImage, type HomepageData, type ProductCardData } from "@/lib/marketplace";
 import { Button } from "@/components/ui/button";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/shared/product-card";
+import { ProductImage } from "@/components/shared/product-image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card } from "@/components/ui/card";
+import { HomeHero } from "@/components/marketplace/home-hero";
 
-function ProductSection({
-  title,
-  icon: Icon,
-  iconColor,
-  products,
-}: {
-  title: string;
-  icon: any;
-  iconColor: string;
-  products: any[];
-}) {
+function ProductSection({ title, products, rail = false }: { title: string; products: ProductCardData[]; rail?: boolean }) {
+  const titleId = useId();
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const { scrollLeft, clientWidth } = scrollRef.current;
-      const scrollTo =
-        direction === "left"
-          ? scrollLeft - clientWidth * 0.8
-          : scrollLeft + clientWidth * 0.8;
-      scrollRef.current.scrollTo({ left: scrollTo, behavior: "smooth" });
-    }
+  const [edges, setEdges] = useState({ left: false, right: false });
+  const updateEdges = () => {
+    const element = scrollRef.current;
+    if (element) setEdges({ left: element.scrollLeft > 1, right: element.scrollLeft + element.clientWidth < element.scrollWidth - 1 });
   };
 
-  if (!products || products.length === 0) return null;
+  useEffect(() => {
+    if (!rail || !scrollRef.current) return;
+    const observer = new ResizeObserver(updateEdges);
+    observer.observe(scrollRef.current);
+    const frame = requestAnimationFrame(updateEdges);
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
+  }, [rail, products.length]);
 
+  const scroll = (direction: "left" | "right") => {
+    const element = scrollRef.current;
+    if (!element) return;
+    element.scrollBy({
+      left: element.clientWidth * 0.8 * (direction === "left" ? -1 : 1),
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+    });
+  };
+
+  if (!products.length) return null;
   return (
-    <section className="mb-20">
-      <div className="flex justify-between items-end mb-8">
-        <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-3 font-display">
-          <Icon className={iconColor} size={28} />
-          {title}
-        </h2>
-        <Button variant="ghost" className="text-muted-foreground hover:text-foreground">View All</Button>
-      </div>
-      <div className="relative group">
-        <button
-          onClick={() => scroll("left")}
-          className="absolute left-0 top-1/2 -translate-y-1/2 -ml-5 z-10 bg-background/90 hover:bg-background backdrop-blur-md shadow-lg border border-border rounded-full w-12 h-12 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-        >
-          <ChevronLeft size={24} />
-        </button>
-        <div
-          ref={scrollRef}
-          className="flex gap-6 overflow-x-auto pb-4 px-1 -mx-1 snap-x snap-mandatory no-scrollbar"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {products.map((p: any) => (
-            <div key={p.id} className="min-w-[280px] w-[280px] sm:min-w-[320px] sm:w-[320px] shrink-0 snap-start">
-              <ProductCard p={p} />
-            </div>
-          ))}
+    <section className="store-section" aria-labelledby={titleId}>
+      <div className="store-container">
+        <div className="store-section-head">
+          <h2 id={titleId}>{title}</h2>
+          <div className="store-rail-actions">
+            <Link href="/marketplace" className="market-text-link">Browse all models</Link>
+            {rail && <>
+              <Button type="button" variant="ghost" size="icon" aria-label={`Previous ${title.toLowerCase()}`} disabled={!edges.left} onClick={() => scroll("left")}><ChevronLeft size={20} aria-hidden="true" /></Button>
+              <Button type="button" variant="ghost" size="icon" aria-label={`Next ${title.toLowerCase()}`} disabled={!edges.right} onClick={() => scroll("right")}><ChevronRight size={20} aria-hidden="true" /></Button>
+            </>}
+          </div>
         </div>
-        <button
-          onClick={() => scroll("right")}
-          className="absolute right-0 top-1/2 -translate-y-1/2 -mr-5 z-10 bg-background/90 hover:bg-background backdrop-blur-md shadow-lg border border-border rounded-full w-12 h-12 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-        >
-          <ChevronRight size={24} />
-        </button>
+        <div ref={scrollRef} className={rail ? "store-rail" : "store-grid"} tabIndex={rail ? 0 : undefined}
+          role={rail ? "region" : undefined} aria-label={rail ? `${title}, scroll to explore` : undefined} onScroll={rail ? updateEdges : undefined}>
+          {products.map(product => <ProductCard key={product.id} p={product} />)}
+        </div>
       </div>
     </section>
   );
 }
 
-/**
- * The marketplace home content — product rows, popular creators, categories.
- * Rendered at both "/" (the public entry point) and "/marketplace/home"
- * (the canonical portal destination after login) so there is exactly one
- * implementation to keep in sync.
- */
-export function MarketplaceHomeContent({ initialData }: { initialData?: any }) {
-  // initialData is fetched on the server (see app/page.tsx) so the product rows
-  // are already in the HTML. Without it the visitor waits for HTML, then JS,
-  // then a round trip to the API before seeing a single product.
-  const { data, isLoading } = useQuery({
+/** Shared by / and /marketplace/home; catalogue records stay server-prefetched. */
+export function MarketplaceHomeContent({ initialData }: { initialData?: HomepageData }) {
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["homepage"],
-    queryFn: () => api.get<any>("/api/marketplace/homepage"),
+    queryFn: () => api.get<HomepageData>("/api/marketplace/homepage"),
     initialData,
+    // The API client already retries transient failures. Avoid doubling that wait.
+    retry: false,
   });
+  const featured = data?.featured ?? [];
+  const trending = data?.trending ?? [];
+  const arrivals = data?.new_arrivals ?? [];
+  const categories = data?.categories ?? [];
+  const creators = data?.popular_creators ?? [];
+  const heroProduct = [...featured, ...trending, ...arrivals].find(product => productImage(product));
+  const empty = !featured.length && !trending.length && !arrivals.length;
+
+  const retryButton = <Button type="button" variant="outline" onClick={() => void refetch()} disabled={isFetching} aria-busy={isFetching}>
+    {isFetching && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+    {isFetching ? "Trying again…" : "Try again"}
+  </Button>;
 
   return (
-    <div className="min-h-screen pb-20">
-      {/* Hero Section */}
-      <section className="relative w-full h-[400px] md:h-[500px] overflow-hidden bg-gradient-to-br from-primary/90 to-primary/80 text-primary-foreground flex items-center mb-12">
-        <div className="absolute inset-0 layer-lines opacity-[0.08]" />
-        <div className="max-w-7xl mx-auto px-12 relative z-10">
-          <h1 className="text-4xl sm:text-6xl font-bold tracking-tight mb-4 font-display leading-[1.05]">
-            {BRAND.tagline.split(". ").map((line, i) => (
-              <span key={i} className="block">
-                {line}
-                {i < BRAND.tagline.split(". ").length - 1 ? "." : ""}
-              </span>
-            ))}
-          </h1>
-          <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 max-w-lg">
-            Every listing is checked for printability before it ever reaches you.
-          </p>
-          <Button
-            asChild
-            size="lg"
-            className="bg-card text-primary hover:bg-card/90 font-bold rounded-full px-8 shadow-lg hover:scale-105 transition-transform"
-          >
-            <a href="#featured">Browse the marketplace</a>
-          </Button>
-        </div>
-      </section>
-
-      {/* Content */}
-      <div id="featured" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="storefront">
+      <HomeHero product={heroProduct} />
+      <div id="featured" className="scroll-mt-20">
         {isLoading ? (
-          <div className="space-y-16">
-            <div>
-              <div className="h-8 w-48 skeleton rounded mb-8" />
-              <ProductGridSkeleton count={5} />
+          <section className="store-section store-container" aria-label="Loading models" aria-busy="true">
+            <p role="status" className="mb-6 text-muted-foreground">Loading the catalogue…</p>
+            <ProductGridSkeleton count={4} />
+          </section>
+        ) : isError && !data ? (
+          <section className="store-container" aria-labelledby="catalogue-error">
+            <div className="store-state" role="alert">
+              <h2 id="catalogue-error">The catalogue couldn’t load.</h2>
+              <p>Please try again in a moment.</p>
+              {retryButton}
             </div>
-            <div>
-              <div className="h-8 w-48 skeleton rounded mb-8" />
-              <ProductGridSkeleton count={5} />
-            </div>
-          </div>
+          </section>
         ) : (
           <>
-            {/* Main Product Rows */}
-            <ProductSection
-              title="Featured Models"
-              icon={Star}
-              iconColor="text-warning"
-              products={data?.featured || []}
-            />
+            {isError && <div className="store-container"><div className="store-refresh" role="status"><p>Couldn’t refresh the catalogue. Showing the last available models.</p>{retryButton}</div></div>}
+            {empty ? (
+              <section className="store-container" aria-labelledby="catalogue-empty">
+                <div className="store-state">
+                  <h2 id="catalogue-empty">No models yet.</h2>
+                  <p>New designs will appear here as creators publish them.</p>
+                  <Link href="/creator/products/new" className="market-text-link">Publish a design</Link>
+                </div>
+              </section>
+            ) : <ProductSection title="Featured models" products={featured} />}
 
-            <ProductSection
-              title="Trending"
-              icon={Tag}
-              iconColor="text-primary"
-              products={data?.trending || []}
-            />
-
-            <ProductSection
-              title="New Arrivals"
-              icon={Clock}
-              iconColor="text-success"
-              products={data?.new_arrivals || []}
-            />
-
-            {/* Popular Creators */}
-            <section className="mb-20">
-              <div className="flex justify-between items-end mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-3 font-display">
-                  <Users className="text-ember" size={28} />
-                  Popular Creators
-                </h2>
+            {categories.length > 0 && <section className="store-categories" aria-labelledby="category-title">
+              <div className="store-container">
+                <div className="store-section-head"><h2 id="category-title">Explore categories</h2></div>
+                <div className="store-category-list">
+                  {categories.map(category => <Link key={category.name} href={`/marketplace?category=${encodeURIComponent(category.name)}`} className="store-category">
+                    <span>{category.name}</span><ArrowUpRight size={20} aria-hidden="true" />
+                  </Link>)}
+                </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
-                {(data?.popular_creators || []).map((creator: any, i: number) => (
-                  <Card key={i} className="p-6 text-center hover:shadow-md transition-all group hover:-translate-y-1 bg-card/50 backdrop-blur">
-                    <Avatar className="w-24 h-24 mx-auto mb-4 border-2 border-primary/20 group-hover:border-primary transition-colors">
-                      {creator.image && <AvatarImage src={api.mediaUrl(creator.image)} />}
+            </section>}
+
+            <ProductSection title="Trending" products={trending} rail />
+
+            {arrivals.length > 0 && <section className="store-section store-container" aria-labelledby="arrivals-title">
+              <div className="store-arrivals">
+                <div className="store-section-head">
+                  <h2 id="arrivals-title">New arrivals</h2>
+                  <Link href="/marketplace" className="market-text-link">Browse all models</Link>
+                </div>
+                <div>
+                  {arrivals.map(product => <Link key={product.id} href={`/marketplace/${product.id}`} className="store-arrival">
+                    <span className="store-arrival-image"><ProductImage src={productImage(product)} title={product.title} /></span>
+                    <div><h3>{product.title}</h3>{product.creator_name && <p>By {product.creator_name}</p>}</div>
+                    {product.price != null && <span className="market-price">${product.price.toFixed(2)}</span>}
+                  </Link>)}
+                </div>
+              </div>
+            </section>}
+
+            {creators.length > 0 && <section className="store-creators" aria-labelledby="creators-title">
+              <div className="store-container store-creators-layout">
+                <h2 id="creators-title">Popular creators</h2>
+                <ul className="store-creator-list">
+                  {creators.map((creator, index) => <li key={`${creator.name}-${index}`} className="store-creator">
+                    <Avatar className="h-12 w-12">
+                      {creator.image && <AvatarImage src={api.mediaUrl(creator.image)} alt="" />}
                       <AvatarFallback>{creator.initials}</AvatarFallback>
                     </Avatar>
-                    <h3 className="font-bold font-display text-lg mb-1">{creator.name}</h3>
-                    <p className="text-muted-foreground text-sm font-medium mb-3">{creator.role}</p>
-                    <Button variant="outline" size="sm" className="w-full rounded-full">Follow</Button>
-                  </Card>
-                ))}
+                    <div><h3>{creator.name}</h3><p>{creator.role}</p></div>
+                  </li>)}
+                </ul>
               </div>
-            </section>
-
-            {/* Categories Banner Grid */}
-            <section className="mb-20">
-              <div className="flex justify-between items-end mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-3 font-display">
-                  <LayoutGrid className="text-muted-foreground" size={28} />
-                  Explore Categories
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(data?.categories || []).map((category: any, i: number) => (
-                  <Link key={i} href={`/marketplace?category=${encodeURIComponent(category.name)}`}>
-                    <div className="group relative h-48 rounded-2xl overflow-hidden cursor-pointer">
-                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors z-10" />
-                      <img
-                        // mediaUrl: a locally stored image is a bare "/uploads/..."
-                        // path that must be fetched from the API, not this site.
-                        src={api.mediaUrl(category.image)}
-                        alt={category.name}
-                        loading="lazy"
-                        decoding="async"
-                        // A category image that 404s just hides; the dark tile and title remain.
-                        onError={(e) => { e.currentTarget.style.visibility = "hidden"; }}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center z-20">
-                        <h3 className="text-2xl font-bold text-white font-display drop-shadow-md">
-                          {category.name}
-                        </h3>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
+            </section>}
           </>
         )}
       </div>

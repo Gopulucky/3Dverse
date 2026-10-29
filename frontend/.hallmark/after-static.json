@@ -1,0 +1,125 @@
+{
+  "summary": {
+    "fails": 0,
+    "reflex": 1,
+    "warns": 11,
+    "waived": 0,
+    "rejected": 0,
+    "answered": 0,
+    "dismissed": 0,
+    "notes": 0,
+    "files": 11,
+    "render": "off",
+    "kept": "kept: links 11/11, handlers 17/22 (5 dropped on record); before 91 FAIL, 4 REFLEX, now 0 FAIL, 1 REFLEX"
+  },
+  "findings": [
+    {
+      "gate": "2b",
+      "grade": "REFLEX",
+      "tier": "reflex",
+      "file": "src\\app\\globals.css",
+      "line": 395,
+      "evidence": "gradient text on .text-gradient-primary",
+      "fix": "Solid ink; weight or a display face. Guard: a single-hue ramp from two tokens with 40 and 41 passing"
+    },
+    {
+      "gate": "19",
+      "grade": "WARN",
+      "tier": "floor",
+      "file": "src\\components\\layout\\footer.tsx",
+      "line": 123,
+      "evidence": "template footer line: \"All rights reserved\"",
+      "fix": "A stock line with no legal effect; cut it unless the owner wants it"
+    },
+    {
+      "gate": "40",
+      "grade": "WARN",
+      "tier": "floor",
+      "file": "src\\styles\\marketplace\\storefront.css",
+      "line": 64,
+      "evidence": "1.34:1 < 4.5:1 on .market-product-featured",
+      "fix": "Raise the contrast to threshold"
+    },
+    {
+      "gate": "41",
+      "grade": "WARN",
+      "tier": "floor",
+      "file": "src\\styles\\marketplace\\storefront.css",
+      "line": 18,
+      "evidence": "dark surface (L 26%) on .store-hero-image sets no text colour",
+      "fix": "Swap text to paper in the same rule"
+    },
+    {
+      "gate": "42",
+      "grade": "WARN",
+      "tier": "reflex",
+      "file": "src\\components\\layout\\footer.tsx",
+      "line": 8,
+      "evidence": "default footer shape: 4 link columns",
+      "fix": "Decide the footer and name it in the stamp, or build another shape"
+    },
+    {
+      "gate": "49",
+      "grade": "WARN",
+      "tier": "floor",
+      "file": "src\\components\\layout\\navbar.tsx",
+      "line": 421,
+      "evidence": "long clickable label \"Search for &ldquo; &rdquo;\" without nowrap",
+      "fix": "Shorten the label or set nowrap"
+    },
+    {
+      "gate": "74",
+      "grade": "WARN",
+      "tier": "reflex",
+      "file": "src\\app\\globals.css",
+      "line": 47,
+      "evidence": "default Tailwind palette #6366F1 on --color-violet-9",
+      "fix": "Mix the colour for this page in OKLCH; a stock swatch is the AI look"
+    },
+    {
+      "gate": "74",
+      "grade": "WARN",
+      "tier": "reflex",
+      "file": "src\\app\\globals.css",
+      "line": 63,
+      "evidence": "default Tailwind palette #F8FAFC on --color-slate-2",
+      "fix": "Mix the colour for this page in OKLCH; a stock swatch is the AI look"
+    },
+    {
+      "gate": "74",
+      "grade": "WARN",
+      "tier": "reflex",
+      "file": "src\\app\\globals.css",
+      "line": 65,
+      "evidence": "default Tailwind palette #64748B on --color-slate-9",
+      "fix": "Mix the colour for this page in OKLCH; a stock swatch is the AI look"
+    },
+    {
+      "gate": "74",
+      "grade": "WARN",
+      "tier": "reflex",
+      "file": "src\\app\\globals.css",
+      "line": 86,
+      "evidence": "default Tailwind palette #0F172A on --color-ink",
+      "fix": "Mix the colour for this page in OKLCH; a stock swatch is the AI look"
+    },
+    {
+      "gate": "F6",
+      "grade": "WARN",
+      "tier": "finish",
+      "file": "src\\styles\\marketplace\\storefront.css",
+      "line": 34,
+      "evidence": "numeric selector .store-state h2 at display size without tabular figures",
+      "fix": "Add font-variant-numeric: tabular-nums"
+    },
+    {
+      "gate": "F16",
+      "grade": "WARN",
+      "tier": "finish",
+      "file": "src\\styles\\marketplace\\base.css",
+      "line": 1,
+      "evidence": "browser surfaces unthemed: ::selection",
+      "fix": "Theme the parts you did not draw from the palette"
+    }
+  ]
+}

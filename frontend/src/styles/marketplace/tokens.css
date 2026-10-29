@@ -1,0 +1,113 @@
+/* Hallmark · theme: brand · 3DVerse palette and shared layout scale · v2.0.0 */
+:root {
+  --store-container: 90rem;
+  --store-gutter: clamp(1rem, 4.4vw, 4rem);
+  --store-gap: 1.5rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  --space-4xl: 6rem;
+  --space-section: clamp(4rem, 8vw, 8rem);
+  --store-display: clamp(2.75rem, 5.1vw, 4.75rem);
+  --store-section: clamp(2rem, 3.5vw, 3rem);
+  --store-title: 1.125rem;
+  --store-body: 1rem;
+  --store-small: 0.875rem;
+  --store-radius: 0.75rem;
+  --store-duration: 160ms;
+  --store-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --store-focus: var(--color-violet-11);
+  --store-action: var(--color-violet-10);
+  --store-action-ink: #FFFFFF;
+  --store-image-surface: var(--color-slate-3);
+  --glass-fill: color-mix(in srgb, var(--color-card) 95%, transparent);
+  --shadow-subtle: 0 2px 8px color-mix(in srgb, var(--color-ink) 6%, transparent);
+  --shadow-raised: 0 8px 24px color-mix(in srgb, var(--color-ink) 8%, transparent);
+}
+.dark {
+  --store-action: var(--color-violet-9);
+  --store-action-ink: #101114;
+}
+/* ================================================================
+   Dark mode — a parallel scale, not a per-component override.
+   next-themes toggles the `dark` class on <html> (see providers.tsx).
+   Same semantic tokens, same roles, different lightness ramp — nothing
+   downstream needs a `dark:` variant.
+   ================================================================ */
+.dark {
+  --color-violet-1: #0E101D;  --color-violet-2: #15172B;  --color-violet-3: #1C1E43;
+  --color-violet-4: #212458;  --color-violet-5: #28296B;  --color-violet-6: #30317F;
+  --color-violet-7: #3D3F9D;  --color-violet-8: #5356C9;  --color-violet-9: #6C71FD;
+  --color-violet-10: #7D86FF; --color-violet-11: #A1ADFF; --color-violet-12: #D5DCFF;
+
+  --color-ember-1: #1B0D08;  --color-ember-2: #27130B;  --color-ember-3: #3C1607;
+  --color-ember-4: #4D1701;  --color-ember-5: #5B1C00;  --color-ember-6: #6B2200;
+  --color-ember-7: #852D00;  --color-ember-8: #AE3D00;  --color-ember-9: #F76421;
+  --color-ember-10: #FF7D4A; --color-ember-11: #FE946C; --color-ember-12: #FFD3C3;
+
+  --color-moss-1: #0A130F;  --color-moss-2: #0E1D16;  --color-moss-3: #0C291D;
+  --color-moss-4: #063423;  --color-moss-5: #003E29;  --color-moss-6: #004A32;
+  --color-moss-7: #005D3F;  --color-moss-8: #057B55;  --color-moss-9: #21A173;
+  --color-moss-10: #38B182; --color-moss-11: #7BC7A4; --color-moss-12: #BFEAD4;
+
+  --color-slate-1: #101114;  --color-slate-2: #17191D;  --color-slate-3: #1F232A;
+  --color-slate-4: #262C35;  --color-slate-5: #2C343F;  --color-slate-6: #353E4B;
+  --color-slate-7: #444F5E;  --color-slate-8: #5B697C;  --color-slate-9: #6E7E96;
+  --color-slate-10: #7D8DA5; --color-slate-11: #A9B5C7; --color-slate-12: #D7DFEA;
+
+  --color-red-1: #1C0C0A;   --color-red-3: #3F120F;   --color-red-6: #750E0F;
+  --color-red-9: #E93632;   --color-red-10: #FB4A42;  --color-red-11: #FF9084; --color-red-12: #FFD2CB;
+  --color-amber-1: #180F08; --color-amber-3: #351C06; --color-amber-6: #5E3000;
+  --color-amber-9: #E58220; --color-amber-10: #F69236; --color-amber-11: #EAA268; --color-amber-12: #FFD5B5;
+  --color-green-1: #0A140C; --color-green-3: #0B2A13; --color-green-6: #004B1D;
+  --color-green-9: #2AAE55; --color-green-10: #40BE64; --color-green-11: #79CA89; --color-green-12: #BEECC5;
+
+  --color-primary: var(--color-violet-9);
+  --color-success: var(--color-green-9);
+  --color-warning: var(--color-amber-9);
+  --color-destructive: var(--color-red-9);
+  --color-moss: var(--color-moss-9);
+  --color-ember: var(--color-ember-9);
+
+  --color-primary-surface: var(--color-violet-3);
+  --color-primary-ink: var(--color-violet-11);
+  --color-success-surface: var(--color-green-3);
+  --color-success-ink: var(--color-green-11);
+  --color-warning-surface: var(--color-amber-3);
+  --color-warning-ink: var(--color-amber-11);
+  --color-danger-surface: var(--color-red-3);
+  --color-danger-ink: var(--color-red-11);
+  --color-ember-surface: var(--color-ember-3);
+  --color-ember-ink: var(--color-ember-11);
+  --color-moss-surface: var(--color-moss-3);
+  --color-moss-ink: var(--color-moss-11);
+
+  --color-creator-accent: var(--color-ember-9);
+  --color-customer-accent: var(--color-violet-9);
+  --color-partner-accent: var(--color-moss-9);
+
+  /* --color-card/-popover/-primary-foreground/-destructive-foreground are
+     NOT redeclared here — they alias to --surface-card / --surface-popover
+     / --on-solid-primary / --on-solid-destructive (top of file), which is
+     where their dark-mode values actually live. See the comment there for
+     why: @theme inline only preserves runtime theme-switching through one
+     layer of var() indirection, so the override has to happen at that
+     lower layer, not by redeclaring the alias itself here. */
+  --color-background: var(--color-slate-1);
+  --color-foreground: var(--color-slate-12);
+  --color-card-foreground: var(--color-slate-12);
+  --color-popover-foreground: var(--color-slate-12);
+  --color-secondary: var(--color-slate-3);
+  --color-secondary-foreground: var(--color-slate-12);
+  --color-muted: var(--color-slate-3);
+  --color-muted-foreground: var(--color-slate-11);
+  --color-accent: var(--color-slate-3);
+  --color-accent-foreground: var(--color-slate-12);
+  --color-border: var(--color-slate-6);
+  --color-input: var(--color-slate-8);
+  --color-ring: var(--color-violet-9);
+}

@@ -1,0 +1,50 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "site",
+  "genre": "modern-minimal",
+  "shape": "Catalogue",
+  "theme": "brand",
+  "axes": "light/geometric/violet",
+  "hero": "Stage",
+  "nav": "search-led",
+  "footer": "index",
+  "imagery": "actual catalogue media",
+  "photos": [],
+  "entry": "src/components/marketplace/home-content.tsx",
+  "fingerprint": {
+   "opening": "catalogue offer",
+   "rhythm": "grid/index/rail/rows",
+   "alignment": "left",
+   "density": "commerce",
+   "action": "browse",
+   "ending": "creators and sitemap"
+  },
+  "sections": [
+   "hero",
+   "featured grid",
+   "category index",
+   "trending rail",
+   "new arrivals",
+   "creators",
+   "footer"
+  ],
+  "signature": "one actual catalogue object with its own title, creator and price",
+  "waived": [],
+  "exceptions": [
+   "2b: existing brand wordmark preserved"
+  ],
+  "prompt": "Implement the Hallmark audit fixes for the 3DVerse marketplace while preserving its brand and functionality.",
+  "verification": {
+   "build": "pass, 50 routes",
+   "browser": "7 groups pass on development and production with isolated API fixtures",
+   "heroReview": "ship",
+   "finishReview": "ship",
+   "staticFloor": 0,
+   "staticReflex": 1,
+   "render": "Puppeteer timed out; Playwright fallback used"
+  },
+  "date": "2026-10-29"
+ }
+]
