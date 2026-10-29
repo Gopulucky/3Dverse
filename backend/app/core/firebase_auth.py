@@ -3,7 +3,7 @@ import os
 from functools import lru_cache
 
 import firebase_admin
-from firebase_admin import auth
+from firebase_admin import auth, credentials
 from fastapi import HTTPException
 
 from app.core.config import settings
@@ -13,7 +13,9 @@ from app.core.config import settings
 def _initialize(project_id: str):
     # Application Default Credentials: workload identity or a server-only file.
     # Never accept credentials, a project ID or an emulator host from a request.
-    return firebase_admin.initialize_app(options={"projectId": project_id}, name="3dverse-auth")
+    credential = (credentials.Certificate(settings.GOOGLE_APPLICATION_CREDENTIALS)
+                  if settings.GOOGLE_APPLICATION_CREDENTIALS else None)
+    return firebase_admin.initialize_app(credential, options={"projectId": project_id}, name="3dverse-auth")
 
 
 def firebase_app():

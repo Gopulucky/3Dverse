@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     SENTRY_DSN: str | None = None
 
     FIREBASE_PROJECT_ID: str | None = None
+    GOOGLE_APPLICATION_CREDENTIALS: str | None = None
     STRIPE_SECRET_KEY: str | None = None
     STRIPE_WEBHOOK_SECRET: str | None = None
     # Never a fallback for checkout. Other local demo flows require opt-in.

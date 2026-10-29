@@ -113,6 +113,43 @@ def test_unconfigured_firebase_is_unavailable_not_invalid_password(monkeypatch):
     assert error.value.status_code == 503
 
 
+def test_admin_credentials_path_from_dotenv_is_used(tmp_path, monkeypatch):
+    from app.core.config import Settings
+    from app.core import firebase_auth
+    env_file = tmp_path / ".env"
+    env_file.write_text("FIREBASE_PROJECT_ID=demo-test\nGOOGLE_APPLICATION_CREDENTIALS=C:/private/firebase.json\n")
+    config = Settings(_env_file=env_file)
+    monkeypatch.setattr(firebase_auth, "settings", config)
+    import firebase_admin.credentials
+    credential = Mock()
+    certificate = Mock(return_value=credential)
+    initializer = Mock(return_value="initialized-app")
+    monkeypatch.setattr(firebase_admin.credentials, "Certificate", certificate)
+    monkeypatch.setattr(firebase_auth.firebase_admin, "initialize_app", initializer)
+    firebase_auth._initialize.cache_clear()
+    try:
+        assert firebase_auth.firebase_app() == "initialized-app"
+        certificate.assert_called_once_with("C:/private/firebase.json")
+        initializer.assert_called_once_with(credential, options={"projectId": "demo-test"}, name="3dverse-auth")
+    finally:
+        firebase_auth._initialize.cache_clear()
+
+
+def test_admin_without_key_file_preserves_default_credentials(monkeypatch):
+    from app.core.config import Settings
+    from app.core import firebase_auth
+    config = Settings(_env_file=None, FIREBASE_PROJECT_ID="demo-default", GOOGLE_APPLICATION_CREDENTIALS=None)
+    monkeypatch.setattr(firebase_auth, "settings", config)
+    initializer = Mock(return_value="default-app")
+    monkeypatch.setattr(firebase_auth.firebase_admin, "initialize_app", initializer)
+    firebase_auth._initialize.cache_clear()
+    try:
+        assert firebase_auth.firebase_app() == "default-app"
+        initializer.assert_called_once_with(None, options={"projectId": "demo-default"}, name="3dverse-auth")
+    finally:
+        firebase_auth._initialize.cache_clear()
+
+
 def test_firebase_account_deletion_requires_recent_matching_identity(monkeypatch):
     import time
     from app.api.routers import users

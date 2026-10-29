@@ -15,7 +15,7 @@ This is an operator guide for the India/INR launch. Local fixture checks do not 
    NEXT_PUBLIC_FIREBASE_APP_ID=your-web-app-id
    ```
 
-4. Set backend `FIREBASE_PROJECT_ID` to the same project. Provide Application Default Credentials through workload identity, or mount a server-only service-account file and set `GOOGLE_APPLICATION_CREDENTIALS` to its absolute path. Use the minimum permissions necessary to verify tokens and inspect/revoke users. Never put an Admin key in `NEXT_PUBLIC_*`, the repository, browser code or chat.
+4. Set backend `FIREBASE_PROJECT_ID` to the same project. Provide Application Default Credentials through workload identity, or mount a server-only service-account file and set `GOOGLE_APPLICATION_CREDENTIALS` to its absolute path. For local development, the backend also reads this path from `backend/.env`; on Render use a Secret File and `/etc/secrets/firebase-admin.json`. Use the minimum permissions necessary to verify tokens and inspect/revoke users. Never put an Admin key in `NEXT_PUBLIC_*`, the repository, browser code or chat.
 5. Rebuild the frontend after changing public environment values; restart the backend after configuring credentials. Do not set `FIREBASE_AUTH_EMULATOR_HOST` in production—the app rejects that configuration.
 6. Configure the Firebase verification/password-reset email templates, sender and authorized action domain. Test Google popup sign-in, email registration/verification, password reset, sign-out, expired token refresh, disabled-account rejection and mobile browsers on the deployed domain.
 
