@@ -17,24 +17,31 @@ import { useRequireAuth } from "@/stores/auth-store";
 import { cn, formatDate } from "@/lib/utils";
 import { MarketplaceShell } from "@/components/layout/marketplace-shell";
 import { StatusChip } from "@/components/ui/status-chip";
-
-const ORDER_STATUS_FLOW = [
-  "pending",
-  "paid",
-  "queued",
-  "printing",
-  "qc",
-  "packed",
-  "shipped",
-  "delivered",
-];
+import { FULFILLMENT_FLOW, orderPhase, orderStatusLabel, orderStatusTone } from "@/lib/order-lifecycle";
 
 function OrderStatusTracker({ status }: { status: string }) {
-  const currentIdx = ORDER_STATUS_FLOW.indexOf(status);
+  const phase = orderPhase(status);
+  if (phase.kind === "unknown") return null;
+
+  // Unpaid and closed orders have no fulfilment progress to show.
+  if (phase.kind === "awaiting_payment" || phase.kind === "closed") {
+    return (
+      <div className="py-3" data-flow="order-status" data-state={phase.kind}>
+        <span className={cn(
+          "inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase whitespace-nowrap",
+          phase.kind === "awaiting_payment" ? "bg-warning-surface text-warning-ink" : "bg-muted text-muted-foreground"
+        )}>
+          {orderStatusLabel(status)}
+        </span>
+      </div>
+    );
+  }
+
+  const currentIdx = phase.kind === "completed" ? FULFILLMENT_FLOW.length : phase.index;
 
   return (
-    <div className="flex items-center gap-1 overflow-x-auto py-3 no-scrollbar">
-      {ORDER_STATUS_FLOW.map((s, idx) => {
+    <div className="flex items-center gap-1 overflow-x-auto py-3 no-scrollbar" data-flow="order-status" data-state={phase.kind}>
+      {FULFILLMENT_FLOW.map((s, idx) => {
         const isPast = idx < currentIdx;
         const isCurrent = idx === currentIdx;
 
@@ -51,9 +58,9 @@ function OrderStatusTracker({ status }: { status: string }) {
               )}
             >
               {isPast && <CheckCircle2 size={10} />}
-              {s}
+              {orderStatusLabel(s)}
             </div>
-            {idx < ORDER_STATUS_FLOW.length - 1 && (
+            {idx < FULFILLMENT_FLOW.length - 1 && (
               <div
                 className={cn(
                   "w-4 h-px mx-0.5",
@@ -80,14 +87,6 @@ export default function OrdersPage() {
 
 
   if (!isAuthenticated) return null;
-
-  const getStatusType = (status: string) => {
-    if (status === "delivered") return "success";
-    if (status === "shipped") return "success";
-    if (status === "pending" || status === "queued") return "warning";
-    if (status === "printing" || status === "qc") return "in-progress";
-    return "neutral";
-  };
 
   const content = (
     <div className="max-w-4xl mx-auto px-6 pt-24 pb-20">
@@ -134,8 +133,8 @@ export default function OrdersPage() {
                 <div className="flex items-center gap-3">
                   {order.status === "pending_payment" && <Link href={`/checkout?order_id=${order.id}`} className="market-text-link">Continue payment</Link>}
                   <StatusChip
-                    status={getStatusType(order.status)}
-                    label={order.status?.toUpperCase()}
+                    status={orderStatusTone(order.status)}
+                    label={orderStatusLabel(order.status)}
                   />
                   {order.invoice_url && (
                     <button

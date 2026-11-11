@@ -95,6 +95,18 @@ try {
   assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'Choose options', exact: true }).getAttribute('href'), '/marketplace/9001');
   assert.equal(await page.locator('.market-product').first().getByRole('button', { name: 'Add Sample bench to cart', exact: true }).count(), 0);
   assert.match(await page.locator('h1').innerText(), /Buy 3D models\s*or finished prints\./);
+  // The storefront speaks to buyers: no creator/partner promotion outside one quiet footer link.
+  assert.equal(await page.getByRole('heading', { name: 'Make or print designs?' }).count(), 0);
+  const footer = page.locator('footer');
+  const footerText = await footer.innerText();
+  assert.ok(!/For Creators|For Print Partners|Become a Creator|Partner Console/i.test(footerText), `Footer still promotes the supply side: ${footerText}`);
+  assert.equal(await footer.getByRole('heading', { name: 'Shop', exact: true }).count(), 1);
+  assert.equal(await footer.getByRole('link', { name: 'Sell on 3DVerse', exact: true }).getAttribute('href'), '/sell');
+  await page.getByRole('button', { name: 'Account and portals', exact: true }).click();
+  await visible(page.getByRole('menuitem', { name: 'My Orders' }));
+  assert.equal(await page.getByRole('menuitem', { name: 'Sell with 3DVerse' }).count(), 0);
+  await page.keyboard.press('Escape');
+  checks.push('Customer storefront: no seller section on home, no creator/partner footer columns, one footer "Sell on 3DVerse" link, no "Sell with 3DVerse" in the customer account menu.');
   assert.equal(await page.getByRole('link', { name: 'Shop printed products', exact: true }).getAttribute('href'), '/marketplace?format=physical');
   await page.getByRole('link', { name: 'Browse digital models', exact: true }).click();
   await page.waitForURL('**/marketplace?format=digital');

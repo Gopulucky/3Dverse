@@ -35,6 +35,10 @@ working-tree changes and never silently discard them.
 - Storefront behaviour: with the local frontend running, execute
   `node scripts/marketplace-smoke.mjs http://127.0.0.1:3000`. Its intercepted
   API fixtures do not verify a real backend, payments or deployed networking.
+- UI flow state lives in `frontend/src/lib/machines/` (see its README). Read
+  `data-flow`/`data-state` attributes instead of matching copy. Order statuses
+  live only in `frontend/src/lib/order-lifecycle.ts`; unit tests compare them
+  with the backend.
 - Backend checks, from `backend/`: `python -m pytest -q -p no:cacheprovider`.
 - Run checks relevant to the change and distinguish fixture coverage from
   real service verification. Review the staged diff before any requested commit.

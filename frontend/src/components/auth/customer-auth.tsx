@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore, type FormEvent } from "react";
+import { useReducer, useState, useSyncExternalStore, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -9,6 +9,7 @@ import { api, API_URL, ApiError } from "@/lib/api";
 import { firebaseConfigured, firebaseAuth, googleSignIn, emailSignIn, signInError } from "@/lib/firebase";
 import { useAuthStore, type User } from "@/stores/auth-store";
 import { AuthCard } from "@/components/layout/auth-card";
+import { authReducer, initialAuthState, isLegacy } from "@/lib/machines/customer-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,13 +24,15 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [previousPassword, setPreviousPassword] = useState("");
-  const [pendingLink, setPendingLink] = useState(false);
-  const [legacy, setLegacy] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [auth, dispatch] = useReducer(authReducer, initialAuthState);
+  const pendingLink = auth.mode.kind === "link";
+  const legacy = isLegacy(auth);
+  const busy = auth.status !== "idle";
+  const error = auth.error;
 
   function finish(token: string, user: User, provider: "firebase" | "password") {
     setAuth(token, user, provider);
+    dispatch({ type: "DONE" });
     const next = new URLSearchParams(window.location.search).get("next");
     const safe = next?.startsWith("/") && !next.startsWith("//") && !next.includes("\\") && !/[\u0000-\u001f]/.test(next);
     router.push(safe ? next! : "/marketplace/home");
@@ -42,8 +45,7 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
       finish(token, user, "firebase");
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        setPendingLink(true);
-        setError("Already shopped here? Verify your email, then enter your previous 3DVerse password below to connect your account and keep your orders.");
+        dispatch({ type: "LINK_REQUIRED", message: "Already shopped here? Verify your email, then enter your previous 3DVerse password below to connect your account and keep your orders." });
         return;
       }
       throw err;
@@ -51,7 +53,9 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
   }
 
   async function submit(event: FormEvent) {
-    event.preventDefault(); setBusy(true); setError("");
+    event.preventDefault();
+    if (auth.status !== "idle") return;
+    dispatch({ type: "SUBMIT" });
     try {
       if (pendingLink) {
         const current = (await firebaseAuth()).currentUser;
@@ -61,12 +65,13 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
         const user = await api.post<User>("/api/auth/firebase/link", { id_token: token, previous_password: previousPassword });
         finish(token, user, "firebase");
       } else if (firebaseConfigured && !legacy) {
-        if (create && password !== confirm) { setError("Your passwords don’t match."); return; }
+        if (create && password !== confirm) { dispatch({ type: "FAILED", error: "Your passwords don’t match." }); return; }
         const credential = await emailSignIn(email.trim(), password, create);
         await completeFirebase(await credential.user.getIdToken());
       } else if (create) {
-        if (password !== confirm) { setError("Your passwords don’t match."); return; }
+        if (password !== confirm) { dispatch({ type: "FAILED", error: "Your passwords don’t match." }); return; }
         await api.post("/api/auth/register", { email: email.trim(), password, role: "customer" });
+        dispatch({ type: "DONE" });
         toast.success("Account created. Check your email, then sign in."); router.push(`/login${window.location.search}`);
       } else {
         const res = await fetch(`${API_URL}/api/auth/login/access-token`, {
@@ -74,20 +79,19 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
           body: new URLSearchParams({ username: email.trim(), password }),
         });
         const result = await res.json();
-        if (!res.ok) { setError(result.detail || "Check your email and password."); return; }
+        if (!res.ok) { dispatch({ type: "FAILED", error: result.detail || "Check your email and password." }); return; }
         finish(result.access_token, result.user, "password");
       }
-    } catch (err) { setError(signInError(err)); }
-    finally { setBusy(false); }
+    } catch (err) { dispatch({ type: "FAILED", error: signInError(err) }); }
   }
 
   async function google() {
-    setBusy(true); setError("");
+    if (auth.status !== "idle") return;
+    dispatch({ type: "SUBMIT" });
     try {
       const credential = await googleSignIn();
       await completeFirebase(await credential.user.getIdToken());
-    } catch (err) { setError(signInError(err)); }
-    finally { setBusy(false); }
+    } catch (err) { dispatch({ type: "FAILED", error: signInError(err) }); }
   }
 
   return (
@@ -98,7 +102,7 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
         {!firebaseConfigured && <p className="text-xs text-muted-foreground text-center">Google sign-in is currently unavailable. Use email below.</p>}
         <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px bg-border flex-1" />or use email<span className="h-px bg-border flex-1" /></div>
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-        <form onSubmit={submit} className="space-y-4" data-ready={ready}>
+        <form onSubmit={submit} className="space-y-4" data-ready={ready} data-flow="customer-auth" data-state={auth.status} data-auth-mode={auth.mode.kind}>
           {pendingLink ? <>
             <Label htmlFor="previous-password">Previous 3DVerse password</Label>
             <Input id="previous-password" type="password" autoComplete="current-password" required value={previousPassword} onChange={(e) => setPreviousPassword(e.target.value)} />
@@ -112,7 +116,7 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
           </>}
           <Button type="submit" className="w-full" size="lg" disabled={busy || !ready}>{busy ? <Loader2 className="animate-spin" size={18} /> : pendingLink ? "Connect my account" : create ? "Create my account" : "Sign in with email"}</Button>
         </form>
-        {!create && firebaseConfigured && <button type="button" className="text-xs text-primary underline" disabled={busy} onClick={() => { setLegacy(!legacy); setPendingLink(false); setError(""); }}>{legacy ? "Use Google or current email sign-in" : "Use my previous 3DVerse sign-in"}</button>}
+        {!create && firebaseConfigured && <button type="button" className="text-xs text-primary underline" disabled={busy} onClick={() => dispatch({ type: "TOGGLE_LEGACY" })}>{legacy ? "Use Google or current email sign-in" : "Use my previous 3DVerse sign-in"}</button>}
         {legacy && <p className="text-xs text-muted-foreground">For accounts created before Google sign-in was introduced.</p>}
         <p className="text-sm text-center text-muted-foreground">{create ? "Already have an account? " : "New to 3DVerse? "}<Link href={create ? "/login" : "/register"} onClick={(event) => { event.preventDefault(); router.push(`${create ? "/login" : "/register"}${window.location.search}`); }} className="text-primary underline">{create ? "Sign in" : "Create an account"}</Link></p>
         {create && <p className="text-xs text-muted-foreground text-center">By creating an account, you agree to our <Link href="/terms" className="underline">Terms</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>.</p>}

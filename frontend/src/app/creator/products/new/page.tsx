@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useReducer } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { initialUploadState, uploadProgress, uploadReducer, UPLOAD_LABEL } from "@/lib/machines/product-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,11 +90,11 @@ export default function NewProductPage() {
   const [step, setStep] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadStage, setUploadStage] = useState<"idle" | "uploading" | "verifying" | "analyzing" | "generating" | "ready">("idle");
+  const [upload, dispatchUpload] = useReducer(uploadReducer, initialUploadState);
+  const uploadStage = upload.status;
+  const uploadPercent = uploadProgress(upload);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     if (uploadStage !== "idle") return;
@@ -148,6 +149,7 @@ export default function NewProductPage() {
   };
 
   const handleSubmit = async () => {
+    if (upload.status !== "idle") return;
     if (copy.fileRequired && !file) {
       toast.error("Please select a 3D model file to upload");
       return;
@@ -157,9 +159,7 @@ export default function NewProductPage() {
       return;
     }
 
-    setIsUploading(true);
-    setUploadStage("uploading");
-    setUploadProgress(0);
+    dispatchUpload({ type: "START" });
 
     // The draft is created first, so once this succeeds the listing exists even
     // if the file transfer later fails. Tracked here so the failure path can say
@@ -179,6 +179,7 @@ export default function NewProductPage() {
         fulfillment_status: copy.fulfillment,
       });
       productId = product.id;
+      dispatchUpload({ type: "CREATED", hasFile: !!file, productId: product.id });
 
       if (file) {
         const formData = new FormData();
@@ -187,16 +188,14 @@ export default function NewProductPage() {
           `/api/products/${product.id}/upload-model`,
           formData,
           (percent) => {
-            setUploadProgress(percent);
+            dispatchUpload({ type: "PROGRESS", percent });
             // Once the bytes are all sent, the server is still storing the file
             // and queueing analysis — say that instead of sitting at 100%.
-            if (percent >= 100) setUploadStage("verifying");
           }
         );
       }
 
-      setUploadProgress(100);
-      setUploadStage("ready");
+      dispatchUpload({ type: "UPLOADED" });
       toast.success(
         file
           ? "Listing created. Printability analysis is running in the background."
@@ -204,9 +203,7 @@ export default function NewProductPage() {
       );
       router.push(`/creator/products/${product.id}`);
     } catch (err: any) {
-      setUploadStage("idle");
-      setUploadProgress(0);
-      setIsUploading(false);
+      dispatchUpload({ type: "FAILED" });
 
       const message = err?.detail || err?.message || `Failed to create ${copy.noun}`;
       if (productId) {
@@ -383,6 +380,8 @@ export default function NewProductPage() {
                     ? "border-success/60 bg-success/5"
                     : "border-border hover:border-ember/50 hover:bg-muted/30 group"
                 )}
+                data-flow="product-upload"
+                data-state={uploadStage}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
@@ -402,18 +401,14 @@ export default function NewProductPage() {
                     <div className="space-y-6 max-w-sm mx-auto">
                       <div className="flex items-center justify-between font-bold font-display text-lg">
                         <span className="capitalize text-ember">
-                          {uploadStage === "uploading" && "Uploading..."}
-                          {uploadStage === "verifying" && "Saving on server..."}
-                          {uploadStage === "analyzing" && "Analyzing Printability..."}
-                          {uploadStage === "generating" && "Generating Preview..."}
-                          {uploadStage === "ready" && "Ready"}
+                          {UPLOAD_LABEL[uploadStage]}
                         </span>
-                        <span>{uploadProgress}%</span>
+                        <span>{uploadPercent}%</span>
                       </div>
                       <div className="h-4 w-full bg-border rounded-full overflow-hidden">
                         <div
                           className="h-full bg-ember transition-all duration-300 ease-out"
-                          style={{ width: `${uploadProgress}%` }}
+                          style={{ width: `${uploadPercent}%` }}
                         />
                       </div>
                       <div className="flex justify-center text-ember">

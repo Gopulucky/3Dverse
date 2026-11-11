@@ -169,7 +169,6 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: Homepage
           </>
         )}
       </div>
-      <section className="store-section store-container store-seller-note"><h2>Make or print designs?</h2><p>Bring your work to the marketplace.</p><Link href="/sell" className="market-text-link">Sell with 3DVerse</Link></section>
     </div>
   );
 }

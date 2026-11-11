@@ -1,3 +1,5 @@
+import { isPaidStatus } from "./order-lifecycle";
+
 export interface DownloadOrder {
   status?: string;
   currency?: string;
@@ -17,7 +19,7 @@ export interface DownloadItem {
 
 /** Controls visibility only. The authenticated download API checks entitlement. */
 export function canDownloadModel(order: DownloadOrder, item: DownloadItem): boolean {
-  if (!["paid", "queued", "printing", "qc", "packed", "shipped", "delivered", "completed"].includes(order.status || "")) return false;
+  if (!isPaidStatus(order.status)) return false;
   if (order.currency !== "USD" && !order.payment_verified_at) return false;
   const format = item.selected_config?.purchase_type;
   if (format) return format === "digital";

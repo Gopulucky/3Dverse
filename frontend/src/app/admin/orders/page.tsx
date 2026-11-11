@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ShoppingCart, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api";
 import { useRequireAuth } from "@/stores/auth-store";
+import { ADMIN_OPEN_STATUSES } from "@/lib/order-lifecycle";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { Card } from "@/components/ui/card";
 import {
@@ -67,7 +68,6 @@ const FILTERS = [
   { value: "defects", label: "Defects" },
 ];
 
-const OPEN_STATUSES = ["pending", "paid", "queued", "printing"];
 
 export default function AdminOrdersPage() {
   const { ready: isAuthenticated, user } = useRequireAuth();
@@ -108,7 +108,7 @@ export default function AdminOrdersPage() {
       filter === "all"
         ? true
         : filter === "open"
-        ? OPEN_STATUSES.includes(o.status)
+        ? ADMIN_OPEN_STATUSES.has(o.status)
         : filter === "defects"
         ? o.defect_reported
         : o.status === filter;
@@ -139,7 +139,7 @@ export default function AdminOrdersPage() {
             { label: "Total Orders", value: all.length },
             {
               label: "Open",
-              value: all.filter((o) => OPEN_STATUSES.includes(o.status)).length,
+              value: all.filter((o) => ADMIN_OPEN_STATUSES.has(o.status)).length,
               accent: "text-warning",
             },
             {
