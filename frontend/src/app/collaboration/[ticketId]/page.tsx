@@ -4,6 +4,7 @@ import { useState, useEffect, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { StudioShell } from '@/components/layout/studio-shell';
 import { api } from '@/lib/api';
+import { ticketLabel } from '@/lib/ticket-lifecycle';
 import { useRequireAuth } from '@/stores/auth-store';
 import { Send, User, CheckCircle, Clock, Box, CircleDollarSign, ShieldCheck, Loader2, Paperclip, Smile, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -178,7 +179,7 @@ export default function TicketChatPage({ params }: { params: Promise<{ ticketId:
                     <Badge variant="secondary" className="text-[10px] py-0">Ticket #{ticket.id}</Badge>
                   </h2>
                   <p className="text-[13px] text-muted-foreground flex items-center gap-2 mt-0.5 font-medium">
-                    <span className="flex items-center gap-1 capitalize"><Hash className="w-3 h-3"/> {ticket.workflow_status.replace('_', ' ')}</span>
+                    <span className="flex items-center gap-1"><Hash className="w-3 h-3"/> {ticketLabel(ticket.workflow_status)}</span>
                     <span>•</span>
                     <span>Fee: ${ticket.ticket_fee}</span>
                   </p>

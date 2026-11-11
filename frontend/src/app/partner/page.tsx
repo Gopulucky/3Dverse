@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings, Truck, CheckCircle2, Package, Printer, Inbox, X } from "lucide-react";
+import { Settings, Truck, CheckCircle2, Package, Printer, Inbox as Inbox_, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,10 @@ import { cn, formatDate } from "@/lib/utils";
 import { ConsoleShell } from "@/components/layout/console-shell";
 import { StatusChip } from "@/components/ui/status-chip";
 import { formatMoney } from "@/lib/currency";
+import { inboxGroup } from "@/lib/ticket-lifecycle";
+import { AvailabilitySwitch } from "@/components/partner/availability-switch";
+import { Inbox } from "@/components/partner/inbox";
+import { ProfileTab, type PartnerProfile, type ProfileSave } from "@/components/partner/profile-tab";
 import { FULFILLMENT_FLOW, NEXT_STATUS, orderStatusLabel, orderStatusTone } from "@/lib/order-lifecycle";
 
 // The partner board starts at "queued"; "paid" is the pre-queue state.
@@ -37,23 +41,11 @@ interface Ticket {
   created_at: string;
 }
 
-const TICKET_STATUS_TYPE: Record<string, "success" | "warning" | "in-progress" | "neutral"> = {
-  agreed: "success",
-  rejected: "neutral",
-  expired: "neutral",
-  pending_payment: "warning",
-  paid: "in-progress",
-  design_submitted: "in-progress",
-  sample_printing: "in-progress",
-  certified: "in-progress",
-  negotiating: "in-progress",
-};
-
 export default function PartnerDashboard() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { ready: isAuthenticated } = useRequireAuth();
-  const [activeTab, setActiveTab] = useState<"jobs" | "tickets" | "fleet">("jobs");
+  const [activeTab, setActiveTab] = useState<"jobs" | "inbox" | "profile" | "fleet">("jobs");
   const [parcels, setParcels] = useState<Record<number, Partial<Parcel>>>({});
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
@@ -71,6 +63,17 @@ export default function PartnerDashboard() {
     enabled: isAuthenticated,
   });
 
+  // Partner profile: capabilities, rates, availability
+  const { data: profile } = useQuery({
+    queryKey: ["partner-profile"],
+    queryFn: () => api.get<PartnerProfile>("/api/partner/profile"),
+    enabled: isAuthenticated,
+  });
+  const [profileError, setProfileError] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [togglingWork, setTogglingWork] = useState(false);
+  const [busyTicket, setBusyTicket] = useState<number | null>(null);
+
   // Fetch Fleet (Printers)
   const { data: printers = [], isLoading: isLoadingPrinters } = useQuery({
     queryKey: ["partner-printers"],
@@ -85,19 +88,60 @@ export default function PartnerDashboard() {
     enabled: isAuthenticated,
   });
 
-  const pendingTickets = tickets.filter((t) =>
-    ["paid", "design_submitted", "sample_printing", "certified", "negotiating"].includes(t.workflow_status)
-  );
+  const actionCount = tickets.filter((t) => inboxGroup(t.workflow_status) === "action").length;
+
+  const saveProfile = async ({ profile: values, capabilities }: ProfileSave) => {
+    setSavingProfile(true);
+    setProfileError("");
+    try {
+      await api.put("/api/partner/profile", values);
+      await api.put("/api/partner/capabilities", { items: capabilities });
+      toast.success("Profile saved");
+      await queryClient.invalidateQueries({ queryKey: ["partner-profile"] });
+    } catch (e) {
+      setProfileError(e instanceof Error ? e.message : "Could not save your profile. Try again.");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const setAcceptingWork = async (next: boolean) => {
+    setTogglingWork(true);
+    try {
+      await api.patch("/api/partner/availability", { accepting_work: next });
+      await queryClient.invalidateQueries({ queryKey: ["partner-profile"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not change availability.");
+    } finally {
+      setTogglingWork(false);
+    }
+  };
+
+  const handleAccept = async (ticketId: number) => {
+    setBusyTicket(ticketId);
+    try {
+      await api.post(`/api/collaboration/tickets/${ticketId}/accept`);
+      toast.success("Ticket accepted");
+      await queryClient.invalidateQueries({ queryKey: ["partner-tickets"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not accept this ticket.");
+    } finally {
+      setBusyTicket(null);
+    }
+  };
 
   const handleDecline = async (ticketId: number) => {
     const reason = window.prompt("Reason for declining this ticket (shown to the creator):");
     if (!reason?.trim()) return;
+    setBusyTicket(ticketId);
     try {
       await api.post(`/api/collaboration/tickets/${ticketId}/decline`, { reason: reason.trim() });
       toast.success("Ticket declined");
       queryClient.invalidateQueries({ queryKey: ["partner-tickets"] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to decline ticket");
+    } finally {
+      setBusyTicket(null);
     }
   };
 
@@ -317,44 +361,14 @@ export default function PartnerDashboard() {
     );
   };
 
-  const renderTickets = () => {
-    if (pendingTickets.length === 0) {
-      return (
-        <Card className="p-12 text-center border-border">
-          <p className="text-muted-foreground">No open evaluation tickets right now.</p>
-        </Card>
-      );
-    }
-    return (
-      <div className="space-y-4">
-        {pendingTickets.map((t) => (
-          <Card key={t.id} className="p-5 border-border bg-card flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <p className="font-semibold text-sm">Ticket #{t.id}</p>
-                <StatusChip status={TICKET_STATUS_TYPE[t.workflow_status] || "neutral"} label={t.workflow_status.replace(/_/g, " ").toUpperCase()} />
-              </div>
-              <p className="text-sm text-muted-foreground">{t.product_reference || "Evaluation ticket"}</p>
-              {t.overflow_reason && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Overflow reason: <span className="capitalize">{t.overflow_reason.replace(/_/g, " ")}</span>
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground font-data mt-1">{formatDate(t.created_at)} · Fee {formatMoney(t.ticket_fee, "USD")}</p>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <Button size="sm" onClick={() => router.push(`/collaboration/${t.id}`)}>
-                Open
-              </Button>
-              <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDecline(t.id)}>
-                <X size={14} /> Decline
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
-    );
-  };
+  const renderInbox = () => (
+    <Inbox tickets={tickets} busyId={busyTicket} onAccept={handleAccept} onDecline={handleDecline} />
+  );
+
+  const renderProfile = () => profile
+    ? <ProfileTab key={JSON.stringify(profile)}
+        profile={profile} saving={savingProfile} error={profileError} onSave={saveProfile} />
+    : <Skeleton className="h-64 w-full" />;
 
   const renderFleet = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -380,53 +394,30 @@ export default function PartnerDashboard() {
         Print Partner Dashboard
       </h1>
 
+      {profile && <AvailabilitySwitch accepting={profile.accepting_work} missing={profile.missing} busy={togglingWork}
+        onToggle={setAcceptingWork} onOpenProfile={() => setActiveTab("profile")} />}
+
       {renderKPIs()}
 
-      <div className="mb-6 border-b border-border flex gap-4">
-        <button
-          onClick={() => setActiveTab("jobs")}
-          className={cn(
-            "pb-3 text-sm font-semibold transition-colors relative",
-            activeTab === "jobs" ? "text-moss" : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <div className="flex items-center gap-2">
-            <Package size={16} /> Job Queue
-          </div>
-          {activeTab === "jobs" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-moss rounded-t" />}
-        </button>
-        <button
-          onClick={() => setActiveTab("tickets")}
-          className={cn(
-            "pb-3 text-sm font-semibold transition-colors relative",
-            activeTab === "tickets" ? "text-moss" : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <div className="flex items-center gap-2">
-            <Inbox size={16} /> Ticket Inbox
-            {pendingTickets.length > 0 && (
-              <span className="bg-moss-surface text-moss-ink text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                {pendingTickets.length}
-              </span>
-            )}
-          </div>
-          {activeTab === "tickets" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-moss rounded-t" />}
-        </button>
-        <button
-          onClick={() => setActiveTab("fleet")}
-          className={cn(
-            "pb-3 text-sm font-semibold transition-colors relative",
-            activeTab === "fleet" ? "text-moss" : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <div className="flex items-center gap-2">
-            <Printer size={16} /> Fleet Management
-          </div>
-          {activeTab === "fleet" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-moss rounded-t" />}
-        </button>
+      <div role="group" aria-label="Partner hub sections" className="mb-6 flex gap-4 overflow-x-auto whitespace-nowrap border-b border-border">
+        {([
+          ["jobs", "Job Queue", <Package key="i" size={16} />, 0],
+          ["inbox", "Inbox", <Inbox_ key="i" size={16} />, actionCount],
+          ["profile", "Profile", <UserCog key="i" size={16} />, 0],
+          ["fleet", "Fleet Management", <Printer key="i" size={16} />, 0],
+        ] as const).map(([key, label, icon, badge]) => (
+          <button key={key} type="button" aria-pressed={activeTab === key} onClick={() => setActiveTab(key)}
+            className={cn("relative min-h-11 pb-3 text-sm font-semibold transition-colors", activeTab === key ? "text-moss" : "text-muted-foreground hover:text-foreground")}>
+            <div className="flex items-center gap-2">
+              {icon} {label}
+              {badge > 0 && <span className="rounded-full bg-moss-surface px-1.5 py-0.5 text-[10px] font-bold text-moss-ink">{badge}</span>}
+            </div>
+            {activeTab === key && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t bg-moss" />}
+          </button>
+        ))}
       </div>
 
-      {activeTab === "jobs" ? renderJobs() : activeTab === "tickets" ? renderTickets() : renderFleet()}
+      {activeTab === "jobs" ? renderJobs() : activeTab === "inbox" ? renderInbox() : activeTab === "profile" ? renderProfile() : renderFleet()}
     </div>
   );
 
