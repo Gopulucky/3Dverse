@@ -20,11 +20,14 @@ export function ProductCard({
   onWishlist,
   className,
   format,
+  compact = false,
 }: {
   p: ProductCardData;
   onWishlist?: (id: number) => void;
   className?: string;
   format?: string;
+  /** Image, title, formats and price only: for dense rows such as the home page. */
+  compact?: boolean;
 }) {
   const { isAuthenticated } = useAuthStore();
   const { setItemCount } = useCartStore();
@@ -57,6 +60,24 @@ export function ProductCard({
   };
 
   const reviews = p.review_count ?? 0;
+
+  if (compact) {
+    return (
+      <article className={cn("market-product market-product--compact", className)}>
+        <Link href={`/marketplace/${p.id}`} className="market-product-image" aria-label={`View ${p.title}`}>
+          <ProductImage src={productImage(p)} title={p.title} />
+          {p.is_featured && <span className="market-product-featured">Featured</span>}
+        </Link>
+        <div className="market-product-info">
+          <h3><Link href={`/marketplace/${p.id}`}>{p.title}</Link></h3>
+          {p.avg_rating != null && p.avg_rating > 0 && <div className="market-product-modes">
+            <span className="market-product-rating"><Star size={14} aria-hidden="true" /> {p.avg_rating.toFixed(1)}</span>
+          </div>}
+          <div className="market-product-footer"><ProductPrices product={p} format={format} /></div>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article className={cn("market-product", className)}>

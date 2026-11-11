@@ -3,16 +3,13 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ArrowUpRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Loader2, Package, ShieldCheck, Truck } from "lucide-react";
 import { api } from "@/lib/api";
-import { ProductPrices } from "@/components/shared/product-prices";
-import { productImage, type HomepageData, type ProductCardData } from "@/lib/marketplace";
+import { homeSections } from "@/lib/home-sections";
+import type { HomepageData, ProductCardData } from "@/lib/marketplace";
 import { Button } from "@/components/ui/button";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/shared/product-card";
-import { ProductImage } from "@/components/shared/product-image";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { HomeHero } from "@/components/marketplace/home-hero";
 
 function ProductSection({ title, products, rail = false }: { title: string; products: ProductCardData[]; rail?: boolean }) {
   const titleId = useId();
@@ -42,7 +39,7 @@ function ProductSection({ title, products, rail = false }: { title: string; prod
 
   if (!products.length) return null;
   return (
-    <section className="store-section" aria-labelledby={titleId}>
+    <section className="store-section home-products" aria-labelledby={titleId}>
       <div className="store-container">
         <div className="store-section-head">
           <h2 id={titleId}>{title}</h2>
@@ -54,9 +51,9 @@ function ProductSection({ title, products, rail = false }: { title: string; prod
             </>}
           </div>
         </div>
-        <div ref={scrollRef} className={rail ? "store-rail" : "store-grid"} tabIndex={rail ? 0 : undefined}
+        <div ref={scrollRef} className={rail ? "store-rail store-rail--compact" : "store-grid store-grid--compact"} tabIndex={rail ? 0 : undefined}
           role={rail ? "region" : undefined} aria-label={rail ? `${title}, scroll to explore` : undefined} onScroll={rail ? updateEdges : undefined}>
-          {products.map(product => <ProductCard key={product.id} p={product} />)}
+          {products.map(product => <ProductCard key={product.id} p={product} compact />)}
         </div>
       </div>
     </section>
@@ -72,13 +69,10 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: Homepage
     // The API client already retries transient failures. Avoid doubling that wait.
     retry: false,
   });
-  const featured = data?.featured ?? [];
-  const trending = data?.trending ?? [];
-  const arrivals = data?.new_arrivals ?? [];
   const categories = data?.categories ?? [];
-  const creators = data?.popular_creators ?? [];
-  const heroProduct = [...featured, ...trending, ...arrivals].find(product => productImage(product));
-  const empty = !featured.length && !trending.length && !arrivals.length;
+  const { primary, second, empty } = homeSections({
+    new_arrivals: data?.new_arrivals, featured: data?.featured, trending: data?.trending,
+  });
 
   const retryButton = <Button type="button" variant="outline" onClick={() => void refetch()} disabled={isFetching} aria-busy={isFetching}>
     {isFetching && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
@@ -87,15 +81,26 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: Homepage
 
   return (
     <div className="storefront">
-      <HomeHero product={heroProduct} />
-      <section className="store-section store-container" aria-labelledby="how-it-works">
-        <div className="store-section-head"><h2 id="how-it-works">How shopping works</h2></div>
-        <ol className="store-how-it-works">
-          <li><span>01</span><h3>Choose your format</h3><p>Physical prints are made and shipped to you. Digital models are files for your own printer.</p></li>
-          <li><span>02</span><h3>Check the listing</h3><p>See the offered formats, material options and price. Availability varies by design.</p></li>
-          <li><span>03</span><h3>Order and follow along</h3><p>Sign in to buy and track your order. Purchased digital files appear in your orders.</p></li>
-        </ol>
+      {categories.length > 0 && <nav className="home-chips" aria-label="Shop by category">
+        <div className="store-container home-chips-list">
+          {categories.map(category => <Link key={category.name} href={`/marketplace?category=${encodeURIComponent(category.name)}`} className="home-chip">{category.name}</Link>)}
+        </div>
+      </nav>}
+
+      <section className="store-container home-intro" aria-labelledby="home-title">
+        <h1 id="home-title">3D models and finished prints</h1>
+        <div className="home-tiles">
+          <Link href="/marketplace?format=physical" className="home-tile home-tile--printed">
+            <Package size={36} aria-hidden="true" />
+            <span><strong>Printed products</strong><small>Delivered in India</small></span>
+          </Link>
+          <Link href="/marketplace?format=digital" className="home-tile home-tile--digital">
+            <Download size={36} aria-hidden="true" />
+            <span><strong>Digital models</strong><small>Files for your 3D printer</small></span>
+          </Link>
+        </div>
       </section>
+
       <div id="featured" className="scroll-mt-20">
         {isLoading ? (
           <section className="store-section store-container" aria-label="Loading models" aria-busy="true">
@@ -121,54 +126,19 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: Homepage
                   <Link href="/marketplace" className="market-text-link">Browse the catalogue</Link>
                 </div>
               </section>
-            ) : <ProductSection title="Featured models" products={featured} />}
-
-            {categories.length > 0 && <section className="store-categories" aria-labelledby="category-title">
-              <div className="store-container">
-                <div className="store-section-head"><h2 id="category-title">Explore categories</h2></div>
-                <div className="store-category-list">
-                  {categories.map(category => <Link key={category.name} href={`/marketplace?category=${encodeURIComponent(category.name)}`} className="store-category">
-                    <span>{category.name}</span><ArrowUpRight size={20} aria-hidden="true" />
-                  </Link>)}
-                </div>
-              </div>
-            </section>}
-
-            <ProductSection title="Trending" products={trending} rail />
-
-            {arrivals.length > 0 && <section className="store-section store-container" aria-labelledby="arrivals-title">
-              <div className="store-arrivals">
-                <div className="store-section-head">
-                  <h2 id="arrivals-title">New arrivals</h2>
-                  <Link href="/marketplace" className="market-text-link">Browse all products</Link>
-                </div>
-                <div>
-                  {arrivals.map(product => <Link key={product.id} href={`/marketplace/${product.id}`} className="store-arrival">
-                    <span className="store-arrival-image"><ProductImage src={productImage(product)} title={product.title} /></span>
-                    <div><h3>{product.title}</h3>{product.creator_name && <p>By {product.creator_name}</p>}</div>
-                    <ProductPrices product={product} />
-                  </Link>)}
-                </div>
-              </div>
-            </section>}
-
-            {creators.length > 0 && <section className="store-creators" aria-labelledby="creators-title">
-              <div className="store-container store-creators-layout">
-                <h2 id="creators-title">Popular creators</h2>
-                <ul className="store-creator-list">
-                  {creators.map((creator, index) => <li key={`${creator.name}-${index}`} className="store-creator">
-                    <Avatar className="h-12 w-12">
-                      {creator.image && <AvatarImage src={api.mediaUrl(creator.image)} alt="" />}
-                      <AvatarFallback>{creator.initials}</AvatarFallback>
-                    </Avatar>
-                    <div><h3>{creator.name}</h3><p>{creator.role}</p></div>
-                  </li>)}
-                </ul>
-              </div>
-            </section>}
+            ) : <ProductSection title={primary.title} products={primary.products} />}
+            <ProductSection title={second.title} products={second.products} rail />
           </>
         )}
       </div>
+
+      <section className="home-trust" aria-label="Shopping with 3DVerse">
+        <ul className="store-container">
+          <li><Truck size={20} aria-hidden="true" />Delivery within India</li>
+          <li><Download size={20} aria-hidden="true" />Digital files unlock after payment</li>
+          <li><ShieldCheck size={20} aria-hidden="true" />Secure payment</li>
+        </ul>
+      </section>
     </div>
   );
 }
