@@ -145,7 +145,12 @@ async function request<T>(
     let detail = "An error occurred";
     try {
       const errorData = await response.json();
-      detail = errorData.detail || JSON.stringify(errorData);
+      const raw = errorData.detail;
+      // FastAPI sends text, a list of problems, or an object with a message.
+      detail = typeof raw === "string" && raw ? raw
+        : Array.isArray(raw) ? raw.map((item: unknown) => typeof item === "string" ? item : (item as { msg?: string })?.msg || JSON.stringify(item)).join("; ")
+        : raw && typeof raw === "object" && typeof raw.message === "string" ? raw.message
+        : JSON.stringify(errorData);
     } catch {
       detail = response.statusText;
     }

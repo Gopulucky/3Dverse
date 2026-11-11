@@ -1,11 +1,13 @@
 from typing import Any, List
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.api import deps
 from app.models.user import User, UserRole
 from app.models.order import Order
-from app.models.printer import PrinterProfile
+from app.models.printer import PrinterProfile, PrinterTechnology
+from app.models.print_partner import PrintPartner, PrintPartnerCapability
+from app.services import partner_identity, partner_profile
 from app.schemas.order import OrderResponse
 from pydantic import BaseModel
 from app.core.shiprocket import create_shiprocket_order, generate_awb, shipment_payload, ShippingPackage, ensure_carrier_configured
@@ -169,3 +171,101 @@ def get_analytics(
         "active_printers": active_printers,
         "maintenance_alerts": maintenance_alerts
     }
+
+
+# --- Partner profile: what the shop prints, rates, lead time, availability -------------
+
+def _capabilities(db: Session, partner: PrintPartner) -> list:
+    rows = (db.query(PrintPartnerCapability)
+            .filter(PrintPartnerCapability.print_partner_id == partner.id)
+            .order_by(PrintPartnerCapability.id).all())
+    return [{"technology": r.technology.value if hasattr(r.technology, "value") else r.technology,
+             "material": r.material_type} for r in rows]
+
+
+def _profile_payload(db: Session, partner: PrintPartner) -> dict:
+    caps = _capabilities(db, partner)
+    return {
+        "name": partner.name, "region": partner.region, "bio": partner.bio,
+        "accepting_work": bool(partner.accepting_work),
+        "lead_time_days": partner.lead_time_days, "price_per_gram_inr": partner.price_per_gram_inr,
+        "min_order_inr": partner.min_order_inr, "build_x_mm": partner.build_x_mm,
+        "build_y_mm": partner.build_y_mm, "build_z_mm": partner.build_z_mm,
+        "capabilities": caps, "missing": partner_profile.missing_for_work(partner, caps),
+    }
+
+
+@router.get("/profile")
+def get_profile(
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user),
+) -> Any:
+    partner = partner_identity.require_partner_record(db, current_user)
+    db.commit()  # persists the record if this is the partner's first visit
+    return _profile_payload(db, partner)
+
+
+@router.put("/profile")
+def update_profile(
+    body: dict = Body(...),
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user),
+) -> Any:
+    partner = partner_identity.require_partner_record(db, current_user)
+    try:
+        values = partner_profile.validate_profile(body)
+    except partner_profile.ProfileError as error:
+        raise HTTPException(status_code=400, detail=error.problems)
+    if "name" in values and not values["name"]:
+        raise HTTPException(status_code=400, detail=["name cannot be empty"])
+    for field, value in values.items():
+        setattr(partner, field, value)
+    db.add(partner)
+    db.commit()
+    return _profile_payload(db, partner)
+
+
+@router.put("/capabilities")
+def replace_capabilities(
+    body: dict = Body(...),
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user),
+) -> Any:
+    partner = partner_identity.require_partner_record(db, current_user)
+    items = body.get("items")
+    if not isinstance(items, list):
+        raise HTTPException(status_code=400, detail=["items must be a list"])
+    try:
+        cleaned = partner_profile.normalise_capabilities(items, {t.value for t in PrinterTechnology})
+    except partner_profile.ProfileError as error:
+        raise HTTPException(status_code=400, detail=error.problems)
+    db.query(PrintPartnerCapability).filter(PrintPartnerCapability.print_partner_id == partner.id).delete()
+    for cap in cleaned:
+        db.add(PrintPartnerCapability(print_partner_id=partner.id, technology=PrinterTechnology(cap["technology"]),
+                                      material_type=cap["material"]))
+    if not cleaned:
+        partner.accepting_work = False   # no capabilities left: the profile is no longer complete
+        db.add(partner)
+    db.commit()
+    return _profile_payload(db, partner)
+
+
+@router.patch("/availability")
+def set_availability(
+    body: dict = Body(...),
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user),
+) -> Any:
+    partner = partner_identity.require_partner_record(db, current_user)
+    wanted = body.get("accepting_work")
+    if not isinstance(wanted, bool):
+        raise HTTPException(status_code=400, detail=["accepting_work must be true or false"])
+    if wanted:
+        try:
+            partner_profile.can_accept_work(partner, _capabilities(db, partner))
+        except partner_profile.ProfileError as error:
+            raise HTTPException(status_code=400, detail={"message": "Finish your profile before accepting work.", "missing": error.problems})
+    partner.accepting_work = wanted
+    db.add(partner)
+    db.commit()
+    return _profile_payload(db, partner)

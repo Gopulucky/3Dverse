@@ -13,8 +13,15 @@ import { Ban } from 'lucide-react';
 interface PrintPartner {
   id: number;
   name: string;
-  region: string;
-  cost_tier: number;
+  region: string | null;
+  cost_tier: number | null;
+  bio?: string | null;
+  lead_time_days?: number | null;
+  price_per_gram_inr?: number | null;
+  min_order_inr?: number | null;
+  build_x_mm?: number | null;
+  build_y_mm?: number | null;
+  build_z_mm?: number | null;
   capabilities: { technology: string; material_type: string }[];
 }
 
@@ -36,19 +43,37 @@ export default function CollaborationPage() {
   const [partners, setPartners] = useState<PrintPartner[]>([]);
   const [loading, setLoading] = useState(true);
   const [overflowReason, setOverflowReason] = useState('');
+  const [technology, setTechnology] = useState('');
+  const [material, setMaterial] = useState('');
+  const [minBuild, setMinBuild] = useState('');
+  const [loadError, setLoadError] = useState(false);
+  const filtered = Boolean(technology || material.trim() || minBuild);
 
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    api.get<PrintPartner[]>('/api/collaboration/partners')
-      .then(data => {
-        if (Array.isArray(data)) {
-          setPartners(data);
-        }
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [isAuthenticated]);
+    const params: Record<string, string> = {};
+    if (technology) params.technology = technology;
+    if (material.trim()) params.material_type = material.trim();
+    const build = Number(minBuild);
+    if (minBuild && Number.isInteger(build) && build >= 1 && build <= 2000) params.min_build_mm = String(build);
+    let cancelled = false;   // a slower, older request must not overwrite a newer one
+    const timer = setTimeout(() => {
+      api.get<PrintPartner[]>('/api/collaboration/partners', params)
+        .then(data => {
+          if (cancelled) return;
+          setLoadError(false);
+          setPartners(Array.isArray(data) ? data : []);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setPartners([]);       // never leave the previous, unfiltered list on screen
+          setLoadError(true);
+        })
+        .finally(() => { if (!cancelled) setLoading(false); });
+    }, material ? 250 : 0);   // wait for a pause while typing a material
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [isAuthenticated, technology, material, minBuild]);
 
   const handlePurchaseTicket = async (partnerId: number) => {
     if (creatorType === 'studio' && !overflowReason) {
@@ -140,6 +165,24 @@ export default function CollaborationPage() {
           </div>
         )}
 
+        <div role="group" aria-label="Partner filters" className="mb-6 grid gap-3 sm:grid-cols-3">
+          <div>
+            <label htmlFor="partner-tech" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Technology</label>
+            <select id="partner-tech" value={technology} onChange={e => setTechnology(e.target.value)} className="min-h-11 w-full rounded-lg border border-border bg-secondary px-3 text-sm">
+              <option value="">Any technology</option>
+              {['fdm', 'sla', 'sls', 'slm', 'dmls', 'mjf'].map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="partner-material" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Material</label>
+            <input id="partner-material" value={material} onChange={e => setMaterial(e.target.value)} placeholder="For example PLA" className="min-h-11 w-full rounded-lg border border-border bg-secondary px-3 text-sm" />
+          </div>
+          <div>
+            <label htmlFor="partner-build" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Smallest build size (mm)</label>
+            <input id="partner-build" type="number" min="1" max="2000" step="1" value={minBuild} onChange={e => setMinBuild(e.target.value)} placeholder="For example 200" className="min-h-11 w-full rounded-lg border border-border bg-secondary px-3 text-sm" />
+          </div>
+        </div>
+
         {loading ? (
           <div className="text-center py-12 text-muted-foreground">Loading partners...</div>
         ) : (
@@ -148,15 +191,21 @@ export default function CollaborationPage() {
               <div key={partner.id} className="bg-card border border-border rounded-2xl p-6 hover:border-moss/40 transition-all hover:shadow-2xl hover:shadow-moss/10 flex flex-col">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-bold text-foreground">{partner.name}</h3>
-                  <div className="flex text-warning text-sm">
-                    {Array(partner.cost_tier).fill('⭐').join('')}
-                  </div>
+                  {partner.cost_tier ? <div className="flex text-warning text-sm">{Array(partner.cost_tier).fill('⭐').join('')}</div> : null}
                 </div>
                 
                 <div className="text-muted-foreground text-sm mb-4 flex items-center gap-1">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                   {partner.region || 'Global'}
                 </div>
+
+                {partner.bio && <p className="mb-4 text-sm text-foreground">{partner.bio}</p>}
+                <dl className="mb-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  {partner.lead_time_days != null && <div><dt className="text-xs text-muted-foreground">Lead time</dt><dd>{partner.lead_time_days} {partner.lead_time_days === 1 ? 'day' : 'days'}</dd></div>}
+                  {partner.price_per_gram_inr != null && <div><dt className="text-xs text-muted-foreground">Price</dt><dd>₹{partner.price_per_gram_inr} per gram</dd></div>}
+                  {partner.min_order_inr != null && <div><dt className="text-xs text-muted-foreground">Minimum order</dt><dd>₹{partner.min_order_inr}</dd></div>}
+                  {partner.build_x_mm != null && partner.build_y_mm != null && partner.build_z_mm != null && <div><dt className="text-xs text-muted-foreground">Largest print</dt><dd>{partner.build_x_mm} × {partner.build_y_mm} × {partner.build_z_mm} mm</dd></div>}
+                </dl>
 
                 <div className="flex-grow mb-6">
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Capabilities</h4>
@@ -171,7 +220,7 @@ export default function CollaborationPage() {
 
                 <button
                   onClick={() => handlePurchaseTicket(partner.id)}
-                  className="w-full py-3 bg-secondary hover:bg-accent text-foreground rounded-xl font-medium transition-colors border border-border hover:border-moss/40"
+                  className="w-full min-h-11 py-3 bg-secondary hover:bg-accent text-foreground rounded-xl font-medium transition-colors border border-border hover:border-moss/40"
                 >
                   Buy Evaluation Ticket ($50)
                 </button>
@@ -180,7 +229,7 @@ export default function CollaborationPage() {
 
             {partners.length === 0 && (
               <div className="col-span-full text-center py-12 text-muted-foreground bg-card/50 rounded-2xl border border-border border-dashed">
-                No print partners found matching your criteria.
+                {loadError ? "Couldn't load print partners. Try again in a moment." : filtered ? 'No print partners match these filters. Try fewer filters.' : 'No print partners are taking work right now.'}
               </div>
             )}
           </div>

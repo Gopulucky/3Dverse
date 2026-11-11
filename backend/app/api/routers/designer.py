@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.api.deps import require_role, get_db
 from app.services import partner_matching
+from app.models.print_partner import PrintPartner
 from app.models.product import Product
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -23,6 +24,11 @@ def choose_partner(product_id: int, request: AssignPartnerRequest,
     product = db.query(Product).filter_by(id=product_id, creator_id=creator.id).first()
     if not product:
         raise HTTPException(404, "Product not found")
+    partner = db.query(PrintPartner).filter_by(id=request.print_partner_id).first()
+    if not partner:
+        raise HTTPException(404, "Print partner not found")
+    if not partner.accepting_work:
+        raise HTTPException(409, "This print partner is not taking new work right now.")
     updated = partner_matching.assign_partner(db, product, request.print_partner_id)
     updated.is_published = True   # only orderable once a partner is confirmed
     db.commit()

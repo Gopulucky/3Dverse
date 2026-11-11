@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey, DateTime, Enum
 from sqlalchemy.sql import func
 from app.core.database import Base
 from app.models.printer import PrinterTechnology
@@ -22,6 +22,16 @@ class PrintPartner(Base):
     cost_tier = Column(Integer, nullable=True)   # 1 (⭐) to 5 (⭐⭐⭐⭐⭐)
     total_orders_fulfilled = Column(Integer, default=0)
     total_defect_reports = Column(Integer, default=0)
+    # Profile a creator sees when choosing a partner. A partner is listed only while
+    # accepting_work is true, which needs a complete profile (services/partner_profile.py).
+    accepting_work = Column(Boolean, nullable=False, default=False, server_default="false")
+    bio = Column(String, nullable=True)
+    lead_time_days = Column(Integer, nullable=True)
+    price_per_gram_inr = Column(Float, nullable=True)
+    min_order_inr = Column(Float, nullable=True)
+    build_x_mm = Column(Integer, nullable=True)
+    build_y_mm = Column(Integer, nullable=True)
+    build_z_mm = Column(Integer, nullable=True)
     # reship_rate is computed, not stored -- see services/metrics.py
 
 

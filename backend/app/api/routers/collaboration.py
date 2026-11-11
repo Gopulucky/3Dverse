@@ -1,10 +1,12 @@
 from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.api import deps
 from app.core.config import settings
 from app.models.user import User, UserRole, CreatorType
 from app.models.print_partner import PrintPartner, PrintPartnerCapability
+from app.models.printer import PrinterTechnology
 from app.models.collaboration import (
     CollaborationTicket,
     TicketStatus,
@@ -27,7 +29,7 @@ from app.schemas.collaboration import (
     TicketDetailsResponse
 )
 from app.core.storage import save_upload_file
-from app.services import partner_identity
+from app.services import partner_identity, partner_profile
 
 router = APIRouter()
 
@@ -37,6 +39,7 @@ def search_print_partners(
     region: Optional[str] = Query(None),
     technology: Optional[str] = Query(None),
     material_type: Optional[str] = Query(None),
+    min_build_mm: Optional[int] = Query(None, ge=1, le=2000),
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
@@ -49,7 +52,8 @@ def search_print_partners(
     if current_user.role not in (UserRole.creator, UserRole.admin):
         raise HTTPException(status_code=403, detail="Only creators can search for print partners")
         
-    query = db.query(PrintPartner)
+    # Creators only see partners who have switched "accepting work" on.
+    query = db.query(PrintPartner).filter(PrintPartner.accepting_work == True)  # noqa: E712
     
     if region:
         query = query.filter(PrintPartner.region == region)
@@ -57,11 +61,22 @@ def search_print_partners(
     if technology or material_type:
         query = query.join(PrintPartnerCapability, PrintPartner.id == PrintPartnerCapability.print_partner_id)
         if technology:
-            query = query.filter(PrintPartnerCapability.technology == technology)
-        if material_type:
-            query = query.filter(PrintPartnerCapability.material_type == material_type)
+            # An unknown technology simply matches nobody.
+            if technology.strip().lower() not in {t.value for t in PrinterTechnology}:
+                return []
+            query = query.filter(PrintPartnerCapability.technology == technology.strip().lower())
+        if material_type and material_type.strip():
+            # Materials are free text, so compare without regard to case or stray spaces.
+            query = query.filter(func.lower(PrintPartnerCapability.material_type) == material_type.strip().lower())
             
     partners = query.distinct().all()
+    if min_build_mm is not None:
+        # The smallest of the three build dimensions must fit the requested size.
+        partners = [
+            p for p in partners
+            if None not in (p.build_x_mm, p.build_y_mm, p.build_z_mm)
+            and min(p.build_x_mm, p.build_y_mm, p.build_z_mm) >= min_build_mm
+        ]
     
     return [
         {
@@ -71,6 +86,13 @@ def search_print_partners(
             "cost_tier": p.cost_tier,
             "total_orders_fulfilled": p.total_orders_fulfilled,
             "total_defect_reports": p.total_defect_reports,
+            "bio": p.bio,
+            "lead_time_days": p.lead_time_days,
+            "price_per_gram_inr": p.price_per_gram_inr,
+            "min_order_inr": p.min_order_inr,
+            "build_x_mm": p.build_x_mm,
+            "build_y_mm": p.build_y_mm,
+            "build_z_mm": p.build_z_mm,
             "capabilities": [
                 {"technology": cap.technology.value if hasattr(cap.technology, "value") else cap.technology, "material_type": cap.material_type}
                 for cap in db.query(PrintPartnerCapability).filter(PrintPartnerCapability.print_partner_id == p.id).all()
@@ -108,6 +130,8 @@ def create_ticket(
     partner = db.query(PrintPartner).filter(PrintPartner.id == req.print_partner_id).first()
     if not partner:
         raise HTTPException(status_code=404, detail="Print partner not found")
+    if not partner.accepting_work:
+        raise HTTPException(status_code=409, detail="This print partner is not taking new work right now.")
 
     ticket = CollaborationTicket(
         creator_id=current_user.id,
@@ -196,6 +220,32 @@ def decline_ticket(
 
     ticket.workflow_status = TicketStatus.REJECTED
     ticket.decline_reason = req.reason.strip()
+    db.add(ticket)
+    db.commit()
+    db.refresh(ticket)
+    return ticket
+
+
+@router.post("/tickets/{ticket_id}/accept", response_model=TicketResponse)
+def accept_ticket(
+    ticket_id: int,
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_active_user),
+) -> Any:
+    """Print partner accepts a ticket whose design has arrived and starts the sample."""
+    partner_record = partner_identity.require_partner_record(db, current_user)
+
+    ticket = db.query(CollaborationTicket).filter(CollaborationTicket.id == ticket_id).first()
+    if not ticket or ticket.print_partner_id != partner_record.id:
+        raise HTTPException(status_code=404, detail="Ticket not found for this partner")
+
+    status = ticket.workflow_status.value if hasattr(ticket.workflow_status, "value") else str(ticket.workflow_status)
+    try:
+        target = partner_profile.accept_target(status)
+    except partner_profile.ProfileError as error:
+        raise HTTPException(status_code=400, detail=error.problems[0])
+
+    ticket.workflow_status = TicketStatus(target)
     db.add(ticket)
     db.commit()
     db.refresh(ticket)

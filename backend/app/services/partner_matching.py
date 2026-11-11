@@ -27,6 +27,8 @@ def recommended_partners(db: Session, product: Product) -> list[dict]:
         seen_partner_ids.add(m.print_partner_id)
         
         partner = db.query(PrintPartner).get(m.print_partner_id)
+        if partner is None or not partner.accepting_work:
+            continue   # paused or unfinished partners are not offered
         reship_rate = (partner.total_defect_reports / partner.total_orders_fulfilled
                         if partner.total_orders_fulfilled else 0)
         partners.append({
