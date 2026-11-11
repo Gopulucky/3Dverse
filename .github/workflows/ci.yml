@@ -43,7 +43,20 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: https://example.invalid
           NEXT_PUBLIC_BUG_DETECTOR: "0"
-      - run: npx playwright install --with-deps chromium
+      # Browser binary only, cached per Playwright version. The runner image already
+      # has Chromium's system libraries, so `--with-deps` is skipped: it runs apt
+      # against Ubuntu mirrors that can hang for minutes on DNS failures.
+      - name: Read Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Install Chromium for browser checks
+        run: npx playwright install chromium
+        timeout-minutes: 5
       - run: npm run test:performance
         env:
           BROWSER_CHANNEL: chromium

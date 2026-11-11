@@ -88,6 +88,13 @@ def enrich_products(db: Session, products: List[Product]) -> List[Product]:
 FALLBACK_CATEGORY_IMAGE = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=500"
 
 
+# How many products each home page row is given. Long enough to fill a full-width
+# row on a wide screen (6 across) and leave the row something to scroll.
+HOME_FEATURED_LIMIT = 8
+HOME_TRENDING_LIMIT = 12
+HOME_NEW_LIMIT = 12
+
+
 def _build_homepage(db: Session) -> dict:
     from app.models.user import UserRole
 
@@ -138,9 +145,10 @@ def _build_homepage(db: Session) -> dict:
     # queries, then load all of those products together so the related rows are
     # fetched once for the whole page instead of once per shelf.
     published = Product.status == ProductStatus.published
-    featured_ids = [i for (i,) in db.query(Product.id).filter(published, Product.is_featured == True).limit(4).all()]
-    trending_ids = [i for (i,) in db.query(Product.id).filter(published).order_by(desc(Product.mock_order_count)).limit(4).all()]
-    new_ids = [i for (i,) in db.query(Product.id).filter(published).order_by(desc(Product.created_at)).limit(4).all()]
+    featured_ids = [i for (i,) in db.query(Product.id).filter(published, Product.is_featured == True).order_by(desc(Product.created_at)).limit(HOME_FEATURED_LIMIT).all()]
+    # Ties (every product before the first sale) fall back to newest, so the row is stable.
+    trending_ids = [i for (i,) in db.query(Product.id).filter(published).order_by(desc(Product.mock_order_count), desc(Product.created_at)).limit(HOME_TRENDING_LIMIT).all()]
+    new_ids = [i for (i,) in db.query(Product.id).filter(published).order_by(desc(Product.created_at)).limit(HOME_NEW_LIMIT).all()]
 
     wanted = set(featured_ids) | set(trending_ids) | set(new_ids)
     by_id: dict[int, Product] = {}
