@@ -75,7 +75,7 @@ async function settleImages(page) {
     document.querySelectorAll('img').forEach(image => { image.loading = 'eager'; });
     await Promise.all(Array.from(document.images).map(image => image.decode().catch(() => {})));
   });
-  assert.ok(await page.locator('.store-hero-image img').evaluate(image => image.complete && image.naturalWidth > 0), 'Hero fixture image must load before visual capture.');
+  assert.ok(await page.locator('.storefront .market-product-image img').first().evaluate(image => image.complete && image.naturalWidth > 0), 'Product fixture image must load before visual capture.');
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 function contrast(a, b) {
@@ -85,16 +85,42 @@ function contrast(a, b) {
 }
 try {
   const { page, context, current, errors } = await visit({ authenticated: true });
-  await visible(page.getByRole('link', { name: 'Explore Sample bench' }));
+  await visible(page.getByRole('link', { name: 'View Sample bench', exact: true }));
   await page.evaluate(() => document.fonts.ready);
   await settleImages(page);
+  // Home: products lead the page and the copy stays short.
+  assert.match(await page.locator('h1').innerText(), /3D models and finished prints/);
+  const tiles = page.locator('.home-tiles');
+  assert.equal(await tiles.getByRole('link', { name: /Printed products/ }).getAttribute('href'), '/marketplace?format=physical');
+  assert.equal(await tiles.getByRole('link', { name: /Digital models/ }).getAttribute('href'), '/marketplace?format=digital');
+  assert.equal(await page.getByRole('heading', { name: 'How shopping works' }).count(), 0);
+  assert.equal(await page.getByRole('heading', { name: 'Popular creators' }).count(), 0);
+  assert.equal(await page.getByRole('navigation', { name: 'Shop by category' }).getByRole('link', { name: 'Home Decor' }).count(), 1);
+  const lead = await page.evaluate(() => {
+    const card = document.querySelector('.storefront .market-product');
+    const range = document.createRange();
+    range.setStart(document.querySelector('.storefront'), 0);
+    range.setEndBefore(card);
+    return { top: Math.round(card.getBoundingClientRect().top), words: range.toString().split(/\s+/).filter(Boolean).length,
+      titles: [...document.querySelectorAll('.storefront .market-product h3')].map(h => h.innerText) };
+  });
+  assert.ok(lead.top < 700, `First product starts too low (${lead.top}px)`);
+  assert.ok(lead.words < 80, `Too much text before the first product (${lead.words} words)`);
+  assert.equal(new Set(lead.titles).size, lead.titles.length, `A product repeats on the home page: ${lead.titles}`);
+  // Home cards are compact: no review line or cart controls (those live on the catalogue page).
+  assert.equal(await page.locator('.storefront .market-product .market-product-reviews').count(), 0);
+  assert.equal(await page.locator('.storefront .market-product .market-cart-button').count(), 0);
+  // Full catalogue cards keep their detail.
+  await page.goto(`${base}/marketplace`, { waitUntil: 'domcontentloaded' });
+  await visible(page.getByRole('link', { name: 'View Sample bench', exact: true }));
   assert.equal(await page.locator('.market-product-reviews').first().innerText(), '4.5\n2 reviews\nPrintability passed');
   assert.equal(await page.getByRole('button', { name: 'Follow', exact: true }).count(), 0);
   assert.equal(await page.locator('.market-product a button').count(), 0);
   assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'View product', exact: true }).getAttribute('href'), '/marketplace/9001');
   assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'Choose options', exact: true }).getAttribute('href'), '/marketplace/9001');
   assert.equal(await page.locator('.market-product').first().getByRole('button', { name: 'Add Sample bench to cart', exact: true }).count(), 0);
-  assert.match(await page.locator('h1').innerText(), /Buy 3D models\s*or finished prints\./);
+  await page.goto(base, { waitUntil: 'domcontentloaded' });
+  await visible(page.getByRole('link', { name: 'View Sample bench', exact: true }));
   // The storefront speaks to buyers: no creator/partner promotion outside one quiet footer link.
   assert.equal(await page.getByRole('heading', { name: 'Make or print designs?' }).count(), 0);
   const footer = page.locator('footer');
@@ -107,8 +133,7 @@ try {
   assert.equal(await page.getByRole('menuitem', { name: 'Sell with 3DVerse' }).count(), 0);
   await page.keyboard.press('Escape');
   checks.push('Customer storefront: no seller section on home, no creator/partner footer columns, one footer "Sell on 3DVerse" link, no "Sell with 3DVerse" in the customer account menu.');
-  assert.equal(await page.getByRole('link', { name: 'Shop printed products', exact: true }).getAttribute('href'), '/marketplace?format=physical');
-  await page.getByRole('link', { name: 'Browse digital models', exact: true }).click();
+  await page.locator('.home-tiles').getByRole('link', { name: /Digital models/ }).click();
   await page.waitForURL('**/marketplace?format=digital');
   await visible(page.getByRole('heading', { name: 'Digital models', exact: true }));
   const add = page.getByRole('button', { name: 'Add Sample bench to cart', exact: true });
@@ -122,25 +147,24 @@ try {
   assert.equal(current.posts.length, 2);
   await visible(page.getByRole('link', { name: 'Cart, 1 item', exact: true }));
   await page.goto(base, { waitUntil: 'domcontentloaded' });
-  await visible(page.getByRole('link', { name: 'Explore Sample bench' }));
-  checks.push('Buyer-first headline and format links; generic cards require options; digital catalogue sends explicit purchase_type; duplicate additions preserve unique-item cart count.');
+  await visible(page.getByRole('link', { name: 'View Sample bench', exact: true }));
+  checks.push('Products-first home with two format tiles; generic cards require options; digital catalogue sends explicit purchase_type; duplicate additions preserve unique-item cart count.');
 
   for (const [width, height] of [[320,812], [375,812], [768,1024], [1280,800], [1440,900], [1920,1080]]) {
     await page.setViewportSize({width,height});
     await page.evaluate(() => { window.scrollTo(0, 0); return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); });
     const metrics = await page.evaluate(() => ({ width: innerWidth, page: document.documentElement.scrollWidth,
-      top: document.querySelector('.store-primary').getBoundingClientRect().top,
-      cta: document.querySelector('.store-primary').getBoundingClientRect().bottom,
-      digitalCta: document.querySelector('.store-actions a[href="/marketplace?format=digital"]').getBoundingClientRect().bottom,
+      tileTop: document.querySelector('.home-tiles').getBoundingClientRect().top,
+      card: document.querySelector('.storefront .market-product').getBoundingClientRect().top,
       h1: document.querySelector('h1').getBoundingClientRect().bottom,
       font: getComputedStyle(document.querySelector('h1')).fontFamily }));
     assert.ok(metrics.page <= width, `Horizontal overflow at ${width}: ${JSON.stringify(metrics)}`);
-    assert.ok(metrics.top >= 64 && metrics.cta < height && metrics.h1 < height, `Hero action/head off screen at ${width}`);
-    assert.ok(metrics.digitalCta < height, `Digital shopping action off screen at ${width}`);
+    assert.ok(metrics.tileTop >= 64 && metrics.h1 < height, `Home heading or tiles off screen at ${width}`);
+    assert.ok(metrics.card < height, `First product is not on the first screen at ${width}x${height}: ${metrics.card}px`);
     assert.match(metrics.font, /Space_Grotesk|Space Grotesk/);
     await page.screenshot({path:`${out}/fixture-home-${width}.png`, fullPage: width === 375 || width === 1440});
   }
-  checks.push('320/375/768/1280/1440/1920px: no page overflow; headline and browse action visible; brand font loaded.');
+  checks.push('320/375/768/1280/1440/1920px: no page overflow; heading, format tiles and the first product on the first screen; brand font loaded.');
 
   await page.setViewportSize({width:375,height:812});
   await page.getByRole('button', { name: 'Open menu', exact: true }).click();
@@ -161,10 +185,10 @@ try {
 
   for (const scheme of ['light', 'dark']) {
     const v = await visit({ colorScheme: scheme });
-    await visible(v.page.getByRole('link', { name: 'Explore Sample bench' }));
+    await visible(v.page.getByRole('link', { name: 'View Sample bench', exact: true }));
     await v.page.evaluate(() => document.fonts.ready);
     await settleImages(v.page);
-    const pair = await v.page.locator('.store-primary').evaluate(el => ({ color: getComputedStyle(el).color, bg: getComputedStyle(el).backgroundColor }));
+    const pair = await v.page.locator('.home-tile--printed').evaluate(el => ({ color: getComputedStyle(el).color, bg: getComputedStyle(el).backgroundColor }));
     const ratio = contrast(pair.color, pair.bg);
     assert.ok(ratio >= 4.5, `${scheme} primary contrast ${ratio}`);
     await v.page.keyboard.press('Tab');
@@ -172,7 +196,7 @@ try {
     assert.notEqual(focus.width, '0px');
     assert.notEqual(focus.style, 'none');
     await settleImages(v.page);
-    await v.page.locator('.store-hero-image img').screenshot({path:`${out}/fixture-${scheme}-product.png`});
+    await v.page.locator('.storefront .market-product-image img').first().screenshot({path:`${out}/fixture-${scheme}-product.png`});
     await v.page.screenshot({path:`${out}/fixture-${scheme}.png`});
     checks.push(`${scheme}: primary text contrast ${ratio.toFixed(2)}:1; keyboard focus visible.`);
     await v.context.close();
@@ -194,7 +218,7 @@ try {
   await failure.page.screenshot({path:`${out}/error.png`});
   failure.current.state = 'full';
   await failure.page.getByRole('button', { name: 'Try again', exact: true }).click();
-  await visible(failure.page.getByRole('link', { name: 'Explore Sample bench' }));
+  await visible(failure.page.getByRole('link', { name: 'View Sample bench', exact: true }));
   await failure.context.close();
   checks.push('API outage produces a retry action; retry recovers the catalogue.');
 

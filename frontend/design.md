@@ -1,6 +1,6 @@
 # Design: 3DVerse storefront
 
-Shared by `/` and `/marketplace/home`. Both routes render the same homepage.
+Shared by `/` and `/marketplace/home`. Both routes render the same homepage (products first, see below).
 Uses the existing 3DVerse colour and type values captured from the project
 and recorded below. `src/lib/brand.ts` holds the shared identity and copy.
 
@@ -28,6 +28,21 @@ and recorded below. `src/lib/brand.ts` holds the shared identity and copy.
 - Column gap below the hero: `--store-gap` (1.5rem).
 - Image radius: `--store-radius` (0.75rem).
 - Surface/text pairs use semantic tokens and switch together in dark mode.
+
+## Home layout (products first)
+
+Order, top to bottom: header with search, category chips, one-line heading,
+two format tiles (Printed products, Digital models), a "New arrivals" row, a
+"Trending" row, a three-item trust strip. Targets, checked by
+`scripts/marketplace-smoke.mjs`: the first product starts on the first screen
+at 320-1920 px, fewer than 80 words come before it, and no product appears
+twice. Row and fallback rules live in `src/lib/home-sections.ts`.
+
+- Home cards use `ProductCard compact` (image, title, price caption). Catalogue
+  pages keep the full card.
+- Product grid: 6 columns, then 5, 4, 3 and 2 on narrow screens.
+- No creator or print-partner promotion on the home page (see
+  `docs/superpowers/specs/2026-11-11-customer-clarity-design.md`).
 
 ## Controls
 
