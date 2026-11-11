@@ -9,6 +9,7 @@ await context.addInitScript(user => {
   localStorage.setItem('token', 'qa-fixture-only');
   localStorage.setItem('user', JSON.stringify(user));
 }, user);
+const settled = async (test) => { for (let i = 0; i < 60 && !test(); i++) await new Promise(r => setTimeout(r, 100)); };
 const requests = [];
 const catalogueRequests = [];
 const cartPosts = [];
@@ -92,6 +93,59 @@ try {
   await page.getByRole('searchbox', { name: 'Search products', exact: true }).fill('empty');
   await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
   await page.getByRole('heading', { name: 'No products match these filters.' }).waitFor();
+  // Phone layout: products first; search, filters and sort become a compact toolbar.
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto(`${base}/marketplace`);
+  await page.locator('.market-product').first().waitFor();
+  const filtersButton = page.getByRole('button', { name: /^Filters/ });
+  await filtersButton.waitFor();
+  assert.equal(await page.getByRole('form', { name: 'Catalogue filters' }).isVisible(), false, 'filter form must start closed on a phone');
+  const phone = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll('.market-product')];
+    return { firstTop: Math.round(cards[0].getBoundingClientRect().top), sameRow: Math.round(cards[0].getBoundingClientRect().top) === Math.round(cards[1].getBoundingClientRect().top),
+      h1: parseFloat(getComputedStyle(document.querySelector('h1')).fontSize), overflow: document.documentElement.scrollWidth > innerWidth };
+  });
+  assert.ok(phone.firstTop < 480, `first product starts too low on a phone (${phone.firstTop}px)`);
+  assert.ok(phone.sameRow, 'products must sit two across on a phone');
+  assert.ok(phone.h1 <= 24, `page title too large on a phone (${phone.h1}px)`);
+  assert.equal(phone.overflow, false);
+  // Sort is a button that opens a bottom sheet of choices, as on most shops, and closes on pick.
+  await page.getByRole('button', { name: /^Sort/ }).click();
+  await page.getByRole('radiogroup', { name: 'Sort products' }).waitFor();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.getByRole('radiogroup', { name: 'Sort products' }).isVisible(), false, 'Escape closes the sort sheet');
+  await page.getByRole('button', { name: /^Sort/ }).click();
+  const sortSheet = page.getByRole('radiogroup', { name: 'Sort products' });
+  await sortSheet.waitFor();
+  assert.deepEqual(await sortSheet.getByRole('radio').evaluateAll(r => r.map(x => x.getAttribute('aria-label') || x.labels?.[0]?.innerText)), ['Featured', 'Newest arrivals', 'Price: low to high', 'Price: high to low']);
+  await sortSheet.getByRole('radio', { name: 'Price: low to high' }).click();
+  await page.waitForURL('**sort=price_asc**');
+  await settled(() => catalogueRequests.at(-1)?.sort === 'price_asc');
+  assert.equal(catalogueRequests.at(-1).currency, 'INR');
+  assert.equal(await sortSheet.isVisible(), false, 'the sort sheet closes once a choice is made');
+  await page.getByRole('searchbox', { name: 'Search catalogue', exact: true }).fill('lamp');
+  await page.getByRole('searchbox', { name: 'Search catalogue', exact: true }).press('Enter');
+  await page.waitForURL('**q=lamp**');
+  await settled(() => catalogueRequests.at(-1)?.q === 'lamp');
+  assert.equal(catalogueRequests.at(-1).q, 'lamp');
+  await page.getByRole('button', { name: /^Filters/ }).click();
+  await page.getByRole('form', { name: 'Catalogue filters' }).waitFor();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.getByRole('form', { name: 'Catalogue filters' }).isVisible(), false, 'Escape closes the filter sheet');
+  await page.getByRole('button', { name: /^Filters/ }).click();
+  await page.getByRole('form', { name: 'Catalogue filters' }).waitFor();
+  await page.getByRole('combobox', { name: 'Category', exact: true }).selectOption('Gadgets');
+  await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
+  await page.waitForURL('**category=Gadgets**');
+  assert.equal(await page.getByRole('form', { name: 'Catalogue filters' }).isVisible(), false, 'filters close after applying');
+  assert.match(await page.getByRole('button', { name: /^Filters/ }).innerText(), /\(?\d\)?|[1-9]/, 'the Filters button shows how many are active');
+  // Applied filters appear as removable chips under the toolbar.
+  const chip = page.getByRole('button', { name: 'Remove filter: Gadgets' });
+  await chip.waitFor();
+  await chip.click();
+  await page.waitForFunction(() => !location.search.includes('category='));
+  assert.equal(await page.getByRole('button', { name: 'Remove filter: Gadgets' }).count(), 0);
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto(`${base}/marketplace/9001`);
   await page.getByRole('combobox', { name: 'What are you buying?' }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Add to cart', exact: true }).isDisabled(), true);

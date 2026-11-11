@@ -19,7 +19,7 @@ const product = {
   media: [{ media_url: '/qa-bench.jpg', is_primary: true }],
   versions: [{ is_latest: true, printability_report: { status: 'pass' } }],
 };
-const products = Array.from({ length: 4 }, (_, index) => ({ ...product, id: 9001 + index, title: index ? `Sample model ${index + 1}` : product.title }));
+const products = Array.from({ length: 12 }, (_, index) => ({ ...product, id: 9001 + index, title: index ? `Sample model ${index + 1}` : product.title }));
 const full = {
   featured: products, trending: products, new_arrivals: products,
   categories: ['Home Decor', 'Tabletop', 'Miniatures', 'Architecture', 'Gadgets', 'Jewelry'].map(name => ({ name })),
@@ -161,6 +161,15 @@ try {
     assert.ok(metrics.page <= width, `Horizontal overflow at ${width}: ${JSON.stringify(metrics)}`);
     assert.ok(metrics.tileTop >= 64 && metrics.h1 < height, `Home heading or tiles off screen at ${width}`);
     assert.ok(metrics.card < height, `First product is not on the first screen at ${width}x${height}: ${metrics.card}px`);
+    // Rows fill the width: the first row is one full line (no orphan card), and Trending reaches the right edge.
+    const rows = await page.evaluate(() => {
+      const tops = [...document.querySelectorAll('.store-grid--compact .market-product')].filter(c => getComputedStyle(c).display !== 'none').map(c => Math.round(c.getBoundingClientRect().top));
+      const rail = [...document.querySelectorAll('.store-rail--compact .market-product')].map(c => c.getBoundingClientRect()).filter(r => r.left < innerWidth);
+      const container = document.querySelector('.store-rail--compact').getBoundingClientRect();
+      return { lines: new Set(tops).size, count: tops.length, railVisible: rail.filter(r => r.right <= container.right + 1).length, railRight: Math.round(Math.max(...rail.map(r => Math.min(r.right, container.right)))), containerRight: Math.round(container.right) };
+    });
+    if (width > 768) assert.equal(rows.lines, 1, `First row wraps to ${rows.lines} lines at ${width}px (${rows.count} cards)`);
+    assert.ok(rows.railRight >= rows.containerRight - 24, `Trending stops short of the right edge at ${width}px: ${JSON.stringify(rows)}`);
     assert.match(metrics.font, /Space_Grotesk|Space Grotesk/);
     await page.screenshot({path:`${out}/fixture-home-${width}.png`, fullPage: width === 375 || width === 1440});
   }
