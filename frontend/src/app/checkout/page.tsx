@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useReducer, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { loadStripe } from "@stripe/stripe-js";
@@ -16,6 +16,10 @@ import { Label } from "@/components/ui/label";
 import { MarketplaceShell } from "@/components/layout/marketplace-shell";
 import { useRequireAuth, useAuthStore } from "@/stores/auth-store";
 import { useCartStore } from "@/stores/cart-store";
+import {
+  checkoutReducer, checkoutViewState, initialCheckoutState, initialPaymentState, paymentFinished, paymentMessage, paymentReducer,
+  type CheckoutEvent, type CheckoutState,
+} from "@/lib/machines/checkout";
 
 const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = publishableKey && /^pk_(test|live)_/.test(publishableKey) && !publishableKey.includes("fake")
@@ -26,6 +30,7 @@ type Attempt = { idempotency_key: string; shipping_method: "standard"; shipping_
 type Checkout = { order_id: number; client_secret: string; total: number; subtotal: number; shipping_cost: number; currency: string; payment_status: string;
   shipping_address: Address | null; items: { title: string; purchase_type: string; quantity: number; unit_price: number }[] };
 type Cart = { items: { id: number; quantity: number; selected_config?: { purchase_type?: string }; product: ProductCardData }[] };
+const reduceCheckout = (state: CheckoutState<Checkout>, event: CheckoutEvent<Checkout>) => checkoutReducer(state, event);
 const emptyAddress: Address = { name: "", street: "", city: "", state: "", zip: "", country: "IN", phone: "" };
 const addressFields: { key: keyof Address; label: string; autoComplete: string; pattern?: string }[] = [
   { key: "name", label: "Full name", autoComplete: "shipping name" },
@@ -40,47 +45,43 @@ function PaymentForm({ checkout, storageKey }: { checkout: Checkout; storageKey:
   const stripe = useStripe();
   const elements = useElements();
   const attempted = useRef(false);
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
-  const [finished, setFinished] = useState(false);
+  const [pay, dispatchPay] = useReducer(paymentReducer, initialPaymentState);
+  const busy = pay.status === "confirming";
+  const finished = paymentFinished(pay);
+  const message = paymentMessage(pay);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!stripe || !elements || attempted.current) return;
     attempted.current = true;
-    setBusy(true);
-    setMessage("");
+    dispatchPay({ type: "CONFIRM" });
     try {
       const result = await stripe.confirmPayment({
         elements, confirmParams: { return_url: `${window.location.origin}/orders` }, redirect: "if_required",
       });
       if (result.error) {
-        setMessage(result.error.message || "Payment could not be completed. Check your details and try again.");
+        dispatchPay({ type: "STRIPE_ERROR", error: result.error.message || "Payment could not be completed. Check your details and try again." });
         attempted.current = false;
         return;
       }
-      setFinished(true);
-      setMessage("Payment submitted. Waiting for secure confirmation for your saved order.");
+      dispatchPay({ type: "SUBMITTED" });
       for (let check = 0; check < 8; check++) {
         const order = await api.get<{ payment_verified_at: string | null }>(`/api/orders/${checkout.order_id}`);
         if (order.payment_verified_at) {
           sessionStorage.removeItem(storageKey);
           sessionStorage.removeItem("coupon");
-          setMessage("Payment confirmed. Your order is ready to view.");
+          dispatchPay({ type: "VERIFIED" });
           return;
         }
         await new Promise((resolve) => setTimeout(resolve, 1500));
       }
-      setMessage("Your order is saved and payment confirmation is pending. Check Orders for updates before trying another payment.");
+      dispatchPay({ type: "TIMED_OUT" });
     } catch {
-      setFinished(true);
-      setMessage("We could not confirm the latest payment status. Your order is saved. Check Orders before trying another payment.");
-    } finally {
-      setBusy(false);
+      dispatchPay({ type: "FAILED" });
     }
   }
 
-  return <form onSubmit={submit} className="space-y-5">
+  return <form onSubmit={submit} className="space-y-5" data-flow="payment" data-state={pay.status}>
     {!finished && <PaymentElement />}
     {message && <p role="status" className="text-sm rounded-lg bg-muted p-4">{message}</p>}
     {!finished && <Button type="submit" disabled={!stripe || !elements || busy} className="w-full" size="lg">
@@ -97,9 +98,10 @@ export default function CheckoutPage() {
   const setItemCount = useCartStore((state) => state.setItemCount);
   const storageKey = `checkout-attempt-${user?.id}`;
   const [address, setAddress] = useState<Address>(emptyAddress);
-  const [checkout, setCheckout] = useState<Checkout | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [flow, dispatch] = useReducer(reduceCheckout, initialCheckoutState as CheckoutState<Checkout>);
+  const checkout = flow.status === "payment" ? flow.checkout : null;
+  const busy = flow.status === "preparing";
+  const error = flow.status === "editing" ? flow.error : "";
   const preparing = useRef(false);
   const [frozenAttempt, setFrozenAttempt] = useState<Attempt | null>(null);
   const { data, isPending, isError, refetch } = useQuery({
@@ -124,11 +126,10 @@ export default function CheckoutPage() {
     event.preventDefault();
     if (preparing.current || !stripePromise) return;
     preparing.current = true;
-    setBusy(true);
-    setError("");
+    dispatch({ type: "PREPARE" });
     try {
       if (data?.orderId) {
-        setCheckout(await api.post<Checkout>(`/api/checkout/orders/${data.orderId}/resume`));
+        dispatch({ type: "PREPARED", checkout: await api.post<Checkout>(`/api/checkout/orders/${data.orderId}/resume`) });
         return;
       }
       const attempt: Attempt = savedAttempt || {
@@ -140,7 +141,7 @@ export default function CheckoutPage() {
       setFrozenAttempt(attempt);
       sessionStorage.setItem(storageKey, JSON.stringify(attempt));
       const response = await api.post<Checkout>("/api/checkout/create-payment-intent", attempt);
-      setCheckout(response);
+      dispatch({ type: "PREPARED", checkout: response });
       setItemCount(0);
     } catch (failure) {
       if (failure instanceof ApiError && (failure.status === 400 || failure.status === 422 ||
@@ -149,14 +150,14 @@ export default function CheckoutPage() {
         setFrozenAttempt(null);
         void refetch();
       }
-      setError(failure instanceof Error ? failure.message : "Checkout could not be prepared. Please try again.");
+      dispatch({ type: "PREPARE_FAILED", error: failure instanceof Error ? failure.message : "Checkout could not be prepared. Please try again." });
     } finally {
       preparing.current = false;
-      setBusy(false);
     }
   }
 
-  return <MarketplaceShell><main className="mx-auto max-w-4xl px-6 pb-20 pt-24">
+  return <MarketplaceShell><main className="mx-auto max-w-4xl px-6 pb-20 pt-24" data-flow="checkout"
+    data-state={checkoutViewState({ ready, isPending, isError, paymentsAvailable: !!stripePromise, state: flow })}>
     <Link href="/cart" className="inline-flex min-h-11 items-center underline text-sm">Back to cart</Link>
     <h1 className="font-display text-3xl font-semibold mb-3">Checkout</h1>
     <p className="text-muted-foreground mb-8">Review your delivery details, then confirm your payment. Downloads unlock after payment is verified.</p>
@@ -167,7 +168,7 @@ export default function CheckoutPage() {
           <h2 className="font-display text-xl font-semibold">{checkout ? `Order #${checkout.order_id}` : "1. Review your order"}</h2>
           {(!resuming && !checkout ? items : []).map((item) => <div key={item.id} className="border-b pb-3">
             <p className="font-medium">{item.product.title}</p>
-            <p className="text-sm text-muted-foreground">{item.selected_config?.purchase_type === "physical" ? "Printed product" : item.selected_config?.purchase_type === "digital" ? "Digital download" : "Selected option"} ? Quantity {item.quantity}</p>
+            <p className="text-sm text-muted-foreground">{item.selected_config?.purchase_type === "physical" ? "Printed product" : item.selected_config?.purchase_type === "digital" ? "Digital download" : "Selected option"} · Quantity {item.quantity}</p>
             <p className="font-data">{formatMoney((purchasePrice(item.product, item.selected_config?.purchase_type) ?? item.product.price ?? 0) * item.quantity, item.product.currency)}</p>
           </div>)}
           {checkout?.items.map((item, index) => <div key={index} className="border-b pb-3">

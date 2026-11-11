@@ -1,39 +1,42 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useReducer, type Dispatch } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stage, Environment, Grid, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { Maximize, RotateCcw, BoxSelect, Sun, Moon, Orbit, Grid3X3, SunMedium } from "lucide-react";
+import { Maximize, RotateCcw, BoxSelect, Sun, Moon, Orbit, Grid3X3, SunMedium, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  initialViewerState, modelExtension, SUPPORTED_MODEL_EXTENSIONS, viewerReducer, type ViewerEvent,
+} from "@/lib/machines/model-viewer";
 
-function Model({ 
-  url, 
+function Model({
+  url,
   wireframe,
-  onLoaded
-}: { 
-  url: string; 
+  dispatch
+}: {
+  url: string;
   wireframe: boolean;
-  onLoaded: (stats: { polyCount: number; vertices: number }) => void;
+  dispatch: Dispatch<ViewerEvent>;
 }) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | THREE.Group | null>(null);
 
-  // The parent passes a fresh onLoaded function on every render. Keep the latest
-  // one in a ref so the load effect below depends only on the URL: with it in the
-  // dependency list, reporting the stats re-rendered the parent, which re-ran the
-  // effect and re-downloaded the model, in an endless loop.
-  const onLoadedRef = useRef(onLoaded);
-  useEffect(() => {
-    onLoadedRef.current = onLoaded;
-  });
-
   useEffect(() => {
     if (!url) return;
-    const extension = url.split(".").pop()?.toLowerCase();
+    // `dispatch` is stable, so this effect re-runs only when the URL changes.
+    // `cancelled` stops a slow load of a previous URL from overwriting the new one.
+    let cancelled = false;
+    dispatch({ type: "LOAD" });
+    const extension = modelExtension(url);
+    if (!(SUPPORTED_MODEL_EXTENSIONS as readonly string[]).includes(extension)) {
+      dispatch({ type: "FAILED", reason: "unsupported" });
+      return;
+    }
+    const fail = () => { if (!cancelled) dispatch({ type: "FAILED", reason: "failed" }); };
 
     const handleLoaded = (obj: THREE.BufferGeometry | THREE.Group) => {
       let polyCount = 0;
@@ -60,7 +63,8 @@ function Model({
         });
       }
 
-      onLoadedRef.current({ polyCount, vertices });
+      if (cancelled) return;
+      dispatch({ type: "LOADED", stats: { polyCount, vertices } });
       setGeometry(obj);
     };
 
@@ -69,12 +73,12 @@ function Model({
       loader.load(url, (geo) => {
         geo.center();
         handleLoaded(geo);
-      });
+      }, undefined, fail);
     } else if (extension === "obj") {
       const loader = new OBJLoader();
       loader.load(url, (group) => {
         handleLoaded(group);
-      });
+      }, undefined, fail);
     } else if (extension === "glb" || extension === "gltf") {
       // The public preview mesh the server generates for every upload is a .glb.
       // Without this branch the marketplace viewer showed an empty box for any
@@ -100,9 +104,10 @@ function Model({
         wrapper.scale.setScalar(k);
         wrapper.position.copy(box.getCenter(new THREE.Vector3())).multiplyScalar(-k);
         handleLoaded(wrapper);
-      });
+      }, undefined, fail);
     }
-  }, [url]);
+    return () => { cancelled = true; };
+  }, [url, dispatch]);
 
   if (!geometry) return null;
 
@@ -131,8 +136,8 @@ function Model({
 }
 
 export function Advanced3DViewer({ url }: { url: string }) {
-  const [loaded, setLoaded] = useState(false);
-  const [stats, setStats] = useState({ polyCount: 0, vertices: 0 });
+  const [viewer, dispatch] = useReducer(viewerReducer, initialViewerState);
+  const stats = viewer.status === "ready" ? viewer.stats : { polyCount: 0, vertices: 0 };
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -161,13 +166,32 @@ export function Advanced3DViewer({ url }: { url: string }) {
   }, []);
 
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
+      data-flow="model-viewer"
+      data-state={viewer.status}
       className={cn(
         "relative rounded-xl overflow-hidden border border-border bg-gradient-to-b from-muted to-background shadow-sm flex flex-col group",
         isFullscreen ? "h-screen w-screen z-50 rounded-none border-none" : "w-full h-full min-h-[400px] lg:min-h-[500px]"
       )}
     >
+      {viewer.status === "loading" && (
+        <div role="status" className="absolute inset-0 z-10 flex items-center justify-center gap-2 text-sm text-muted-foreground pointer-events-none">
+          <Loader2 className="animate-spin" size={18} aria-hidden="true" />
+          Loading 3D preview…
+        </div>
+      )}
+      {viewer.status === "error" && (
+        <div role="alert" className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 p-6 text-center bg-muted/60">
+          <p className="font-medium text-foreground">This 3D preview can&apos;t be shown.</p>
+          <p className="text-sm text-muted-foreground">
+            {viewer.reason === "unsupported"
+              ? "This file format can't be previewed in the browser."
+              : "The preview didn't load. Refresh to try again."}
+          </p>
+        </div>
+      )}
+
       {/* HUD Info */}
       <div className="absolute top-4 left-4 z-10 flex gap-2">
         {stats.polyCount > 0 && (
@@ -183,7 +207,7 @@ export function Advanced3DViewer({ url }: { url: string }) {
       </div>
 
       {/* Floating Toolbar */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-background/80 backdrop-blur-md p-1.5 rounded-full border border-border/50 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-background/80 backdrop-blur-md p-1.5 rounded-full border border-border/50 shadow-lg opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
         <Button
           variant={autoRotate ? "secondary" : "ghost"}
           size="icon"
@@ -234,10 +258,7 @@ export function Advanced3DViewer({ url }: { url: string }) {
 
       <Canvas camera={{ position: [0, 0, 150], fov: 50 }}>
         <Stage environment={lighting} intensity={0.5}>
-          <Model url={url} wireframe={wireframe} onLoaded={(s) => {
-            setStats(s);
-            setLoaded(true);
-          }} />
+          <Model url={url} wireframe={wireframe} dispatch={dispatch} />
         </Stage>
         {showGrid && <Grid infiniteGrid fadeDistance={200} cellColor="#64748b" sectionColor="#94a3b8" position={[0, -0.01, 0]} />}
         <OrbitControls makeDefault autoRotate={autoRotate} autoRotateSpeed={2} />

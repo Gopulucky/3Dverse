@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useReducer } from "react";
 import {
   ShoppingCart,
   Menu,
@@ -35,6 +35,9 @@ import {
 import { useAuthStore } from "@/stores/auth-store";
 import { useCartStore } from "@/stores/cart-store";
 import { api } from "@/lib/api";
+import {
+  activeSuggestion, categoryItems, initialSearchState, productItems, searchReducer, toSuggestions,
+} from "@/lib/machines/search-suggestions";
 
 interface SearchProduct { id: number; title: string; category: string; price: number; currency?: string }
 
@@ -47,15 +50,13 @@ export function Navbar() {
   const { itemCount, setItemCount } = useCartStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
-  const [suggestions, setSuggestions] = useState<{ products: SearchProduct[]; categories: string[] }>({ products: [], categories: [] });
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [activeIdx, setActiveIdx] = useState(-1);
+  const [search, dispatchSearch] = useReducer(searchReducer, initialSearchState);
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSearch = (overrideQuery?: string, overrideCategory?: string) => {
     const q = (overrideQuery ?? searchQuery).trim();
-    setShowSuggestions(false);
+    dispatchSearch({ type: "CLOSE" });
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     const category = overrideCategory ?? searchCategory;
@@ -67,17 +68,12 @@ export function Navbar() {
   // Fetch suggestions with debounce
   const fetchSuggestions = useCallback((value: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!value.trim() || value.length < 2) {
-      setSuggestions({ products: [], categories: [] });
-      setShowSuggestions(false);
-      return;
-    }
+    if (!value.trim() || value.length < 2) return;
     debounceRef.current = setTimeout(async () => {
       try {
         const data = await api.get<{ products: SearchProduct[]; categories: string[] }>("/api/marketplace/suggestions", { q: value.trim() });
-        setSuggestions(data);
-        setShowSuggestions(true);
-        setActiveIdx(-1);
+        // The reducer drops this if the query changed or the list was closed meanwhile.
+        dispatchSearch({ type: "RESULTS", query: value.trim(), items: toSuggestions(data) });
       } catch {
         // silently fail
       }
@@ -88,17 +84,16 @@ export function Navbar() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
+        dispatchSearch({ type: "CLOSE" });
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const allSuggestions = [
-    ...suggestions.categories.map((c) => ({ type: "category" as const, label: c })),
-    ...suggestions.products.map((p) => ({ type: "product" as const, label: p.title, sub: p.category, price: p.price, id: p.id })),
-  ];
+  const categorySuggestions = categoryItems(search.items);
+  const productSuggestions = productItems(search.items);
+  const highlighted = activeSuggestion(search);
 
   // Determine portal context — /collaboration is a Creator Studio surface
   const isCreator = pathname.startsWith("/creator") || pathname.startsWith("/collaboration");
@@ -306,7 +301,7 @@ export function Navbar() {
 
             {/* Central Search Bar (Marketplace only) */}
             {isMarketplace && (
-              <div ref={searchRef} className="hidden md:flex flex-1 max-w-3xl px-4 lg:px-8 relative">
+              <div ref={searchRef} className="hidden md:flex flex-1 max-w-3xl px-4 lg:px-8 relative" data-flow="search-suggestions" data-state={search.status}>
                 <form role="search" onSubmit={(event) => { event.preventDefault(); handleSearch(); }} className="relative w-full rounded-md flex bg-card border border-input h-11">
                   <select
                     aria-label="Search category"
@@ -334,27 +329,28 @@ export function Navbar() {
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
+                      dispatchSearch({ type: "INPUT", query: e.target.value });
                       fetchSuggestions(e.target.value);
                     }}
-                    onFocus={() => { if (searchQuery.length >= 2) setShowSuggestions(true); }}
+                    onFocus={() => dispatchSearch({ type: "FOCUS" })}
                     onKeyDown={(e) => {
                       if (e.key === "ArrowDown") {
                         e.preventDefault();
-                        setActiveIdx((i) => Math.min(i + 1, allSuggestions.length - 1));
+                        dispatchSearch({ type: "ARROW", dir: 1 });
                       } else if (e.key === "ArrowUp") {
                         e.preventDefault();
-                        setActiveIdx((i) => Math.max(i - 1, -1));
+                        dispatchSearch({ type: "ARROW", dir: -1 });
                       } else if (e.key === "Escape") {
-                        setShowSuggestions(false);
+                        dispatchSearch({ type: "CLOSE" });
                       } else if (e.key === "Enter") {
                         e.preventDefault();
-                        if (activeIdx >= 0 && allSuggestions[activeIdx]) {
-                          const s = allSuggestions[activeIdx];
+                        if (highlighted) {
+                          const s = highlighted;
                           if (s.type === "category") {
                             setSearchCategory(s.label);
                             handleSearch("", s.label);
                           } else {
-                            setShowSuggestions(false);
+                            dispatchSearch({ type: "CLOSE" });
                             router.push(`/marketplace/${s.id}`);
                           }
                         } else {
@@ -373,18 +369,19 @@ export function Navbar() {
                 </form>
 
                 {/* Suggestions Dropdown */}
-                {showSuggestions && allSuggestions.length > 0 && (
+                {search.status === "open" && search.items.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-sm z-50 overflow-hidden">
-                    {suggestions.categories.length > 0 && (
+                    {categorySuggestions.length > 0 && (
                       <div>
                         <div className="px-4 pt-3 pb-1 text-sm font-medium text-muted-foreground">Categories</div>
-                        {suggestions.categories.map((cat, i) => {
+                        {categorySuggestions.map((suggestion, i) => {
+                          const cat = suggestion.label;
                           const idx = i;
                           return (
                             <button
                               key={cat}
-                              onClick={() => { setSearchCategory(cat); setSearchQuery(""); setSuggestions({ products: [], categories: [] }); setShowSuggestions(false); router.push(`/marketplace?category=${encodeURIComponent(cat)}`); }}
-                              className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted/60 transition-colors", activeIdx === idx && "bg-muted")} 
+                              onClick={() => { setSearchCategory(cat); setSearchQuery(""); dispatchSearch({ type: "INPUT", query: "" }); router.push(`/marketplace?category=${encodeURIComponent(cat)}`); }}
+                              className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted/60 transition-colors", search.activeIdx === idx && "bg-muted")} 
                             >
                               <Tag size={13} className="text-primary shrink-0" />
                               <span className="font-medium">{cat}</span>
@@ -394,21 +391,21 @@ export function Navbar() {
                       </div>
                     )}
 
-                    {suggestions.products.length > 0 && (
+                    {productSuggestions.length > 0 && (
                       <div>
                         <div className="px-4 pt-3 pb-1 text-sm font-medium text-muted-foreground">Products</div>
-                        {suggestions.products.map((p, i) => {
-                          const idx = suggestions.categories.length + i;
+                        {productSuggestions.map((p, i) => {
+                          const idx = categorySuggestions.length + i;
                           return (
                             <button
                               key={p.id}
-                              onClick={() => { setShowSuggestions(false); router.push(`/marketplace/${p.id}`); }}
-                              className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/60 transition-colors", activeIdx === idx && "bg-muted")}
+                              onClick={() => { dispatchSearch({ type: "CLOSE" }); router.push(`/marketplace/${p.id}`); }}
+                              className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/60 transition-colors", search.activeIdx === idx && "bg-muted")}
                             >
                               <Search size={13} className="text-muted-foreground shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <span className="text-sm font-medium text-foreground truncate block">{p.title}</span>
-                                <span className="text-sm text-muted-foreground">{p.category}</span>
+                                <span className="text-sm font-medium text-foreground truncate block">{p.label}</span>
+                                <span className="text-sm text-muted-foreground">{p.sub}</span>
                               </div>
                               <span className="text-sm text-muted-foreground shrink-0">View options</span>
                             </button>
@@ -619,7 +616,7 @@ export function Navbar() {
             className="fixed inset-0 bg-ink/40"
             onClick={() => setMobileOpen(false)}
           />
-          <div id="mobile-navigation" className="fixed right-0 top-16 bottom-0 w-full max-w-sm bg-card border-l border-border p-6 overflow-y-auto">
+          <div id="mobile-navigation" data-flow="mobile-menu" data-state={mobileOpen ? "open" : "closed"} className="fixed right-0 top-16 bottom-0 w-full max-w-sm bg-card border-l border-border p-6 overflow-y-auto">
             {isMarketplace && <form role="search" aria-label="Mobile catalogue search" className="flex gap-2 mb-6" onSubmit={(event) => { event.preventDefault(); handleSearch(); }}>
               <input type="search" aria-label="Search models" placeholder="Search models" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="w-full min-w-0 h-11 rounded-md border border-input bg-background px-3 text-base" />
               <Button type="submit" variant="outline" className="min-h-11" aria-label="Search catalogue"><Search size={18} aria-hidden="true" /></Button>

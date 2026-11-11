@@ -8,6 +8,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useRequireAuth } from '@/stores/auth-store';
 import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
+import { FULFILLMENT_FLOW, orderPhase, orderStatusLabel } from '@/lib/order-lifecycle';
 
 interface ItemPolicy {
   order_item_id: number;
@@ -117,8 +118,9 @@ export default function OrderDetailsPage() {
   if (loading) return <div className="min-h-screen bg-background text-foreground flex justify-center pt-24">Loading order details...</div>;
   if (!order) return <div className="min-h-screen bg-background text-foreground flex justify-center pt-24">Order not found</div>;
 
-  const STATUS_FLOW = ["paid", "queued", "printing", "qc", "packed", "shipped", "delivered"];
-  const currentStepIndex = STATUS_FLOW.indexOf(order.status);
+  const STATUS_FLOW = FULFILLMENT_FLOW;
+  const phase = orderPhase(order.status);
+  const currentStepIndex = phase.kind === "fulfilment" ? phase.index : phase.kind === "completed" ? STATUS_FLOW.length : -1;
 
   const itemPolicy = (itemId: number) => policy?.items.find((i) => i.order_item_id === itemId);
   const requestsFor = (itemId: number) => returnRequests.filter((r) => r.order_item_id === itemId);
@@ -148,8 +150,16 @@ export default function OrderDetailsPage() {
         {/* Timeline Component */}
         <div className="bg-card border border-border rounded-xl p-8 mb-8">
           <h2 className="text-lg font-semibold mb-8 text-muted-foreground">Order Status Timeline</h2>
+          {(phase.kind === "awaiting_payment" || phase.kind === "closed") && (
+            <p role="status" className="mb-8 text-sm text-foreground">
+              {orderStatusLabel(order.status)}.{" "}
+              {order.status === "pending_payment" && (
+                <Link href={`/checkout?order_id=${order.id}`} className="underline">Continue payment</Link>
+              )}
+            </p>
+          )}
 
-          <div className="relative">
+          <div className="relative" data-flow="order-status" data-state={phase.kind}>
             {/* Connecting line */}
             <div className="absolute top-5 left-8 bottom-5 w-0.5 bg-border" />
 
@@ -174,8 +184,8 @@ export default function OrderDetailsPage() {
                       <Icon size={16} />
                     </div>
                     <div className="ml-6 pt-2">
-                      <h3 className={`font-semibold capitalize ${isCurrent ? "text-primary" : "text-foreground"}`}>
-                        {status.replace('qc', 'Quality Control')}
+                      <h3 className={`font-semibold ${isCurrent ? "text-primary" : "text-foreground"}`}>
+                        {orderStatusLabel(status)}
                       </h3>
                       {isCurrent && status === "packed" && (
                         <p className="text-sm text-muted-foreground mt-1">Your order is packed and awaiting courier pickup.</p>

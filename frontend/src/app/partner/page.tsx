@@ -14,9 +14,10 @@ import { cn, formatDate } from "@/lib/utils";
 import { ConsoleShell } from "@/components/layout/console-shell";
 import { StatusChip } from "@/components/ui/status-chip";
 import { formatMoney } from "@/lib/currency";
+import { FULFILLMENT_FLOW, NEXT_STATUS, orderStatusLabel, orderStatusTone } from "@/lib/order-lifecycle";
 
-const STATUS_FLOW = ["queued", "printing", "qc", "packed", "shipped", "delivered"];
-const STATUS_LABEL: Record<string, string> = {paid: "Payment confirmed", queued: "Queued", printing: "Printing", qc: "Quality check", packed: "Packed", shipped: "Shipped", delivered: "Delivered"};
+// The partner board starts at "queued"; "paid" is the pre-queue state.
+const STATUS_FLOW: readonly string[] = FULFILLMENT_FLOW.slice(1);
 const ACTION_LABEL: Record<string, string> = {queued: "Add to print queue", printing: "Start printing", qc: "Send to quality check", packed: "Pack and create shipping label", shipped: "Mark as shipped", delivered: "Confirm delivery"};
 type Parcel = {length_cm: string; breadth_cm: string; height_cm: string; weight_kg: string};
 const PARCEL_FIELDS = [{key: "length_cm", label: "Length (cm)"}, {key: "breadth_cm", label: "Breadth (cm)"}, {key: "height_cm", label: "Height (cm)"}, {key: "weight_kg", label: "Weight (kg)"}] as const;
@@ -112,7 +113,7 @@ export default function PartnerDashboard() {
     setUpdatingId(orderId);
     try {
       await api.put(`/api/partner/jobs/${orderId}/status`, { status, ...(shippingPackage ? {shipping_package: shippingPackage} : {}) });
-      toast.success(`Status updated: ${STATUS_LABEL[status] || status}`);
+      toast.success(`Status updated: ${orderStatusLabel(status)}`);
       queryClient.invalidateQueries({ queryKey: ["partner-jobs"] });
       queryClient.invalidateQueries({ queryKey: ["partner-analytics"] });
     } catch (error) {
@@ -120,13 +121,6 @@ export default function PartnerDashboard() {
     } finally {
       setUpdatingId(null);
     }
-  };
-
-  const getStatusType = (status: string) => {
-    if (status === "delivered") return "success";
-    if (status === "queued" || status === "warning") return "warning";
-    if (status === "printing" || status === "qc") return "in-progress";
-    return "neutral";
   };
 
   const isLoading = isLoadingJobs || isLoadingTickets || isLoadingPrinters || isLoadingAnalytics;
@@ -197,7 +191,7 @@ export default function PartnerDashboard() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Status</p>
-                  <StatusChip status={getStatusType(job.status)} label={STATUS_LABEL[job.status] || job.status} />
+                  <StatusChip status={orderStatusTone(job.status)} label={orderStatusLabel(job.status)} />
                 </div>
               </div>
               <div className="p-6">
@@ -215,7 +209,7 @@ export default function PartnerDashboard() {
                             )}
                           >
                             {isPast && <CheckCircle2 size={12} />}
-                            {STATUS_LABEL[status]}
+                            {orderStatusLabel(status)}
                           </div>
                           {idx < STATUS_FLOW.length - 1 && <div className={cn("w-6 h-px mx-1", isPast ? "bg-success" : "bg-border")} />}
                         </div>
@@ -229,7 +223,7 @@ export default function PartnerDashboard() {
                     <h3 className="font-bold font-display text-2xl mb-2 text-foreground">New Job Request</h3>
                     <p className="text-sm text-muted-foreground mb-8">Review the requirements and accept the job to begin printing.</p>
                     
-                    <Button disabled={updatingId === job.id} onClick={() => updateStatus(job.id, job.status === "paid" ? "queued" : "printing")} size="lg" className="rounded-xl px-12 shadow-lg hover-lift font-bold text-base">
+                    <Button disabled={updatingId === job.id} onClick={() => updateStatus(job.id, NEXT_STATUS[job.status] ?? "printing")} size="lg" className="rounded-xl px-12 shadow-lg hover-lift font-bold text-base">
                       {job.status === "paid" ? "Add to print queue" : "Accept job and start printing"}
                     </Button>
                   </div>

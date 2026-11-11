@@ -1,10 +1,6 @@
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
-import ts from 'typescript';
-const path = new URL('../src/lib/order-download.ts', import.meta.url);
-const source = existsSync(path) ? readFileSync(path, 'utf8') : 'export const canDownloadModel = () => false;';
-const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
-const { canDownloadModel } = await import(`data:text/javascript;base64,${Buffer.from(output).toString('base64')}`);
+import { loadTs } from './load-ts.mjs';
+const { canDownloadModel } = await loadTs('src/lib/order-download.ts');
 const order = { status: 'paid', currency: 'INR', payment_verified_at: '2026-10-29T12:00:00Z' };
 const item = { product_id: 1, selected_config: { purchase_type: 'digital' } };
 assert.equal(canDownloadModel(order, item), true);
