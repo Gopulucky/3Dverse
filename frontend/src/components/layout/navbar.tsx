@@ -538,13 +538,6 @@ export function Navbar() {
                     </>
                     )}
                     
-                    {!isCreator && (
-                      <DropdownMenuItem onClick={() => router.push("/sell")} className="rounded-lg cursor-pointer py-2 text-ember focus:text-ember bg-ember/5 focus:bg-ember/10 mb-1 font-medium">
-                        <Store size={16} className="mr-3" />
-                        Sell with 3DVerse
-                      </DropdownMenuItem>
-                    )}
-
                     <DropdownMenuItem onClick={() => router.push(settingsHref)} className="rounded-lg cursor-pointer py-2">
                       <Settings size={16} className="mr-3" />
                       Settings

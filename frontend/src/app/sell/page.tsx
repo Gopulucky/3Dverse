@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { SUPPORT_EMAIL } from "@/lib/site";
+import { BRAND } from "@/lib/brand";
 import { storeCreatorType, type CreatorType } from "@/lib/creator-nav";
 import { useAuthStore } from "@/stores/auth-store";
 import { MarketplaceShell } from "@/components/layout/marketplace-shell";
@@ -36,7 +37,8 @@ export default function SellPage() {
   };
 
   return <MarketplaceShell><div className="store-container py-12 md:py-20 max-w-4xl">
-    <h1 className="font-display text-4xl font-semibold mb-5">Sell with 3DVerse</h1>
+    <h1 className="font-display text-4xl font-semibold mb-3">Sell with 3DVerse</h1>
+    <p className="font-semibold text-ember-ink mb-5">{BRAND.sellerTagline}</p>
     <p className="text-lg text-muted-foreground max-w-2xl">List digital model files or finished 3D prints for customers to buy. Your shopping account stays with you when you set up a creator account.</p>
     <section className="mt-10 border-t border-border pt-8" aria-labelledby="creator-setup">
       <h2 id="creator-setup" className="font-display text-2xl font-semibold mb-4">Set up your creator account</h2>

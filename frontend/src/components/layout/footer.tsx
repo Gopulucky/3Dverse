@@ -7,7 +7,7 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-card/50 mt-auto">
       <div className="store-container py-12">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="inline-block">
@@ -24,7 +24,7 @@ export function Footer() {
           {/* Marketplace */}
           <div>
             <h4 className="text-sm font-semibold text-foreground mb-4 font-display">
-              For Customers
+              Shop
             </h4>
             <ul className="space-y-2.5">
               {[
@@ -32,51 +32,6 @@ export function Footer() {
                 { href: "/marketplace?format=physical", label: "Printed products" },
                 { href: "/marketplace?format=digital", label: "Digital models" },
                 { href: "/orders", label: "Your orders" },
-              ].map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* For Creators */}
-          <div>
-            <h4 className="text-sm font-semibold text-foreground mb-4 font-display">
-              For Creators
-            </h4>
-            <ul className="space-y-2.5">
-              {[
-                { href: "/creator/dashboard", label: "Creator Dashboard" },
-                { href: "/creator/products/new", label: "Upload a Design" },
-                { href: "/sell", label: "Become a Creator" },
-              ].map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* For Partners */}
-          <div>
-            <h4 className="text-sm font-semibold text-foreground mb-4 font-display">
-              For Print Partners
-            </h4>
-            <ul className="space-y-2.5">
-              {[
-                { href: "/partner", label: "Partner Console" },
-                { href: "/sell#partners", label: "Become a Partner" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
@@ -98,6 +53,7 @@ export function Footer() {
             <ul className="space-y-2.5">
               {[
                 { href: "/about", label: "About" },
+                { href: "/sell", label: "Sell on 3DVerse" },
                 { href: "/support", label: "Support 3DVerse" },
                 { href: "/contact", label: "Contact" },
                 { href: "/shipping", label: "Shipping" },

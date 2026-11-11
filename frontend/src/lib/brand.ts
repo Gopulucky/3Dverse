@@ -13,7 +13,10 @@ export const BRAND = {
   name: "3DVerse",
   /** Wordmark split — the two halves are styled differently everywhere. */
   wordmark: { lead: "3D", tail: "Verse" },
-  tagline: "Upload Once. Sell Forever. Print Anywhere.",
+  /** Storefront line, for buyers. */
+  tagline: "Finished prints, delivered. Digital models, ready to print.",
+  /** Creator pitch, shown on /sell. */
+  sellerTagline: "Upload Once. Sell Forever. Print Anywhere.",
   positioning: "3D models and finished prints",
   /** One sentence. Used for metadata and the about hero. */
   oneLiner:
