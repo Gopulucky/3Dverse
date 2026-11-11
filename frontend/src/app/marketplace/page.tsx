@@ -9,10 +9,10 @@ import { api } from "@/lib/api";
 import { type ProductCardData } from "@/lib/marketplace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/auth-store";
 import { cn } from "@/lib/utils";
+import { CatalogueFilters, type FilterValues } from "@/components/marketplace/catalogue-filters";
 import { MarketplaceShell } from "@/components/layout/marketplace-shell";
 import { ProductCard } from "@/components/shared/product-card";
 
@@ -36,6 +36,14 @@ function MarketplaceContent() {
     queryFn: () => api.get<ProductCardData[]>("/api/marketplace/products", params),
     retry: false,
   });
+  const { data: shelf } = useQuery({
+    queryKey: ["catalogue-categories"],
+    queryFn: () => api.get<{ categories?: { name: string }[] }>("/api/marketplace/homepage"),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  const liveCategories = Array.isArray(shelf?.categories) ? shelf.categories.map(c => c.name).filter(Boolean) : [];
+  const categoryNames = liveCategories.length ? liveCategories : CATEGORIES;
   const products = data.slice(0, PAGE_SIZE);
   const hasNext = data.length > PAGE_SIZE;
   const goToPage = (next: number) => {
@@ -48,7 +56,6 @@ function MarketplaceContent() {
     try { await api.post(`/api/wishlist/${id}`); toast.success("Saved to wishlist."); }
     catch { toast.error("Could not save this product. Try again."); }
   };
-  const control = "min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm";
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   // Escape closes whichever sheet is open, wherever focus is.
@@ -69,8 +76,17 @@ function MarketplaceContent() {
     router.push(`/marketplace?${next}`);
   };
   const chips: { key: string; label: string; clear: (next: URLSearchParams) => void }[] = [];
+  const values: FilterValues = { category: search.get("category") || "", format, currency: search.get("currency") || "", min: search.get("min_price") || "", max: search.get("max_price") || "" };
+  const patchKeys = { category: "category", format: "format", currency: "currency", min: "min_price", max: "max_price" } as const;
+  const applyPatch = (patch: Partial<FilterValues>) => go(next => {
+    for (const [key, value] of Object.entries(patch) as [keyof FilterValues, string][]) {
+      if (value) next.set(patchKeys[key], value); else next.delete(patchKeys[key]);
+    }
+  });
+  const clearAll = () => go(next => { for (const key of ["category", "format", "currency", "min_price", "max_price", "q"]) next.delete(key); });
   if (format) chips.push({ key: "format", label: format === "physical" ? "Printed products" : "Digital models", clear: next => next.delete("format") });
   if (search.get("category")) chips.push({ key: "category", label: search.get("category") as string, clear: next => next.delete("category") });
+  if (search.get("q")) chips.push({ key: "q", label: `Search: “${search.get("q")}”`, clear: next => next.delete("q") });
   if (search.get("min_price") || search.get("max_price")) chips.push({ key: "price", label: `Price ${search.get("min_price") || "0"} to ${search.get("max_price") || "any"}`, clear: next => { next.delete("min_price"); next.delete("max_price"); } });
   return (
     <div className="store-container py-4 md:py-8 pb-20">
@@ -91,7 +107,7 @@ function MarketplaceContent() {
             <ArrowDownUp size={16} aria-hidden="true" />{sort === "featured" ? "Sort" : `Sort: ${sortLabel}`}
           </Button>
           <Button type="button" variant="outline" className="min-h-11 justify-center gap-2" aria-controls="catalogue-filters" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(true)}>
-            <SlidersHorizontal size={16} aria-hidden="true" />{chips.length ? `Filters (${chips.length})` : "Filters"}
+            <SlidersHorizontal size={16} aria-hidden="true" />{chips.filter(chip => chip.key !== "q").length ? `Filters (${chips.filter(chip => chip.key !== "q").length})` : "Filters"}
           </Button>
         </div>
       </div>
@@ -115,32 +131,16 @@ function MarketplaceContent() {
           className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 text-sm font-medium hover:border-foreground">{chip.label}<X size={14} aria-hidden="true" /></button>)}
       </div>}
       <div className="flex flex-col md:flex-row gap-8">
-        <aside id="catalogue-filters" className={cn("md:w-56 shrink-0", filtersOpen ? "fixed inset-x-0 bottom-0 top-16 z-40 overflow-y-auto bg-background p-4 md:static md:z-auto md:overflow-visible md:p-0" : "hidden md:block")}>
-          {filtersOpen && <div className="mb-4 flex items-center justify-between md:hidden">
-            <h2 className="font-display text-lg font-semibold">Filters</h2>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close filters" onClick={() => setFiltersOpen(false)}><X size={20} aria-hidden="true" /></Button>
-          </div>}
-          <form key={search.toString()} className="space-y-5" aria-label="Catalogue filters" onSubmit={event => {
-            event.preventDefault();
-            setFiltersOpen(false);
-            const values = new FormData(event.currentTarget);
-            const next = new URLSearchParams();
-            for (const [key, value] of values) if (String(value).trim()) next.set(key, String(value).trim());
-            // Prices in different currencies cannot be compared without conversion.
-            if ((next.get("sort")?.startsWith("price_") || next.has("min_price") || next.has("max_price")) && !next.has("currency")) next.set("currency", "INR");
-            router.push(`/marketplace?${next}`);
-          }}>
-            <div><Label htmlFor="catalogue-search">Search products</Label><Input id="catalogue-search" name="q" type="search" defaultValue={search.get("q") || ""} className="mt-2 min-h-11" placeholder="Try miniatures or home decor" /></div>
-            <div><Label htmlFor="catalogue-format">What would you like?</Label><select id="catalogue-format" name="format" defaultValue={format} className={`${control} mt-2`}><option value="">All formats</option><option value="physical">Physical prints · delivered</option><option value="digital">Digital files · download</option></select></div>
-            <div><Label htmlFor="catalogue-category">Category</Label><select id="catalogue-category" name="category" defaultValue={search.get("category") || ""} className={`${control} mt-2`}><option value="">All categories</option>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select></div>
-            <div><Label htmlFor="catalogue-currency">Listing currency</Label><select id="catalogue-currency" name="currency" defaultValue={search.get("currency") || ""} className={`${control} mt-2`}><option value="">All currencies</option><option value="INR">INR · Indian rupees</option><option value="USD">USD · legacy listings</option></select><p className="text-xs text-muted-foreground mt-2">No currency conversion. Price filters and price sorting use INR unless you choose USD.</p></div>
-            <div><Label htmlFor="catalogue-sort">Sort by</Label><select id="catalogue-sort" name="sort" defaultValue={search.get("sort") || "featured"} className={`${control} mt-2`}><option value="featured">Featured</option><option value="newest">Newest arrivals</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option></select></div>
-            <fieldset><legend className="text-sm font-medium mb-2">Price range</legend><div className="grid grid-cols-2 gap-2"><div><Label htmlFor="min-price">Minimum</Label><Input id="min-price" name="min_price" type="number" min="0" step="0.01" defaultValue={search.get("min_price") || ""} /></div><div><Label htmlFor="max-price">Maximum</Label><Input id="max-price" name="max_price" type="number" min="0" step="0.01" defaultValue={search.get("max_price") || ""} /></div></div></fieldset>
-            <Button type="submit" className="w-full min-h-11">Apply filters</Button>
-            <Button type="button" variant="outline" className="w-full min-h-11" onClick={() => router.push("/marketplace")}>Clear filters</Button>
-          </form>
+        <aside id="catalogue-filters" className={cn("md:w-64 shrink-0 md:sticky md:top-20 md:self-start md:max-h-[calc(100vh-6rem)] md:overflow-y-auto md:rounded-lg md:border md:border-border md:bg-card md:p-4", filtersOpen ? "fixed inset-x-0 bottom-0 top-16 z-40 overflow-y-auto bg-background p-4 md:static md:z-auto md:overflow-visible md:p-0" : "hidden md:block")}>
+          <CatalogueFilters values={values} categories={categoryNames} anyApplied={chips.length > 0 || Boolean(values.currency)}
+            onChange={applyPatch} onClear={clearAll} onClose={filtersOpen ? () => setFiltersOpen(false) : undefined} />
         </aside>
         <section className="flex-1 min-w-0" aria-label="Catalogue results" aria-busy={isLoading}>
+          <div role="group" aria-label="Sort by" className="mb-4 hidden items-center gap-1 border-b border-border text-sm md:flex">
+            <span className="mr-2 font-medium">Sort by</span>
+            {SORTS.map(([value, label]) => <button key={value} type="button" aria-pressed={sort === value} onClick={() => go(next => { next.set("sort", value); })}
+              className={cn("-mb-px border-b-2 px-3 py-2", sort === value ? "border-primary font-medium text-primary-ink" : "border-transparent text-muted-foreground hover:text-foreground")}>{label}</button>)}
+          </div>
           {isLoading ? <><p role="status" className="mb-5">Loading products…</p><ProductGridSkeleton count={6} /></> : isError ? <div role="alert" className="store-state"><h2>The catalogue couldn’t load.</h2><p>Please try again. Your filters have been kept.</p><Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>{isFetching ? "Trying again…" : "Try again"}</Button></div> : <>
             <p role="status" className="text-sm text-muted-foreground mb-3 md:mb-6">{products.length ? `Showing ${(page - 1) * PAGE_SIZE + 1}–${(page - 1) * PAGE_SIZE + products.length}` : "No matching products"}{search.get("q") ? ` for “${search.get("q")}”` : ""}</p>
             <div className="catalogue-grid grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6">{products.map(p => <ProductCard key={p.id} p={p} format={format} onWishlist={handleAddToWishlist} />)}</div>

@@ -80,19 +80,47 @@ try {
   assert.equal(await page.locator('.market-product').count(), 5);
   assert.equal(catalogueRequests.at(-1).skip, '20');
   assert.equal(await page.getByRole('button', { name: 'Next page', exact: true }).isDisabled(), true);
-  await page.getByRole('combobox', { name: 'Sort by', exact: true }).selectOption('price_asc');
-  await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
+  // Desktop: a "Sort by" tab row above the results, like most shops.
+  const tabs = page.getByRole('group', { name: 'Sort by' });
+  assert.deepEqual(await tabs.getByRole('button').allInnerTexts(), ['Featured', 'Newest arrivals', 'Price: low to high', 'Price: high to low']);
+  assert.equal(await tabs.getByRole('button', { name: 'Featured', exact: true }).getAttribute('aria-pressed'), 'true');
+  await tabs.getByRole('button', { name: 'Price: low to high', exact: true }).click();
   await page.waitForURL('**sort=price_asc**');
+  assert.equal(await tabs.getByRole('button', { name: 'Price: low to high', exact: true }).getAttribute('aria-pressed'), 'true');
   await page.getByRole('link', { name: 'QA model 1', exact: true }).waitFor();
   assert.equal(catalogueRequests.at(-1).currency, 'INR');
   assert.equal(catalogueRequests.at(-1).skip, '0');
-  await page.getByRole('searchbox', { name: 'Search products', exact: true }).fill('outage');
-  await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
+  await page.getByRole('searchbox', { name: 'Search 3DVerse', exact: true }).fill('outage');
+  await page.getByRole('searchbox', { name: 'Search 3DVerse', exact: true }).press('Enter');
   await page.getByRole('heading', { name: 'The catalogue couldn’t load.' }).waitFor();
   assert.equal(await page.getByRole('heading', { name: 'No products match these filters.' }).count(), 0);
-  await page.getByRole('searchbox', { name: 'Search products', exact: true }).fill('empty');
-  await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
+  await page.getByRole('searchbox', { name: 'Search 3DVerse', exact: true }).fill('empty');
+  await page.getByRole('searchbox', { name: 'Search 3DVerse', exact: true }).press('Enter');
   await page.getByRole('heading', { name: 'No products match these filters.' }).waitFor();
+  // Left filter panel: collapsible sections, choices apply at once, Clear all resets.
+  await page.goto(`${base}/marketplace`);
+  await page.locator('.market-product').first().waitFor();
+  const panel = page.getByRole('form', { name: 'Catalogue filters' });
+  for (const name of ['Category', 'Format', 'Price', 'Currency']) await panel.getByRole('button', { name, exact: true }).waitFor();
+  assert.equal(await panel.getByRole('button', { name: 'Category', exact: true }).getAttribute('aria-expanded'), 'true');
+  assert.equal(await panel.getByRole('button', { name: 'Currency', exact: true }).getAttribute('aria-expanded'), 'false');
+  assert.equal(await page.getByRole('button', { name: 'Clear all', exact: true }).count(), 0, 'Clear all appears only when a filter is applied');
+  await panel.getByRole('checkbox', { name: 'Gadgets', exact: true }).click();
+  await page.waitForURL('**category=Gadgets**');
+  assert.equal(await panel.getByRole('checkbox', { name: 'Gadgets', exact: true }).isChecked(), true);
+  await panel.getByRole('checkbox', { name: 'Digital models', exact: true }).click();
+  await page.waitForURL('**format=digital**');
+  await panel.getByRole('spinbutton', { name: 'Minimum price', exact: true }).fill('100');
+  await panel.getByRole('spinbutton', { name: 'Maximum price', exact: true }).fill('300');
+  await panel.getByRole('button', { name: 'Apply price', exact: true }).click();
+  await page.waitForURL('**max_price=300**');
+  await settled(() => catalogueRequests.at(-1)?.max_price === '300');
+  assert.equal(catalogueRequests.at(-1).min_price, '100');
+  assert.equal(catalogueRequests.at(-1).currency, 'INR', 'a price range needs an explicit currency');
+  await page.getByRole('button', { name: 'Remove filter: Price 100 to 300' }).waitFor();
+  await page.getByRole('button', { name: 'Clear all', exact: true }).click();
+  await page.waitForFunction(() => !/category=|format=|min_price=|max_price=/.test(location.search));
+  assert.equal(await panel.getByRole('checkbox', { name: 'Gadgets', exact: true }).isChecked(), false);
   // Phone layout: products first; search, filters and sort become a compact toolbar.
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto(`${base}/marketplace`);
@@ -134,10 +162,10 @@ try {
   assert.equal(await page.getByRole('form', { name: 'Catalogue filters' }).isVisible(), false, 'Escape closes the filter sheet');
   await page.getByRole('button', { name: /^Filters/ }).click();
   await page.getByRole('form', { name: 'Catalogue filters' }).waitFor();
-  await page.getByRole('combobox', { name: 'Category', exact: true }).selectOption('Gadgets');
-  await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Gadgets', exact: true }).click();
   await page.waitForURL('**category=Gadgets**');
-  assert.equal(await page.getByRole('form', { name: 'Catalogue filters' }).isVisible(), false, 'filters close after applying');
+  await page.getByRole('button', { name: /^Show results/ }).click();
+  assert.equal(await page.getByRole('form', { name: 'Catalogue filters' }).isVisible(), false, 'the sheet closes on Show results');
   assert.match(await page.getByRole('button', { name: /^Filters/ }).innerText(), /\(?\d\)?|[1-9]/, 'the Filters button shows how many are active');
   // Applied filters appear as removable chips under the toolbar.
   const chip = page.getByRole('button', { name: 'Remove filter: Gadgets' });
