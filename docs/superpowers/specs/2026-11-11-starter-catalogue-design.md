@@ -30,7 +30,7 @@ Two small tools under `backend/scripts/catalogue/`, so generation (verifiable an
   - `<slug>.stl`: the model
   - `<slug>.png`: a lit render of the real mesh (matplotlib, 1200×900) used as the product image
   - an entry in `manifest.json`: title, category, description, tags, INR prices, print settings, dimensions, volume, face count
-- **Quality gate** (fails the run, not a warning): mesh is watertight, volume > 0, every extent between 20 and 220 mm, faces < 400 000.
+- **Quality gate** (fails the run, not a warning): mesh is watertight, volume > 0, largest side 20-220 mm and thinnest part at least 1.2 mm (thin items such as keyrings and tiles are legitimate), faces < 400 000.
 
 ### 2. Importer — `import_catalogue.py`
 - Reads `manifest.json` and writes DB rows through the app's own models and `store_local_file`, then makes the preview with the same `_write_preview`.

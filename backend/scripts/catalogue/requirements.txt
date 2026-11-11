@@ -1,0 +1,3 @@
+# Tooling for the starter-catalogue generator only. Not part of the app's requirements.
+manifold3d>=3.0
+shapely>=2.0
