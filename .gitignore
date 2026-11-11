@@ -27,3 +27,6 @@ frontend/next-env.d.ts
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated starter-catalogue output (regenerate with scripts/catalogue/generate.py)
+backend/scripts/catalogue/out/
