@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/cart-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { toast } from "sonner";
-import { productImage, purchasePrice, type ProductCardData } from "@/lib/marketplace";
+import { productImage, productThumb, purchasePrice, type ProductCardData } from "@/lib/marketplace";
 import { ProductImage } from "@/components/shared/product-image";
 import { ProductPrices } from "@/components/shared/product-prices";
 
@@ -65,7 +65,7 @@ export function ProductCard({
     return (
       <article className={cn("market-product market-product--compact", className)}>
         <Link href={`/marketplace/${p.id}`} className="market-product-image" aria-label={`View ${p.title}`}>
-          <ProductImage src={productImage(p)} title={p.title} />
+          <ProductImage src={productThumb(p)} fallbackSrc={productImage(p)} title={p.title} />
           {p.is_featured && <span className="market-product-featured">Featured</span>}
         </Link>
         <div className="market-product-info">
@@ -82,7 +82,7 @@ export function ProductCard({
   return (
     <article className={cn("market-product", className)}>
       <Link href={`/marketplace/${p.id}`} className="market-product-image" aria-label={`View ${p.title}`}>
-        <ProductImage src={productImage(p)} title={p.title} />
+        <ProductImage src={productThumb(p)} fallbackSrc={productImage(p)} title={p.title} />
         {p.is_featured && <span className="market-product-featured">Featured</span>}
       </Link>
       <div className="market-product-info">

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Trash2, Heart } from "lucide-react";
 import { toast } from "sonner";
+import { productImage, productThumb } from "@/lib/marketplace";
+import { ThumbImage } from "@/components/shared/thumb-image";
 import { api } from "@/lib/api";
 import { ProductPrices } from "@/components/shared/product-prices";
 import { Button } from "@/components/ui/button";
@@ -59,9 +61,8 @@ export default function WishlistPage() {
         <div className="space-y-4">
           {wishlist.map((item: any) => {
             const p = item.product;
-            const mainImg =
-              p.media?.find((m: any) => m.is_primary)?.media_url ||
-              p.media?.[0]?.media_url;
+            const mainImg = productThumb(p);
+            const fullImg = productImage(p);
 
             return (
               <Card
@@ -69,17 +70,7 @@ export default function WishlistPage() {
                 className="p-4 flex gap-6 items-center hover:border-primary/30 transition-colors border-border bg-card shadow-sm"
               >
                 <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 bg-muted">
-                  {mainImg ? (
-                    <img
-                      src={api.mediaUrl(mainImg)}
-                      alt={p.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                      No Image
-                    </div>
-                  )}
+                  <ThumbImage thumb={mainImg} original={fullImg} alt={p.title} width={96} height={96} className="w-full h-full object-cover" empty="No Image" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <Badge variant="secondary" className="text-xs mb-1">

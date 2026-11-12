@@ -16,7 +16,7 @@ const product = {
   id: 9001, title: 'Sample bench', category: 'Home Decor', price: 120, base_print_price: 450, currency: 'INR', digital_download_enabled: true, is_mode_3_active: true,
   creator_name: 'QA catalogue', avg_rating: 4.5, review_count: 2,
   is_mode_2_active: true, is_featured: true,
-  media: [{ media_url: '/qa-bench.jpg', is_primary: true }],
+  media: [{ media_url: '/qa-bench.jpg', thumb_url: '/qa-bench-small.webp', is_primary: true }],
   versions: [{ is_latest: true, printability_report: { status: 'pass' } }],
 };
 const products = Array.from({ length: 12 }, (_, index) => ({ ...product, id: 9001 + index, title: index ? `Sample model ${index + 1}` : product.title }));
@@ -37,7 +37,7 @@ async function visit({ state = 'full', authenticated = false, colorScheme = 'lig
     localStorage.setItem('token', 'qa-only-token');
     localStorage.setItem('user', JSON.stringify({ id: 99, email: 'qa@example.test', role: 'customer' }));
   });
-  await context.route('**/qa-bench.jpg', route => route.fulfill({ body: image, contentType }));
+  await context.route(/qa-bench(-small)?.(jpg|webp)$/, route => route.fulfill({ body: image, contentType }));
   await context.route('**/api/**', async route => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
@@ -107,6 +107,9 @@ try {
   assert.ok(lead.top < 700, `First product starts too low (${lead.top}px)`);
   assert.ok(lead.words < 80, `Too much text before the first product (${lead.words} words)`);
   assert.equal(new Set(lead.titles).size, lead.titles.length, `A product repeats on the home page: ${lead.titles}`);
+  // Cards show the small copy, not the full-size upload.
+  const cardSources = await page.locator('.storefront .market-product img').evaluateAll(els => els.map(e => e.getAttribute('src')));
+  assert.ok(cardSources.length > 0 && cardSources.every(src => src.endsWith('/qa-bench-small.webp')), `cards use the thumbnail: ${cardSources}`);
   // Home cards are compact: no review line or cart controls (those live on the catalogue page).
   assert.equal(await page.locator('.storefront .market-product .market-product-reviews').count(), 0);
   assert.equal(await page.locator('.storefront .market-product .market-cart-button').count(), 0);

@@ -7,7 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Minus, Plus, ShoppingCart, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { productImage } from "@/lib/marketplace";
+import { productImage, productThumb } from "@/lib/marketplace";
+import { ThumbImage } from "@/components/shared/thumb-image";
 import { formatMoney } from "@/lib/currency";
 import { MAX_QUANTITY, summarizeCart, unitPrice, withQuantity, type CartLine, type Discount } from "@/lib/cart-summary";
 import { CART_KEY, useCart, type Cart } from "@/lib/use-cart";
@@ -139,16 +140,10 @@ export default function CartPage() {
         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
           {lines.map((line) => {
             const price = unitPrice(line);
-            const image = productImage(line.product);
             return (
               <li key={line.id} data-line={line.id} className="flex gap-3 p-3 sm:gap-4 sm:p-4">
                 <Link href={`/marketplace/${line.product.id}`} className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-muted sm:h-28 sm:w-28" aria-label={line.product.title}>
-                  {image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={api.mediaUrl(image)} alt="" width={112} height={112} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">No image</span>
-                  )}
+                  <ThumbImage thumb={productThumb(line.product)} original={productImage(line.product)} alt="" width={112} height={112} className="h-full w-full object-cover" />
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col">
                   <Link href={`/marketplace/${line.product.id}`} className="line-clamp-2 font-display font-semibold hover:underline">{line.product.title}</Link>

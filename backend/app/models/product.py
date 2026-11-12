@@ -132,6 +132,7 @@ class ProductMedia(Base):
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     media_url = Column(String, nullable=False)
     media_type = Column(String, nullable=False) # e.g., 'image' or 'video'
+    thumb_url = Column(String, nullable=True)  # small WebP copy for cards; None = use media_url
     is_primary = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 

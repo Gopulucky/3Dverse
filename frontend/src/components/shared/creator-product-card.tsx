@@ -5,6 +5,8 @@ import { formatMoney } from "@/lib/currency";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { productImage, productThumb } from "@/lib/marketplace";
+import { ThumbImage } from "@/components/shared/thumb-image";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function CreatorProductCard({ product }: { product: any }) {
-  const mainImg = product.media?.find((m: any) => m.is_primary)?.media_url || product.media?.[0]?.media_url;
+  const mainImg = productThumb(product);
+  const fullImg = productImage(product);
   
   let statusColor = "bg-muted text-muted-foreground";
   if (product.status === "published") statusColor = "bg-success/20 text-success border-success/30";
@@ -23,17 +26,7 @@ export function CreatorProductCard({ product }: { product: any }) {
     <Card className="flex flex-col md:flex-row gap-4 p-4 border-border bg-card hover-lift transition-all group overflow-hidden">
       {/* Thumbnail */}
       <div className="w-full md:w-48 aspect-video md:aspect-square bg-muted rounded-xl overflow-hidden shrink-0 relative">
-        {mainImg ? (
-          <img 
-            src={api.mediaUrl(mainImg)} 
-            alt={product.title}
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">No Preview</div>
-        )}
+        <ThumbImage thumb={mainImg} original={fullImg} alt={product.title} width={192} height={192} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" empty="No Preview" />
         <div className="absolute top-2 left-2">
           <Badge className={`px-2 py-0.5 rounded-md text-[10px] uppercase font-bold tracking-wider border backdrop-blur-md ${statusColor}`}>
             {product.status || "Draft"}

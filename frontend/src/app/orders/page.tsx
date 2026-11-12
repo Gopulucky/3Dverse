@@ -7,7 +7,8 @@ import { Download, Package, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { formatMoney } from "@/lib/currency";
-import { productImage, type ProductCardData } from "@/lib/marketplace";
+import { productImage, productThumb, type ProductCardData } from "@/lib/marketplace";
+import { ThumbImage } from "@/components/shared/thumb-image";
 import { DownloadModel } from "@/components/shared/download-model";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -74,16 +75,10 @@ function OrderCard({ order }: { order: CustomerOrder }) {
 
           <ul className="divide-y divide-border/60">
             {order.items?.map((item) => {
-              const image = item.product ? productImage(item.product) : undefined;
               return (
                 <li key={item.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
                   <Link href={`/marketplace/${item.product_id}`} aria-label={item.product?.title || `Product ${item.product_id}`} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border/40 bg-muted">
-                    {image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={api.mediaUrl(image)} alt="" width={64} height={64} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">No image</span>
-                    )}
+                    <ThumbImage thumb={item.product ? productThumb(item.product) : undefined} original={item.product ? productImage(item.product) : undefined} alt="" width={64} height={64} className="h-full w-full object-cover" />
                   </Link>
                   <div className="min-w-0 flex-1">
                     <Link href={`/marketplace/${item.product_id}`} className="line-clamp-2 font-display font-semibold hover:underline">{item.product?.title || `Product #${item.product_id}`}</Link>
