@@ -44,6 +44,13 @@ export default function PrivacyPage() {
         cart. We do not use advertising cookies.
       </p>
 
+      <h2>Visit statistics and page speed</h2>
+      <p>
+        We use Vercel Web Analytics and Vercel Speed Insights to count page views and measure how quickly
+        pages load for real visitors. They do not set cookies, and we do not use them to follow you across
+        other websites or to identify you personally.
+      </p>
+
       <h2>Your choices</h2>
       <ul>
         <li>You can edit your profile and change your password in Settings.</li>
