@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional, Any
-from app.schemas.product import Product
+from app.schemas.product import LineProduct
 
 class CartItemBase(BaseModel):
     product_id: int
@@ -16,7 +16,7 @@ class CartItemUpdate(BaseModel):
 class CartItemResponse(CartItemBase):
     id: int
     cart_id: int
-    product: Optional[Product] = None
+    product: Optional[LineProduct] = None
 
     class Config:
         from_attributes = True

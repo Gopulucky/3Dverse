@@ -1,280 +1,229 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { Trash2, ShoppingCart, ArrowRight, Minus, Plus } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { ArrowRight, Minus, Plus, ShoppingCart, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { purchasePrice, type ProductCardData } from "@/lib/marketplace";
+import { productImage } from "@/lib/marketplace";
 import { formatMoney } from "@/lib/currency";
+import { MAX_QUANTITY, summarizeCart, unitPrice, withQuantity, type CartLine, type Discount } from "@/lib/cart-summary";
+import { CART_KEY, useCart, type Cart } from "@/lib/use-cart";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRequireAuth } from "@/stores/auth-store";
-import { useCartStore } from "@/stores/cart-store";
 import { MarketplaceShell } from "@/components/layout/marketplace-shell";
+
+const ISSUE_TEXT = {
+  mixed_currency: "Your cart has items in different currencies. Remove the older USD items to check out in INR.",
+  non_inr: "These older USD listings need the creator to set an INR price before you can check out.",
+  needs_format: "Some items have no format chosen. Remove them and pick a format on the product page.",
+} as const;
+
+function formatLabel(line: CartLine) {
+  const type = line.selected_config?.purchase_type;
+  if (type === "digital") return "Digital file · instant download";
+  if (type === "physical") return "Physical print · delivered to you";
+  return "Format needed · choose it on the product page";
+}
+
+function CartSkeleton() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      {[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 w-full" />)}
+    </div>
+  );
+}
 
 export default function CartPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { ready: isAuthenticated } = useRequireAuth();
-  const { setItemCount } = useCartStore();
+  const { ready } = useRequireAuth();
+  const { data: cart, isPending, isError, refetch } = useCart(ready);
+  const [couponOpen, setCouponOpen] = useState(false);
   const [couponCode, setCouponCode] = useState("");
-  const [discountInfo, setDiscountInfo] = useState<any>(null);
+  const [discount, setDiscount] = useState<Discount | null>(null);
   const [couponError, setCouponError] = useState("");
+  const [applying, setApplying] = useState(false);
+  const inFlight = useRef(0);
 
-  const {
-    data: cart,
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ["cart"],
-    queryFn: () => api.get<any>("/api/cart/"),
-    enabled: isAuthenticated,
-  });
+  const lines = cart?.items ?? [];
+  const summary = summarizeCart(lines, discount);
+  const money = (amount: number | null) => (amount == null ? "—" : formatMoney(amount, summary.currency));
 
-
-  if (!isAuthenticated) return null;
-
-  const updateQuantity = async (itemId: number, newQty: number) => {
+  /** Update the screen at once, then tell the server. The server's answer only replaces the screen
+   *  when no other change is still on its way, so quick taps never flicker back. */
+  async function change(id: number, quantity: number, request: () => Promise<Cart>, failure: string) {
+    const before = queryClient.getQueryData<Cart>(CART_KEY);
+    if (!before) return;
+    queryClient.setQueryData<Cart>(CART_KEY, { ...before, items: withQuantity(before.items, id, quantity) });
+    inFlight.current += 1;
     try {
-      await api.put(`/api/cart/items/${itemId}`, { quantity: newQty });
-      refetch();
+      const fresh = await request();
+      if (inFlight.current === 1) queryClient.setQueryData(CART_KEY, fresh);
     } catch {
-      toast.error("Failed to update quantity");
-    }
-  };
-
-  const removeItem = async (itemId: number) => {
-    try {
-      await api.delete(`/api/cart/items/${itemId}`);
-      toast.success("Item removed");
-      const result = await refetch();
-      setItemCount(result.data?.items?.length || 0);
-    } catch {
-      toast.error("Failed to remove item");
-    }
-  };
-
-  const applyCoupon = async () => {
-    setCouponError("");
-    setDiscountInfo(null);
-    try {
-      const result = await api.post<any>("/api/cart/apply-coupon", {
-        code: couponCode,
-      });
-      setDiscountInfo(result);
-      toast.success("Coupon applied!");
-    } catch (e: any) {
-      setCouponError(e.detail || "Invalid coupon");
-      toast.error("Invalid coupon code");
-    }
-  };
-
-  const subtotal =
-    cart?.items?.reduce(
-      (acc: number, item: any) => acc + (purchasePrice(item.product, item.selected_config?.purchase_type) ?? item.product.price ?? 0) * item.quantity,
-      0
-    ) || 0;
-
-  let discountAmount = 0;
-  if (discountInfo) {
-    if (discountInfo.percent_off) {
-      discountAmount = subtotal * (discountInfo.percent_off / 100);
-    } else if (discountInfo.flat_off) {
-      discountAmount = discountInfo.flat_off;
+      toast.error(failure);
+      void queryClient.invalidateQueries({ queryKey: CART_KEY });
+    } finally {
+      inFlight.current -= 1;
     }
   }
 
-  const total = Math.max(0, subtotal - discountAmount);
-  const currencies = new Set<string>((cart?.items || []).map((item: { product: { currency?: string } }) => item.product.currency || "INR"));
-  const cartCurrency = currencies.values().next().value || "INR";
-  const mixedCurrencies = currencies.size > 1;
-  const needsFormat = (cart?.items || []).some((item: { selected_config?: { purchase_type?: string }; product: ProductCardData }) => purchasePrice(item.product, item.selected_config?.purchase_type) == null);
-  const checkoutBlocked = mixedCurrencies || cartCurrency !== "INR" || needsFormat;
+  const setQuantity = (line: CartLine, quantity: number) =>
+    change(line.id, quantity, () => api.put<Cart>(`/api/cart/items/${line.id}`, { quantity }), "Could not update the quantity");
 
-  const handleCheckout = () => {
-    if (checkoutBlocked) return;
-    if (discountInfo) {
-      sessionStorage.setItem("coupon", discountInfo.code);
-    } else {
-      sessionStorage.removeItem("coupon");
+  const remove = (line: CartLine) =>
+    change(line.id, 0, async () => {
+      const fresh = await api.delete<Cart>(`/api/cart/items/${line.id}`);
+      toast.success("Item removed");
+      return fresh;
+    }, "Could not remove the item");
+
+  async function applyCoupon() {
+    const code = couponCode.trim();
+    if (!code) return;
+    setApplying(true);
+    setCouponError("");
+    setDiscount(null);
+    try {
+      setDiscount(await api.post<Discount>("/api/cart/apply-coupon", { code }));
+      toast.success("Coupon applied");
+    } catch (e) {
+      setCouponError((e as { detail?: string }).detail || "This coupon is not valid");
+    } finally {
+      setApplying(false);
     }
+  }
+
+  function checkout() {
+    if (!summary.canCheckout) return;
+    if (discount) sessionStorage.setItem("coupon", discount.code);
+    else sessionStorage.removeItem("coupon");
     router.push("/checkout");
-  };
+  }
 
-  const content = (
-    <div className="max-w-5xl mx-auto px-6 pt-24 pb-20">
-      <h1 className="text-3xl font-bold mb-8 flex items-center gap-3 font-display">
-        <ShoppingCart className="text-primary" />
-        Your Cart
-      </h1>
+  const checkoutButton = (
+    <Button onClick={checkout} disabled={!summary.canCheckout} size="lg" className="w-full min-h-12">
+      Checkout <ArrowRight size={18} aria-hidden="true" />
+    </Button>
+  );
 
-      {!cart || !cart.items || cart.items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-32 px-4 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="text-[80px] mb-6 leading-none">🛒</div>
-          <h2 className="text-2xl font-bold font-display mb-2 text-foreground">Your cart is empty.</h2>
-          <p className="text-muted-foreground mb-8 text-lg max-w-sm mx-auto">
-            Explore thousands of 3D models.
-          </p>
-          <Button asChild size="lg" className="rounded-xl px-12 shadow-lg hover-lift group">
-            <Link href="/marketplace">
-              Explore Marketplace <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </Button>
+  let body;
+  if (!ready || isPending) {
+    body = <CartSkeleton />;
+  } else if (isError) {
+    body = (
+      <div role="alert" className="rounded-xl border border-border bg-card p-8 text-center">
+        <p className="mb-4 font-display text-lg font-semibold">We could not load your cart.</p>
+        <Button onClick={() => refetch()}>Try again</Button>
+      </div>
+    );
+  } else if (lines.length === 0) {
+    body = (
+      <div data-flow="cart" data-state="empty" className="mx-auto flex max-w-md flex-col items-center py-16 text-center">
+        <ShoppingCart size={48} className="mb-4 text-muted-foreground" aria-hidden="true" />
+        <h2 className="mb-2 font-display text-2xl font-semibold">Your cart is empty</h2>
+        <p className="mb-6 text-muted-foreground">Pick printed products delivered to you, or digital models for your own printer.</p>
+        <div className="flex w-full flex-col gap-3 sm:flex-row">
+          <Button asChild size="lg" className="min-h-12 flex-1"><Link href="/marketplace?format=physical">Printed products</Link></Button>
+          <Button asChild size="lg" variant="outline" className="min-h-12 flex-1"><Link href="/marketplace?format=digital">Digital models</Link></Button>
         </div>
-      ) : (
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-4">
-            {cart.items.map((item: any) => {
-              const img =
-                item.product?.media?.find((m: any) => m.is_primary)
-                  ?.media_url || item.product?.media?.[0]?.media_url;
-
-              return (
-                <Card
-                  key={item.id}
-                  className="p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 border-border bg-card shadow-sm"
-                >
-                  <div className="w-20 h-20 rounded-lg bg-muted shrink-0 overflow-hidden">
-                    {img ? (
-                      <img
-                        src={api.mediaUrl(img)}
-                        alt={item.product.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                        No img
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold truncate font-display">
-                      <Link href={`/marketplace/${item.product.id}`} className="underline">{item.product.title}</Link>
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{item.selected_config?.purchase_type === "digital" ? "Digital file · download" : item.selected_config?.purchase_type === "physical" ? "Physical print · delivered" : "Format required · choose on product page"}</p>
-                    <p className="text-sm text-muted-foreground font-data mt-0.5">
-                      {purchasePrice(item.product, item.selected_config?.purchase_type) == null ? "Price unavailable until format is chosen" : formatMoney(purchasePrice(item.product, item.selected_config?.purchase_type)!, item.product.currency)}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-4 w-full sm:w-auto justify-between">
-                    <div className="flex items-center rounded-md border border-border bg-background">
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.id, item.quantity - 1)
-                        }
-                        className="px-2.5 py-1 hover:bg-accent transition-colors rounded-l-md"
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <span className="px-3 py-1 border-x border-border text-sm font-medium font-data">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.id, item.quantity + 1)
-                        }
-                        className="px-2.5 py-1 hover:bg-accent transition-colors rounded-r-md"
-                      >
-                        <Plus size={12} />
-                      </button>
+      </div>
+    );
+  } else {
+    body = (
+      <div data-flow="cart" data-state={summary.canCheckout ? "ready" : "blocked"} className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+          {lines.map((line) => {
+            const price = unitPrice(line);
+            const image = productImage(line.product);
+            return (
+              <li key={line.id} data-line={line.id} className="flex gap-3 p-3 sm:gap-4 sm:p-4">
+                <Link href={`/marketplace/${line.product.id}`} className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-muted sm:h-28 sm:w-28" aria-label={line.product.title}>
+                  {image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={api.mediaUrl(image)} alt="" width={112} height={112} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">No image</span>
+                  )}
+                </Link>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <Link href={`/marketplace/${line.product.id}`} className="line-clamp-2 font-display font-semibold hover:underline">{line.product.title}</Link>
+                  <p className={price == null ? "mt-0.5 text-sm text-warning-ink" : "mt-0.5 text-sm text-muted-foreground"}>{formatLabel(line)}</p>
+                  <p className="mt-1 font-data text-lg font-semibold">
+                    {price == null ? "Price unavailable" : formatMoney(price * line.quantity, line.product.currency)}
+                    {price != null && line.quantity > 1 && <span className="ml-2 text-sm font-normal text-muted-foreground">{formatMoney(price, line.product.currency)} each</span>}
+                  </p>
+                  <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-2">
+                    <div className="inline-flex items-center rounded-full border border-border" role="group" aria-label={`Quantity for ${line.product.title}`}>
+                      <button type="button" aria-label="Decrease quantity" disabled={line.quantity <= 1} onClick={() => setQuantity(line, line.quantity - 1)} className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-muted disabled:opacity-40"><Minus size={16} aria-hidden="true" /></button>
+                      <span className="min-w-8 text-center font-data text-sm font-medium" aria-live="polite">{line.quantity}</span>
+                      <button type="button" aria-label="Increase quantity" disabled={line.quantity >= MAX_QUANTITY} onClick={() => setQuantity(line, line.quantity + 1)} className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-muted disabled:opacity-40"><Plus size={16} aria-hidden="true" /></button>
                     </div>
-
-                    <p className="font-bold w-20 text-right font-data text-foreground">
-                      {purchasePrice(item.product, item.selected_config?.purchase_type) == null ? "—" : formatMoney(purchasePrice(item.product, item.selected_config?.purchase_type)! * item.quantity, item.product.currency)}
-                    </p>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeItem(item.id)}
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 size={16} />
-                    </Button>
+                    <button type="button" onClick={() => remove(line)} className="min-h-11 text-sm font-medium text-muted-foreground underline underline-offset-4 hover:text-destructive" aria-label={`Remove ${line.product.title}`}>Remove</button>
                   </div>
-                </Card>
-              );
-            })}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        <aside aria-label="Price details" className="rounded-xl border border-border bg-card p-5 lg:sticky lg:top-24">
+          <h2 className="mb-4 font-display text-lg font-semibold">Price details</h2>
+          <dl className="space-y-3 text-sm">
+            <div className="flex justify-between"><dt>Price ({summary.itemCount} {summary.itemCount === 1 ? "item" : "items"})</dt><dd className="font-data">{money(summary.subtotal)}</dd></div>
+            {summary.discount > 0 && discount && <div className="flex justify-between text-success-ink"><dt>Coupon {discount.code}</dt><dd className="font-data">−{money(summary.discount)}</dd></div>}
+            <div className="flex justify-between"><dt>Delivery</dt><dd className="text-muted-foreground">Calculated at checkout</dd></div>
+            <div className="flex justify-between border-t border-border pt-3 text-base font-semibold"><dt>Total</dt><dd className="font-data" data-total>{money(summary.total)}</dd></div>
+          </dl>
+
+          <div className="mt-4 border-t border-border pt-4">
+            {couponOpen ? (
+              <form className="space-y-2" onSubmit={(event) => { event.preventDefault(); void applyCoupon(); }}>
+                <label htmlFor="coupon" className="text-sm font-medium">Coupon code</label>
+                <div className="flex gap-2">
+                  <Input id="coupon" value={couponCode} onChange={(event) => setCouponCode(event.target.value)} className="min-h-11 uppercase" autoComplete="off" />
+                  <Button type="submit" variant="outline" className="min-h-11" disabled={applying || !couponCode.trim()}>{applying ? "Applying…" : "Apply"}</Button>
+                </div>
+                {couponError && <p role="alert" className="text-sm text-destructive">{couponError}</p>}
+              </form>
+            ) : (
+              <button type="button" onClick={() => setCouponOpen(true)} className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-primary underline underline-offset-4"><Tag size={16} aria-hidden="true" />Have a coupon?</button>
+            )}
           </div>
 
-          {/* Order Summary */}
-          <Card className="p-6 h-fit sticky top-24 border-border bg-card shadow-sm">
-            <h3 className="font-bold text-xl mb-6 font-display">Order Summary</h3>
+          {summary.issue && <p role="status" className="mt-4 rounded-lg bg-warning-surface p-3 text-sm text-warning-ink">{ISSUE_TEXT[summary.issue]}</p>}
+          <div className="mt-4 hidden lg:block">{checkoutButton}</div>
+        </aside>
+      </div>
+    );
+  }
 
-            <div className="space-y-3 mb-6">
-              <div className="flex justify-between text-muted-foreground font-data text-sm">
-                <span>Subtotal</span>
-                <span>{mixedCurrencies ? "Mixed currencies" : needsFormat ? "Choose formats first" : formatMoney(subtotal, cartCurrency)}</span>
-              </div>
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-success font-data text-sm">
-                  <span>Discount ({discountInfo.code})</span>
-                  <span>−{formatMoney(discountAmount, cartCurrency)}</span>
-                </div>
-              )}
-              <Separator />
-              <div className="flex justify-between text-lg font-bold font-data text-foreground">
-                <span>Total</span>
-                <span>{mixedCurrencies ? "Mixed currencies" : needsFormat ? "Choose formats first" : formatMoney(total, cartCurrency)}</span>
-              </div>
-            </div>
-
-            {/* Coupon */}
-            <div className="mb-6 space-y-2">
-              <label className="text-sm text-muted-foreground font-medium">
-                Have a coupon code?
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  placeholder="Code"
-                  className="uppercase"
-                />
-                <Button variant="outline" onClick={applyCoupon}>
-                  Apply
-                </Button>
-              </div>
-              {couponError && (
-                <p className="text-destructive text-xs">{couponError}</p>
-              )}
-            </div>
-
-            {checkoutBlocked && <p role="status" className="text-sm mb-4">{mixedCurrencies ? "Your cart contains different currencies. Remove legacy USD items to continue with INR checkout." : cartCurrency !== "INR" ? "These legacy USD listings need the creator to reprice them in INR before checkout." : "Some items need a valid format and price. Remove them and choose a format on the product page."}</p>}
-            <Button
-              onClick={handleCheckout}
-              disabled={checkoutBlocked}
-              className="w-full"
-              size="lg"
-            >
-              Proceed to Checkout
-              <ArrowRight size={18} />
-            </Button>
-          </Card>
-        </div>
-      )}
-    </div>
-  );
+  const showBar = ready && !isPending && !isError && lines.length > 0;
 
   return (
     <MarketplaceShell>
-      {isLoading ? (
-        <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 space-y-4">
-          <Skeleton className="h-10 w-48" />
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
+      <div className={`mx-auto max-w-6xl px-4 pt-6 sm:px-6 ${showBar ? "pb-32 lg:pb-16" : "pb-16"}`}>
+        <div className="mb-5 flex items-baseline justify-between gap-4">
+          <h1 className="font-display text-2xl font-semibold sm:text-3xl">
+            Cart{showBar && <span className="ml-2 text-lg font-normal text-muted-foreground">({lines.length})</span>}
+          </h1>
+          {showBar && <Link href="/marketplace" className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4">Continue shopping</Link>}
         </div>
-      ) : (
-        content
+        {body}
+      </div>
+
+      {showBar && (
+        <div data-flow="cart-checkout-bar" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-4 border-t border-border bg-card px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] lg:hidden">
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">Total</p>
+            <p className="font-data text-lg font-semibold leading-tight">{money(summary.total)}</p>
+          </div>
+          <div className="flex-1">{checkoutButton}</div>
+        </div>
       )}
     </MarketplaceShell>
   );

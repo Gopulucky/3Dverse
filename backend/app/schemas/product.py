@@ -146,6 +146,25 @@ class Product(ProductBase):
         from_attributes = True
 
 
+class LineProduct(BaseModel):
+    """The few product fields a cart line or order line needs to display, price
+    and (when paid) offer a download. No file paths, versions or creator rows,
+    so it loads with one batched query for images."""
+    id: int
+    title: str
+    price: float = 0.0
+    base_print_price: Optional[float] = 0.0
+    currency: Literal["INR", "USD"] = "INR"
+    is_mode_2_active: Optional[bool] = False
+    is_mode_3_active: Optional[bool] = False
+    is_mode_4_active: Optional[bool] = False
+    digital_download_enabled: Optional[bool] = False
+    media: List[ProductMedia] = []
+
+    class Config:
+        from_attributes = True
+
+
 class PublicProduct(Product):
     """What anonymous marketplace traffic sees: everything except the paths to
     the paid source files."""

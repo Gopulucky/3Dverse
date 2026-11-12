@@ -1,7 +1,7 @@
 from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer, joinedload, selectinload
 from app.api import deps
 from app.core.rate_limit import rate_limit
 from app.models.user import User
@@ -9,7 +9,8 @@ from app.models.cart import Cart
 from app.models.order import Order, OrderItem
 from app.models.defect_report import DefectReport
 from app.models.return_request import ReturnRequest, ReturnReason, ReturnStatus
-from app.schemas.order import OrderCreate, OrderResponse
+from app.models.product import Product
+from app.schemas.order import CustomerOrderResponse, OrderCreate, OrderResponse
 from app.core.config import settings
 from app.services import payments
 from app.services import returns, stock
@@ -28,26 +29,39 @@ class ReturnRequestCreate(BaseModel):
     reason: ReturnReason
     description: str | None = None
 
-@router.get("/", response_model=List[OrderResponse])
+def _with_lines():
+    """Load items, products and images in three queries for any number of
+    orders, instead of several lazy queries per order."""
+    return selectinload(Order.items).joinedload(OrderItem.product).options(
+        defer(Product.embedding), selectinload(Product.media)
+    )
+
+
+@router.get("/", response_model=List[CustomerOrderResponse])
 def get_orders(
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
-    orders = db.query(Order).filter(Order.customer_id == current_user.id).order_by(Order.created_at.desc()).all()
-    return orders
+    return (
+        db.query(Order)
+        .options(_with_lines())
+        .filter(Order.customer_id == current_user.id)
+        .order_by(Order.created_at.desc(), Order.id.desc())
+        .all()
+    )
 
-@router.get("/{order_id}", response_model=OrderResponse)
+@router.get("/{order_id}", response_model=CustomerOrderResponse)
 def get_order(
     order_id: int,
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
-    order = db.query(Order).filter(Order.id == order_id, Order.customer_id == current_user.id).first()
+    order = db.query(Order).options(_with_lines()).filter(Order.id == order_id, Order.customer_id == current_user.id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
-@router.post("/{order_id}/cancel", response_model=OrderResponse)
+@router.post("/{order_id}/cancel", response_model=CustomerOrderResponse)
 def cancel_order(
     order_id: int,
     db: Session = Depends(deps.get_db),

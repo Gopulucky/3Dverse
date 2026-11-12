@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional, Any
 from datetime import datetime
-from app.schemas.product import Product
+from app.schemas.product import LineProduct, Product
 
 class OrderItemBase(BaseModel):
     product_id: int
@@ -13,6 +13,15 @@ class OrderItemResponse(OrderItemBase):
     id: int
     order_id: int
     product: Optional[Product] = None
+
+    class Config:
+        from_attributes = True
+
+class CustomerOrderItemResponse(OrderItemBase):
+    """What the buyer's own pages need: no source-file paths or version rows."""
+    id: int
+    order_id: int
+    product: Optional[LineProduct] = None
 
     class Config:
         from_attributes = True
@@ -44,6 +53,16 @@ class OrderResponse(OrderBase):
     customer_id: int
     created_at: datetime
     items: List[OrderItemResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class CustomerOrderResponse(OrderBase):
+    id: int
+    customer_id: int
+    created_at: datetime
+    items: List[CustomerOrderItemResponse] = []
 
     class Config:
         from_attributes = True

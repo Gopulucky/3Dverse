@@ -44,6 +44,19 @@ twice. Row and fallback rules live in `src/lib/home-sections.ts`.
 - No creator or print-partner promotion on the home page (see
   `docs/superpowers/specs/2026-11-11-customer-clarity-design.md`).
 
+## Cart and orders
+
+- Cart: item rows (image, title, format, price, quantity stepper, Remove) beside a
+  "Price details" card; on phones the total and Checkout sit in a fixed bottom bar.
+  Totals and blocked states come from `src/lib/cart-summary.ts`.
+- Quantity changes show at once and sync in the background; the navbar badge and the
+  cart page share one `["cart"]` query (`src/lib/use-cart.ts`).
+- Orders: filter chips (All, In progress, Delivered, Cancelled) and one card per order
+  with a plain-language headline from `src/lib/order-view.ts`. Digital-only paid orders
+  read "Ready to download" with no print progress bar.
+- Checked by `node scripts/cart-orders-smoke.mjs` and the query-count tests in
+  `backend/tests/test_cart_orders_queries.py`.
+
 ## Controls
 
 - Browse action: `--store-action` / `--store-action-ink`, 48px high.
