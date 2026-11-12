@@ -61,6 +61,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   hydrate: () => {
     if (typeof window === "undefined") return;
+    // Every page mounts a navbar and a page gate that both call this. Reading the
+    // session once is enough; repeating it re-ran the /users/me check on every
+    // page and twice on first load.
+    if (get().hydrated) return;
     sessionGeneration += 1;
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");

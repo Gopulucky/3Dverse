@@ -1,6 +1,6 @@
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer, joinedload, selectinload
 from app.api import deps
 from app.core.rate_limit import rate_limit
 from app.models.user import User
@@ -20,12 +20,29 @@ def get_or_create_cart(db: Session, user_id: int) -> Cart:
         db.refresh(cart)
     return cart
 
+def load_cart(db: Session, user_id: int) -> Cart:
+    """The cart with its lines, products and images in three queries, however
+    many lines it has. (Each lazy load across regions costs a full round trip.)"""
+    get_or_create_cart(db, user_id)
+    return (
+        db.query(Cart)
+        .filter(Cart.user_id == user_id)
+        .options(
+            selectinload(Cart.items)
+            .joinedload(CartItem.product)
+            .options(defer(Product.embedding), selectinload(Product.media))
+        )
+        .populate_existing()
+        .one()
+    )
+
+
 @router.get("/", response_model=CartResponse)
 def get_cart(
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
-    return get_or_create_cart(db, current_user.id)
+    return load_cart(db, current_user.id)
 
 @router.post("/items", response_model=CartResponse)
 def add_cart_item(
@@ -63,8 +80,7 @@ def add_cart_item(
         db.add(new_item)
 
     db.commit()
-    db.refresh(cart)
-    return cart
+    return load_cart(db, current_user.id)
 
 @router.put("/items/{item_id}", response_model=CartResponse)
 def update_cart_item(
@@ -84,8 +100,7 @@ def update_cart_item(
         item.quantity = item_in.quantity
         
     db.commit()
-    db.refresh(cart)
-    return cart
+    return load_cart(db, current_user.id)
 
 @router.delete("/items/{item_id}", response_model=CartResponse)
 def remove_cart_item(
@@ -100,8 +115,7 @@ def remove_cart_item(
         
     db.delete(item)
     db.commit()
-    db.refresh(cart)
-    return cart
+    return load_cart(db, current_user.id)
 
 @router.post("/apply-coupon", dependencies=[Depends(rate_limit("apply_coupon", limit=15, window_seconds=600))])
 def apply_coupon(

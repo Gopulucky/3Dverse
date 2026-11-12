@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/stores/auth-store";
 import { useCartStore } from "@/stores/cart-store";
+import { useCart } from "@/lib/use-cart";
 import { api } from "@/lib/api";
 import {
   activeSuggestion, categoryItems, initialSearchState, productItems, searchReducer, toSuggestions,
@@ -109,14 +110,11 @@ export function Navbar() {
   // Re-read on pathname change so the seller/designer nav stays in sync
   const { path: creatorPath, links: creatorLinks, topBarLinks } = useCreatorType([pathname]);
 
-  // Fetch cart count
+  // The cart badge reads the same query the cart page uses, so it is one request, not two.
+  const { data: cartData } = useCart(isAuthenticated);
   useEffect(() => {
-    if (isAuthenticated) {
-      api.get<{ items?: unknown[] }>("/api/cart/")
-        .then((cart) => setItemCount(cart?.items?.length || 0))
-        .catch(() => {});
-    }
-  }, [isAuthenticated, setItemCount]);
+    if (cartData) setItemCount(cartData.items?.length || 0);
+  }, [cartData, setItemCount]);
 
   // Scroll handler
   useEffect(() => {
