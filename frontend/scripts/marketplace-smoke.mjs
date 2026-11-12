@@ -96,6 +96,9 @@ try {
   assert.equal(await page.getByRole('heading', { name: 'How shopping works' }).count(), 0);
   assert.equal(await page.getByRole('heading', { name: 'Popular creators' }).count(), 0);
   assert.equal(await page.getByRole('navigation', { name: 'Shop by category' }).getByRole('link', { name: 'Home Decor' }).count(), 1);
+  // Vercel Web Analytics and Speed Insights: same-origin scripts, loaded once and deferred (they 404 off Vercel, harmlessly).
+  const insightScripts = await page.locator('script[src^="/_vercel/"]').evaluateAll(els => els.map(e => e.getAttribute('src')).sort());
+  assert.deepEqual(insightScripts, ['/_vercel/insights/script.js', '/_vercel/speed-insights/script.js'], `analytics scripts present: ${insightScripts}`);
   const lead = await page.evaluate(() => {
     const card = document.querySelector('.storefront .market-product');
     const range = document.createRange();
