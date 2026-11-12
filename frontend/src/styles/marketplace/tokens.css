@@ -30,7 +30,7 @@
 }
 .dark {
   --store-action: var(--color-violet-9);
-  --store-action-ink: #101114;
+  --store-action-ink: #111318;
 }
 /* ================================================================
    Dark mode — a parallel scale, not a per-component override.
@@ -39,25 +39,28 @@
    downstream needs a `dark:` variant.
    ================================================================ */
 .dark {
-  --color-violet-1: #0E101D;  --color-violet-2: #15172B;  --color-violet-3: #1C1E43;
-  --color-violet-4: #212458;  --color-violet-5: #28296B;  --color-violet-6: #30317F;
-  --color-violet-7: #3D3F9D;  --color-violet-8: #5356C9;  --color-violet-9: #6C71FD;
-  --color-violet-10: #7D86FF; --color-violet-11: #A1ADFF; --color-violet-12: #D5DCFF;
+  /* Neel indigo (violet-*) */
+  --color-violet-1: #161821;  --color-violet-2: #1A1D28;  --color-violet-3: #1F2231;
+  --color-violet-4: #23273B;  --color-violet-5: #282D44;  --color-violet-6: #2F344F;
+  --color-violet-7: #383F62;  --color-violet-8: #4A5282;  --color-violet-9: #8C9BFF;
+  --color-violet-10: #9DAAFF; --color-violet-11: #B4BFFF; --color-violet-12: #DDE2FF;
 
-  --color-ember-1: #1B0D08;  --color-ember-2: #27130B;  --color-ember-3: #3C1607;
-  --color-ember-4: #4D1701;  --color-ember-5: #5B1C00;  --color-ember-6: #6B2200;
-  --color-ember-7: #852D00;  --color-ember-8: #AE3D00;  --color-ember-9: #F76421;
-  --color-ember-10: #FF7D4A; --color-ember-11: #FE946C; --color-ember-12: #FFD3C3;
+  /* Terracotta (ember-*) */
+  --color-ember-1: #1A181B;  --color-ember-2: #211B1D;  --color-ember-3: #2A201F;
+  --color-ember-4: #322422;  --color-ember-5: #3B2925;  --color-ember-6: #472F28;
+  --color-ember-7: #58382D;  --color-ember-8: #784836;  --color-ember-9: #F0875A;
+  --color-ember-10: #F59A72; --color-ember-11: #F7A783; --color-ember-12: #FFD9C7;
 
   --color-moss-1: #0A130F;  --color-moss-2: #0E1D16;  --color-moss-3: #0C291D;
   --color-moss-4: #063423;  --color-moss-5: #003E29;  --color-moss-6: #004A32;
   --color-moss-7: #005D3F;  --color-moss-8: #057B55;  --color-moss-9: #21A173;
   --color-moss-10: #38B182; --color-moss-11: #7BC7A4; --color-moss-12: #BFEAD4;
 
-  --color-slate-1: #101114;  --color-slate-2: #17191D;  --color-slate-3: #1F232A;
-  --color-slate-4: #262C35;  --color-slate-5: #2C343F;  --color-slate-6: #353E4B;
-  --color-slate-7: #444F5E;  --color-slate-8: #5B697C;  --color-slate-9: #6E7E96;
-  --color-slate-10: #7D8DA5; --color-slate-11: #A9B5C7; --color-slate-12: #D7DFEA;
+  /* Ink + chalk (slate-*) */
+  --color-slate-1: #111318;  --color-slate-2: #171A20;  --color-slate-3: #1E222A;
+  --color-slate-4: #252A33;  --color-slate-5: #2B313B;  --color-slate-6: #343B47;
+  --color-slate-7: #424A57;  --color-slate-8: #58606F;  --color-slate-9: #6C7484;
+  --color-slate-10: #7B8394; --color-slate-11: #A3AAB8; --color-slate-12: #E6E8EE;
 
   --color-red-1: #1C0C0A;   --color-red-3: #3F120F;   --color-red-6: #750E0F;
   --color-red-9: #E93632;   --color-red-10: #FB4A42;  --color-red-11: #FF9084; --color-red-12: #FFD2CB;

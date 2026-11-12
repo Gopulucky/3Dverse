@@ -16,7 +16,7 @@ export default function Image() {
           flexDirection: "column",
           justifyContent: "center",
           padding: "80px",
-          background: "#101114",
+          background: "#111318",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", marginBottom: 36 }}>
@@ -25,7 +25,7 @@ export default function Image() {
               width: 64,
               height: 64,
               borderRadius: 14,
-              background: "#6C71FD",
+              background: "#8C9BFF",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -33,20 +33,20 @@ export default function Image() {
             }}
           >
             <svg width="34" height="34" viewBox="0 0 32 32" fill="none">
-              <path d="M6 9H26" stroke="white" strokeWidth="2.6" strokeLinecap="round" />
-              <path d="M9 16H23" stroke="white" strokeWidth="2.6" strokeLinecap="round" opacity="0.85" />
-              <path d="M12 23H20" stroke="white" strokeWidth="2.6" strokeLinecap="round" opacity="0.7" />
+              <path d="M6 9H26" stroke="#111318" strokeWidth="2.6" strokeLinecap="round" />
+              <path d="M9 16H23" stroke="#111318" strokeWidth="2.6" strokeLinecap="round" opacity="0.85" />
+              <path d="M12 23H20" stroke="#111318" strokeWidth="2.6" strokeLinecap="round" opacity="0.7" />
             </svg>
           </div>
           <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: "white" }}>
-            <span style={{ color: "#F76421" }}>3D</span>
+            <span style={{ color: "#F0875A" }}>3D</span>
             <span>Verse</span>
           </div>
         </div>
         <div style={{ display: "flex", fontSize: 54, fontWeight: 700, color: "white", maxWidth: 900, lineHeight: 1.1 }}>
           {BRAND.tagline}
         </div>
-        <div style={{ display: "flex", fontSize: 26, color: "#A9B5C7", marginTop: 24 }}>
+        <div style={{ display: "flex", fontSize: 26, color: "#A3AAB8", marginTop: 24 }}>
           {BRAND.positioning}
         </div>
       </div>
