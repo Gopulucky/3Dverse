@@ -22,19 +22,26 @@ def get_or_create_cart(db: Session, user_id: int) -> Cart:
 
 def load_cart(db: Session, user_id: int) -> Cart:
     """The cart with its lines, products and images in three queries, however
-    many lines it has. (Each lazy load across regions costs a full round trip.)"""
-    get_or_create_cart(db, user_id)
-    return (
-        db.query(Cart)
-        .filter(Cart.user_id == user_id)
-        .options(
-            selectinload(Cart.items)
-            .joinedload(CartItem.product)
-            .options(defer(Product.embedding), selectinload(Product.media))
+    many lines it has. (Each lazy load across regions costs a full round trip.)
+    The cart row is read once, with its lines; it is only created if missing."""
+    def fetch() -> Cart | None:
+        return (
+            db.query(Cart)
+            .filter(Cart.user_id == user_id)
+            .options(
+                selectinload(Cart.items)
+                .joinedload(CartItem.product)
+                .options(defer(Product.embedding), selectinload(Product.media))
+            )
+            .populate_existing()
+            .first()
         )
-        .populate_existing()
-        .one()
-    )
+
+    cart = fetch()
+    if cart is None:
+        get_or_create_cart(db, user_id)
+        cart = fetch()
+    return cart
 
 
 @router.get("/", response_model=CartResponse)
