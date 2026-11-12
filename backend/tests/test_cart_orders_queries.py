@@ -20,7 +20,7 @@ from app.models.order import Order, OrderItem
 from app.models.product import PrintabilityReport, Product, ProductMedia, ProductVersion
 from app.models.user import User, UserRole
 
-QUERY_BUDGET = 5  # cart / orders: a handful of batched queries, whatever the size
+QUERY_BUDGET = 4  # user lookup + three batched queries (cart, lines with products, images), whatever the size
 
 
 @pytest.fixture()
