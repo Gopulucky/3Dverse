@@ -14,4 +14,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping health endpoint
-        run: curl --fail --silent --show-error --max-time 60 https://threedverse.onrender.com/health
+        run: curl --fail --silent --show-error --max-time 60 https://threedverse-sg.onrender.com/health
