@@ -42,17 +42,23 @@
    ================================================================ */
 
 @theme inline {
-  /* ---- Violet — primary / customers ---- */
-  --color-violet-1: #FCFCFF;  --color-violet-2: #F8F9FF;  --color-violet-3: #F1F3FF;
-  --color-violet-4: #EAEDFF;  --color-violet-5: #E1E6FF;  --color-violet-6: #D6DCFF;
-  --color-violet-7: #C6CEFF;  --color-violet-8: #ADB8FF;  --color-violet-9: #6366F1;
-  --color-violet-10: #5757E1; --color-violet-11: #5A5FD2; --color-violet-12: #2A2E66;
+  /* Brand palette (60/30/10): Chalk + ink neutrals (slate-*, 60%),
+     Neel indigo (violet-*, 30%: trust, primary actions, links), and
+     Terracotta (ember-*, 10%: Buy now, highlights, creator cues).
+     Token names are kept so call sites don't change. Contrast pairs are
+     pinned by scripts/machines/brand-palette.test.mjs. */
 
-  /* ---- Ember — creators ---- */
-  --color-ember-1: #FFFCFB;  --color-ember-2: #FFF8F6;  --color-ember-3: #FFF1EB;
-  --color-ember-4: #FFE9E1;  --color-ember-5: #FFDFD4;  --color-ember-6: #FFD3C3;
-  --color-ember-7: #FFC1AB;  --color-ember-8: #FFA381;  --color-ember-9: #EA580C;
-  --color-ember-10: #D64D00; --color-ember-11: #BB4405; --color-ember-12: #5B2007;
+  /* ---- Neel indigo (violet-*) — primary / customers ---- */
+  --color-violet-1: #FBFCFE;  --color-violet-2: #F8F8FD;  --color-violet-3: #F1F3FC;
+  --color-violet-4: #EBEDFA;  --color-violet-5: #E4E6F9;  --color-violet-6: #DBDEF7;
+  --color-violet-7: #CCD1F4;  --color-violet-8: #AEB5ED;  --color-violet-9: #2E3A87;
+  --color-violet-10: #27317A; --color-violet-11: #34419A; --color-violet-12: #1A2155;
+
+  /* ---- Terracotta (ember-*) — action accent / creators ---- */
+  --color-ember-1: #FEFCFB;  --color-ember-2: #FEF9F7;  --color-ember-3: #FDF4F0;
+  --color-ember-4: #FCEEE9;  --color-ember-5: #FAE8E1;  --color-ember-6: #F9E0D8;
+  --color-ember-7: #F6D4C8;  --color-ember-8: #F1BAA6;  --color-ember-9: #B4441C;
+  --color-ember-10: #9E3A16; --color-ember-11: #A33D18; --color-ember-12: #55200D;
 
   /* ---- Moss — print partners ---- */
   --color-moss-1: #F9FEFB;  --color-moss-2: #F4FCF8;  --color-moss-3: #E9F9F0;
@@ -60,11 +66,11 @@
   --color-moss-7: #AFDFC7;  --color-moss-8: #8ECEAF;  --color-moss-9: #059669;
   --color-moss-10: #00875E; --color-moss-11: #16805A; --color-moss-12: #0F3F2C;
 
-  /* ---- Slate — neutral, most of the UI ---- */
-  --color-slate-1: #FCFDFE;  --color-slate-2: #F8FAFC;  --color-slate-3: #F1F4F9;
-  --color-slate-4: #EAEEF5;  --color-slate-5: #E2E8F0;  --color-slate-6: #D8DFE9;
-  --color-slate-7: #CAD2DE;  --color-slate-8: #B4BFCE;  --color-slate-9: #64748B;
-  --color-slate-10: #57677E; --color-slate-11: #627083; --color-slate-12: #2F3640;
+  /* ---- Chalk + ink (slate-*) — neutral, most of the UI ---- */
+  --color-slate-1: #FBFAF7;  --color-slate-2: #F6F5F1;  --color-slate-3: #EFEEE9;
+  --color-slate-4: #E8E7E1;  --color-slate-5: #E1E0DA;  --color-slate-6: #D7D6D0;
+  --color-slate-7: #C9C8C2;  --color-slate-8: #B3B3AE;  --color-slate-9: #6A7080;
+  --color-slate-10: #5F6574; --color-slate-11: #5B6270; --color-slate-12: #1F2430;
 
   /* ---- Status — red / amber / green (status only, never decoration) ---- */
   --color-red-1: #FFFCFB;   --color-red-3: #FFF0EE;   --color-red-6: #FFD2CC;

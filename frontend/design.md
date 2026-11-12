@@ -18,9 +18,18 @@ and recorded below. `src/lib/brand.ts` holds the shared identity and copy.
 `src/app/globals.css` defines the light brand scales and semantic aliases.
 `src/styles/marketplace/tokens.css` defines the dark scales and storefront scale.
 
-- Customers: violet, anchored at `#6366F1`.
-- Creators: ember, anchored at `#EA580C`.
-- Print partners: moss, anchored at `#059669`.
+Three brand colours, used 60/30/10. Token names are unchanged (`slate-*`,
+`violet-*`, `ember-*`), only their values; `scripts/machines/brand-palette.test.mjs`
+pins the anchors and WCAG AA pairs.
+
+- 60% Chalk + ink (`slate-*`): page `#FBFAF7`, text `#1F2430`; dark `#111318` / `#E6E8EE`.
+  Calm surfaces so product photos lead.
+- 30% Neel indigo (`violet-*`, `primary`): `#2E3A87`; dark `#8C9BFF` with dark ink.
+  Trust: primary buttons, links, focus. Customers' accent.
+- 10% Terracotta (`ember-*`): `#B4441C`; dark `#F0875A` with dark ink.
+  Action and warmth: Buy now, highlights, the wordmark lead. Creators' accent.
+- Moss (`#059669`) is functional only: success states and the print-partner portal.
+  Never in the logo or marketing.
 - Display: Space Grotesk, 600. Body and controls: IBM Plex Sans.
 - Currency and measurements: IBM Plex Mono with tabular numerals.
 - Font variables belong on `html` so root theme aliases resolve correctly.
