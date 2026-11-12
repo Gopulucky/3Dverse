@@ -6,9 +6,12 @@ const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL || 
 const context = await browser.newContext({ bypassCSP: true, viewport: { width: 1280, height: 900 } });
 const user = { id: 5, email: 'buyer@example.test', role: 'customer' };
 const counts = { cart: 0, me: 0, orders: 0 };
+const imageRequests = [];
+const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', 'base64');
 const calls = [];
 const product = (id, title, over = {}) => ({ id, title, price: 100, base_print_price: 300, currency: 'INR', is_mode_2_active: true, digital_download_enabled: true,
-  is_mode_3_active: true, is_mode_4_active: false, media: [], ...over });
+  is_mode_3_active: true, is_mode_4_active: false,
+  media: [{ id: id, product_id: id, media_type: 'image', is_primary: true, media_url: `/uploads/media/big-${id}.png`, thumb_url: id === 2 ? '/uploads/media/missing-thumb.webp' : `/uploads/media/small-${id}.webp` }], ...over });
 let cart = { id: 1, items: [
   { id: 11, quantity: 2, selected_config: { purchase_type: 'digital' }, product: product(1, 'Wall hook') },
   { id: 12, quantity: 1, selected_config: { purchase_type: 'physical' }, product: product(2, 'Desk stand') },
@@ -26,6 +29,12 @@ await context.addInitScript(u => {
   localStorage.setItem('token', 'qa-only-token');
   localStorage.setItem('user', JSON.stringify(u));
 }, user);
+await context.route('**/uploads/**', route => {
+  const path = new URL(route.request().url()).pathname;
+  imageRequests.push(path);
+  if (path.includes('missing-thumb')) return route.fulfill({ status: 404 });
+  return route.fulfill({ body: PIXEL, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' } });
+});
 await context.route('**/api/**', async route => {
   const request = route.request(), url = new URL(request.url()), path = url.pathname, method = request.method();
   const send = (json, status = 200) => route.fulfill({ json, status, headers: { 'access-control-allow-origin': '*' } });
@@ -58,6 +67,10 @@ try {
   let text = await page.locator('main').innerText();
   assert.ok(text.includes('Cart') && text.includes('(2)'), 'cart heading shows the number of items, like the navbar badge');
   assert.ok(text.includes('Digital file · instant download') && text.includes('Physical print · delivered to you'));
+  await page.waitForFunction(() => [...document.querySelectorAll('[data-line] img')].every(i => i.complete && i.naturalWidth > 0), null, { timeout: 8000 });
+  assert.ok(imageRequests.includes('/uploads/media/small-1.webp'), 'the cart loads the small copy');
+  assert.ok(!imageRequests.includes('/uploads/media/big-1.png'), 'the full-size original is not downloaded for a cart row');
+  assert.ok(imageRequests.includes('/uploads/media/missing-thumb.webp') && imageRequests.includes('/uploads/media/big-2.png'), 'a missing thumbnail falls back to the original');
   const total = page.locator('[data-total]');
   assert.match(await total.innerText(), /500\.00/, '2 x 100 + 300 = 500');
 

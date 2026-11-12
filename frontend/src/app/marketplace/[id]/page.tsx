@@ -25,7 +25,7 @@ import {
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { formatMoney } from "@/lib/currency";
-import { availableFormats, purchasePrice, type PurchaseType } from "@/lib/marketplace";
+import { availableFormats, purchasePrice, thumbOf, type PurchaseType } from "@/lib/marketplace";
 import { ProductPrices } from "@/components/shared/product-prices";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -282,7 +282,7 @@ export default function ProductDetailPage() {
                 {product.media.map((m: any) => (
                   <img
                     key={m.id}
-                    src={api.mediaUrl(m.media_url)}
+                    src={api.mediaUrl(thumbOf(m) || m.media_url)}
                     className="w-16 h-16 object-cover rounded-lg border border-border hover:border-primary/50 transition-colors cursor-pointer"
                     alt="thumbnail"
                     onError={(e) => { e.currentTarget.style.display = "none"; }}
@@ -655,8 +655,10 @@ export default function ProductDetailPage() {
                     <div className="aspect-square bg-muted relative overflow-hidden">
                       {p.media && p.media.length > 0 ? (
                         <img
-                          src={api.mediaUrl(p.media[0].media_url)}
+                          src={api.mediaUrl(thumbOf(p.media[0]) || p.media[0].media_url)}
                           alt={p.title}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (

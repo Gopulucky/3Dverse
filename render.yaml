@@ -1,6 +1,12 @@
+# All services run in Singapore, the Render region closest to the Supabase database
+# (ap-south-1, Mumbai). Every database query is a network round trip, so an API in
+# another continent makes each page slower. The worker, beat and Redis must share
+# the web service's region to reach each other. A service's region cannot be
+# changed in place; moving one means creating it again.
 services:
   - type: web
     name: 3dverse-api
+    region: singapore
     runtime: python
     plan: starter
     rootDir: backend
@@ -75,6 +81,7 @@ services:
 
   - type: worker
     name: 3dverse-celery-worker
+    region: singapore
     runtime: python
     plan: starter
     rootDir: backend
@@ -110,6 +117,7 @@ services:
 
   - type: worker
     name: 3dverse-celery-beat
+    region: singapore
     runtime: python
     plan: starter
     rootDir: backend
@@ -144,5 +152,6 @@ services:
 
   - type: redis
     name: 3dverse-redis
+    region: singapore
     plan: starter
     ipAllowList: []

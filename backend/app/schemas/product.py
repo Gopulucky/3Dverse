@@ -68,6 +68,7 @@ class ProductMedia(ProductMediaBase):
     id: int
     product_id: int
     created_at: datetime
+    thumb_url: Optional[str] = None
 
     class Config:
         from_attributes = True

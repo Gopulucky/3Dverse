@@ -57,6 +57,15 @@ twice. Row and fallback rules live in `src/lib/home-sections.ts`.
 - Checked by `node scripts/cart-orders-smoke.mjs` and the query-count tests in
   `backend/tests/test_cart_orders_queries.py`.
 
+## Images
+
+- Every uploaded product image also gets a 480px WebP copy (`thumb_url`, made in
+  `backend/app/core/images.py`). Cards, the cart, orders, wishlist and creator lists
+  show it through `productThumb` / `ThumbImage`, falling back to the original when the
+  copy is missing (images uploaded before thumbnails) or fails to load.
+- The product page keeps the full-size image. Existing images are filled in with
+  `python -m scripts.backfill_thumbnails` (counts only unless `--apply`).
+
 ## Controls
 
 - Browse action: `--store-action` / `--store-action-ink`, 48px high.

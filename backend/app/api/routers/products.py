@@ -9,7 +9,9 @@ from app.core.dispatch import dispatch_task
 from app.models.user import User, UserRole
 from app.models.product import Product, ProductVersion, ProductMedia, ProductStatus, FulfillmentStatus, SafetyReviewStatus, PrintabilityReport
 from app.schemas.product import ProductCreate, ProductUpdate, Product as ProductSchema, ProductVersionResponse as ProductVersionSchema, ProductMedia as ProductMediaSchema
-from app.core.storage import save_upload_file, InvalidUpload, UploadTooLarge, looks_like_image, safe_extension
+from starlette.concurrency import run_in_threadpool
+from app.core.images import make_thumbnail
+from app.core.storage import save_upload_file, store_bytes, InvalidUpload, UploadTooLarge, looks_like_image, safe_extension
 
 logger = logging.getLogger(__name__)
 
@@ -283,6 +285,19 @@ async def upload_media(
         if not looks_like_image(head):
             raise HTTPException(status_code=400, detail="File content does not match an allowed image format.")
 
+    # A small WebP copy for cards and lists. Best effort: any failure just means
+    # the original is shown instead, never a failed upload.
+    thumb_url = None
+    if media_type == "image":
+        try:
+            thumb = await run_in_threadpool(make_thumbnail, file.file)
+            await file.seek(0)
+            if thumb:
+                thumb_url = await run_in_threadpool(store_bytes, thumb, "media", "webp", "image/webp")
+        except Exception:
+            logger.warning("Thumbnail was not stored for product %s", product_id, exc_info=True)
+            await file.seek(0)
+
     try:
         url, _ = await save_upload_file(
             file, subfolder="media", max_bytes=MAX_MEDIA_UPLOAD_BYTES
@@ -299,6 +314,7 @@ async def upload_media(
     new_media = ProductMedia(
         product_id=product.id,
         media_url=url,
+        thumb_url=thumb_url,
         media_type=media_type,
         is_primary=is_primary
     )

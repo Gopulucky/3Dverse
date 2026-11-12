@@ -1,3 +1,11 @@
+/** `thumb_url` is a small WebP copy for cards; it is missing on images uploaded before thumbnails existed. */
+export interface MediaItem {
+  media_url: string;
+  thumb_url?: string | null;
+  media_type?: string;
+  is_primary?: boolean;
+}
+
 export interface ProductCardData {
   id: number;
   title: string;
@@ -13,7 +21,7 @@ export interface ProductCardData {
   is_mode_2_active?: boolean;
   is_mode_3_active?: boolean;
   is_mode_4_active?: boolean;
-  media?: { media_url: string; media_type?: string; is_primary?: boolean }[];
+  media?: MediaItem[];
   versions?: { is_latest?: boolean; printability_report?: { status: string } | null }[];
 }
 
@@ -42,10 +50,24 @@ export function purchasePrice(product: ProductCardData, format?: string): number
   return amount;
 }
 
-/** Video uploads must not become broken <img> elements in the catalogue. */
-export function productImage(product: ProductCardData): string | undefined {
+function chosenImage(product: ProductCardData): MediaItem | undefined {
+  // Video uploads must not become broken <img> elements in the catalogue.
   const images = product.media?.filter((media) =>
     media.media_type !== "video" && !/\.(mp4|webm|mov)(?:[?#]|$)/i.test(media.media_url)
   );
-  return images?.find((media) => media.is_primary)?.media_url || images?.[0]?.media_url;
+  return images?.find((media) => media.is_primary) || images?.[0];
+}
+
+/** The full-size image, for the product page and sharing. */
+export function productImage(product: ProductCardData): string | undefined {
+  return chosenImage(product)?.media_url;
+}
+
+/** The small copy when there is one, else the original. Use this on cards, the cart and lists. */
+export function thumbOf(media?: MediaItem): string | undefined {
+  return media ? media.thumb_url || media.media_url : undefined;
+}
+
+export function productThumb(product: ProductCardData): string | undefined {
+  return thumbOf(chosenImage(product));
 }
