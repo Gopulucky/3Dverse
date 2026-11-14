@@ -72,9 +72,9 @@
   --color-moss-10: #00875E; --color-moss-11: #16805A; --color-moss-12: #0F3F2C;
 
   /* ---- Cool white + ink (slate-*) — neutral, most of the UI ---- */
-  --color-slate-1: #FFFFFF;  --color-slate-2: #F6F8F9;  --color-slate-3: #EEF2F4;
-  --color-slate-4: #E7ECEF;  --color-slate-5: #E0E7EA;  --color-slate-6: #D6DFE3;
-  --color-slate-7: #C6D1D6;  --color-slate-8: #87949B;  --color-slate-9: #66737A;
+  --color-slate-1: #FFFFFF;  --color-slate-2: #F7F7F7;  --color-slate-3: #F0F0F0;
+  --color-slate-4: #EAEAEA;  --color-slate-5: #E3E3E3;  --color-slate-6: #D9D9D9;
+  --color-slate-7: #C9C9C9;  --color-slate-8: #87949B;  --color-slate-9: #66737A;
   --color-slate-10: #5A666D; --color-slate-11: #4E5A61; --color-slate-12: #12181B;
 
   /* ---- Status — red / amber / green (status only, never decoration).
