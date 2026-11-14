@@ -52,9 +52,21 @@ def test_thumbnail_migration_is_one_additive_nullable_column():
     scripts = script_dir()
     revision = scripts.get_revision("c8a3f1d27e54")
     assert revision.down_revision == PARTNER_REVISION
-    assert scripts.get_heads() == ["c8a3f1d27e54"]
+    assert len(scripts.get_heads()) == 1
     upgrade, downgrade = open(revision.path, encoding="utf8").read().split("def downgrade", 1)
     assert re.search(r"add_column\(\s*['\"]product_media['\"].*thumb_url.*nullable=True", upgrade, re.S)
     assert "drop_column" in downgrade and "thumb_url" in downgrade
     for forbidden in ("drop_table", "alter_column", "op.execute", "drop_column"):
+        assert forbidden not in upgrade, f"upgrade must not use {forbidden}"
+
+
+def test_waitlist_migration_only_adds_a_table_after_thumbnails():
+    scripts = script_dir()
+    revision = scripts.get_revision("d2e8b4c6a913")
+    assert revision.down_revision == "c8a3f1d27e54"
+    assert scripts.get_heads() == ["d2e8b4c6a913"]
+    upgrade, downgrade = open(revision.path, encoding="utf8").read().split("def downgrade", 1)
+    assert re.search(r"create_table\(\s*\"waitlist_signups\"", upgrade)
+    assert "drop_table" in downgrade
+    for forbidden in ("drop_table", "alter_column", "op.execute", "drop_column", "add_column"):
         assert forbidden not in upgrade, f"upgrade must not use {forbidden}"

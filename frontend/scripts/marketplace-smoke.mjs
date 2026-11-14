@@ -32,7 +32,7 @@ async function visit({ state = 'full', authenticated = false, colorScheme = 'lig
   // The production CSP deliberately blocks a cross-port HTTP API on localhost.
   // Bypass it only inside this isolated fixture browser; deployment uses HTTPS.
   const context = await browser.newContext({ reducedMotion: 'reduce', colorScheme, viewport, bypassCSP: true });
-  const current = { state, posts: [], homepageRequests: 0, catalogueRequests: [] };
+  const current = { state, posts: [], waitlist: [], homepageRequests: 0, catalogueRequests: [] };
   if (authenticated) await context.addInitScript(() => {
     localStorage.setItem('token', 'qa-only-token');
     localStorage.setItem('user', JSON.stringify({ id: 99, email: 'qa@example.test', role: 'customer' }));
@@ -47,7 +47,11 @@ async function visit({ state = 'full', authenticated = false, colorScheme = 'lig
       current.homepageRequests++;
       if (current.state === 'error') return send({ detail: 'QA simulated outage' }, 503);
       if (current.state === 'loading') await new Promise(resolve => { current.release = resolve; });
-      return send(current.state === 'empty' ? empty : full);
+      return send(current.state === 'empty' ? empty : current.state === 'printed' ? { ...full, availability: { checkout: true, printed: true } } : full);
+    }
+    if (path.endsWith('/waitlist') && request.method() === 'POST') {
+      current.waitlist.push(request.postDataJSON());
+      return send({ status: 'joined' });
     }
     if (path.endsWith('/suggestions')) return send({ products: [product], categories: ['Home Decor'] });
     if (path.endsWith('/products')) {
@@ -262,6 +266,41 @@ try {
   await visible(failure.page.getByRole('link', { name: 'View Sample bench', exact: true }));
   await failure.context.close();
   checks.push('API outage produces a retry action; retry recovers the catalogue.');
+
+  // Waitlist: shown after the products while printing isn't open; validates, then posts the answers.
+  const signup = await visit();
+  const waitlist = signup.page.locator('[data-flow="waitlist"]');
+  await visible(waitlist);
+  const order = await signup.page.evaluate(() => {
+    const product = document.querySelector('.storefront .market-product');
+    const form = document.querySelector('[data-flow="waitlist"]');
+    return Boolean(product.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  assert.ok(order, 'Waitlist must come after the products');
+  await waitlist.getByRole('button', { name: 'Notify me' }).click();
+  for (const text of ['Enter your email address.', 'Choose what you would buy.', 'Tick the box so we can email you at launch.']) await visible(waitlist.getByText(text));
+  assert.equal(signup.current.waitlist.length, 0);
+  await waitlist.getByRole('textbox', { name: 'Email', exact: true }).fill(' QA@Example.test ');
+  await waitlist.getByLabel('What would you buy first?').selectOption('tabletop');
+  await waitlist.getByRole('radio', { name: '₹499' }).check();
+  await waitlist.getByLabel(/City/).fill('  Pune ');
+  await waitlist.getByRole('checkbox').check();
+  await waitlist.screenshot({ path: `${out}/waitlist.png` });
+  assert.equal(await waitlist.getByText('Enter your email address.').count(), 0, 'Fixed fields drop their error');
+  await waitlist.getByRole('button', { name: 'Notify me' }).click();
+  await signup.page.locator('[data-flow="waitlist"][data-state="joined"]').waitFor();
+  await visible(waitlist.getByText('You’re on the list.'));
+  assert.deepEqual(signup.current.waitlist, [{ email: 'qa@example.test', interest: 'tabletop', price_choice: '499', city: 'Pune', consent: true, source: 'home' }]);
+  await signup.page.setViewportSize({ width: 375, height: 812 });
+  assert.ok(await signup.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Waitlist must not overflow at 375px');
+  await waitlist.screenshot({ path: `${out}/waitlist-joined-mobile.png` });
+  await signup.context.close();
+  const open = await visit({ state: 'printed' });
+  await visible(open.page.getByRole('link', { name: 'View Sample bench', exact: true }));
+  assert.equal(await open.page.locator('[data-flow="waitlist"]').count(), 0);
+  assert.match(await open.page.locator('.home-tile--printed').innerText(), /Delivered in India/);
+  await open.context.close();
+  checks.push('Waitlist: after the products, validates, posts trimmed answers with consent, confirms; hidden once printing is open.');
 
   writeFileSync(`${out}/results.json`, JSON.stringify({ base, checks, passed: checks.length, fixtureBrowserBypassesCSP: true }, null, 2));
   console.log(JSON.stringify({ passed: checks.length, checks }, null, 2));
