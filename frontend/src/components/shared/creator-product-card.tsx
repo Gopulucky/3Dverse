@@ -20,7 +20,7 @@ export function CreatorProductCard({ product }: { product: any }) {
   
   let statusColor = "bg-muted text-muted-foreground";
   if (product.status === "published") statusColor = "bg-success/20 text-success border-success/30";
-  if (product.status === "draft") statusColor = "bg-warning/20 text-warning border-warning/30";
+  if (product.status === "draft") statusColor = "bg-warning/20 text-warning-ink border-warning/30";
   
   return (
     <Card className="flex flex-col md:flex-row gap-4 p-4 border-border bg-card hover-lift transition-all group overflow-hidden">
@@ -42,7 +42,7 @@ export function CreatorProductCard({ product }: { product: any }) {
               {product.title}
             </h3>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1 text-warning font-semibold">
+              <span className="flex items-center gap-1 text-warning-ink font-semibold">
                 <Star size={12} className="fill-current" /> {product.avg_rating ? product.avg_rating.toFixed(1) : "New"}
               </span>
               <span className="text-border">•</span>

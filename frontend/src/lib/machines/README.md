@@ -29,6 +29,7 @@ dispatches around its own `await`s.
 | `model-viewer.ts` | `model-viewer` | `loading`, `ready`, `error` | `components/shared/advanced-3d-viewer.tsx` |
 | `../order-lifecycle.ts` | `order-status` | `awaiting_payment`, `fulfilment`, `completed`, `closed`, `unknown` | `app/orders/page.tsx`, `app/orders/[id]/page.tsx` |
 | (mobile menu) | `mobile-menu` | `open`, `closed` | `components/layout/navbar.tsx` |
+| (day/night switch) | `theme` | `day`, `night` | `components/layout/theme-toggle.tsx` |
 
 ## Waiting on a state (Playwright)
 

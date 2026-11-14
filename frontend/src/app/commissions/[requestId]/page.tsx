@@ -531,7 +531,7 @@ export default function CommissionDetailPage({
                           <CheckCircle size={12} /> Confirmed
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-ember">
+                        <span className="flex items-center gap-1 text-ember-ink">
                           <Clock size={12} /> Pending
                         </span>
                       )}
@@ -543,7 +543,7 @@ export default function CommissionDetailPage({
                           <CheckCircle size={12} /> Confirmed
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-ember">
+                        <span className="flex items-center gap-1 text-ember-ink">
                           <Clock size={12} /> Pending
                         </span>
                       )}

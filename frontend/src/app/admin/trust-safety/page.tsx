@@ -114,7 +114,7 @@ export default function TrustSafetyPage() {
             {
               label: "Awaiting Review",
               value: pending.length,
-              accent: "text-warning",
+              accent: "text-warning-ink",
             },
             {
               label: "Active Risk Flags",
@@ -209,7 +209,7 @@ export default function TrustSafetyPage() {
                   {f.type === "product_defect_rate" ? (
                     <PackageX className="text-destructive shrink-0 mt-0.5" size={18} />
                   ) : (
-                    <AlertTriangle className="text-warning shrink-0 mt-0.5" size={18} />
+                    <AlertTriangle className="text-warning-ink shrink-0 mt-0.5" size={18} />
                   )}
                   <div>
                     <p className="font-semibold text-sm">

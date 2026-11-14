@@ -140,7 +140,7 @@ export default function AdminOrdersPage() {
             {
               label: "Open",
               value: all.filter((o) => ADMIN_OPEN_STATUSES.has(o.status)).length,
-              accent: "text-warning",
+              accent: "text-warning-ink",
             },
             {
               label: "Defects Reported",

@@ -50,7 +50,7 @@ export const CREATOR_PATHS: CreatorPath[] = [
       "Offload overflow to print partners",
     ],
     icon: Factory,
-    accent: "text-ember",
+    accent: "text-ember-ink",
     accentBg: "bg-ember/10",
     canCollaborate: true,
   },

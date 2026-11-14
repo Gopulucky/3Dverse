@@ -22,17 +22,29 @@ Three brand colours, used 60/30/10. Token names are unchanged (`slate-*`,
 `violet-*`, `ember-*`), only their values; `scripts/machines/brand-palette.test.mjs`
 pins the anchors and WCAG AA pairs.
 
-- 60% Chalk + ink (`slate-*`): page `#FBFAF7`, text `#1F2430`; dark `#111318` / `#E6E8EE`.
+- 60% Porcelain + ink (`slate-*`): page `#F7F6F2`, text `#16191D`; dark `#0F1315` / `#E4E9EB`.
   Calm surfaces so product photos lead.
-- 30% Neel indigo (`violet-*`, `primary`): `#2E3A87`; dark `#8C9BFF` with dark ink.
-  Trust: primary buttons, links, focus. Customers' accent.
-- 10% Terracotta (`ember-*`): `#B4441C`; dark `#F0875A` with dark ink.
-  Action and warmth: Buy now, highlights, the wordmark lead. Creators' accent.
+- 30% Deep teal (`violet-*`, `primary`): `#0E5E6F` with white text; dark `#4FC3D4` with dark ink.
+  Trust: primary buttons, Add to cart, links, focus. Customers' accent.
+- 10% Tangerine (`ember-*`): `#FF7A1A`; dark `#FF8A3D`. Always dark ink on it
+  (`text-ember-foreground`). Purchase intent and warmth: Buy now, cart count,
+  applied-filter chips, the wordmark "3D". Creators' accent.
+- Tangerine is a fill, never text: it is ~2.4:1 on Porcelain. Text and solid
+  selected borders use `ember-ink` (`#B04A00`); translucent `ember/NN` tints are decorative.
+- Warning amber is a yellow-ochre (`#C99A06`, ink `#7A5600`), held 15° of hue
+  away from Tangerine so a warning never reads as the brand. Warning text uses `warning-ink`.
 - Moss (`#059669`) is functional only: success states and the print-partner portal.
   Never in the logo or marketing.
+- Input borders (`slate-8`) meet 3:1 non-text contrast on page and card.
+- Day/night: `ThemeToggle` in the navbar (sun in day, moon at night, 44px target,
+  `role="switch"` named "Night mode"). Starts from the OS scheme; a click is stored
+  by next-themes. `dark:` utilities follow the `.dark` class, not the media query.
 - Display: Space Grotesk, 600. Body and controls: IBM Plex Sans.
 - Currency and measurements: IBM Plex Mono with tabular numerals.
 - Font variables belong on `html` so root theme aliases resolve correctly.
+- Fonts are self-hosted in `src/app/fonts` via `next/font/local` (latin + latin-ext, OFL
+  licences alongside); never `next/font/google`, so builds need no network.
+  Regenerate with `scripts/fonts/build_fonts.py`.
 - Container: `--store-container` (90rem), centred, with `--store-gutter`.
 - Column gap below the hero: `--store-gap` (1.5rem).
 - Image radius: `--store-radius` (0.75rem).

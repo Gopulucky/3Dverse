@@ -373,9 +373,9 @@ export default function NewProductPage() {
                 className={cn(
                   "relative border-2 border-dashed rounded-3xl transition-all duration-300 cursor-pointer overflow-hidden",
                   uploadStage !== "idle"
-                    ? "border-ember bg-muted/50 cursor-default"
+                    ? "border-ember-ink bg-muted/50 cursor-default"
                     : dragActive
-                    ? "border-ember bg-ember/5 scale-[1.01] shadow-[0_0_0_4px_rgba(234,88,12,0.1)]"
+                    ? "border-ember-ink bg-ember/5 scale-[1.01] shadow-[0_0_0_4px_rgba(234,88,12,0.1)]"
                     : file
                     ? "border-success/60 bg-success/5"
                     : "border-border hover:border-ember/50 hover:bg-muted/30 group"
@@ -400,7 +400,7 @@ export default function NewProductPage() {
                   {uploadStage !== "idle" ? (
                     <div className="space-y-6 max-w-sm mx-auto">
                       <div className="flex items-center justify-between font-bold font-display text-lg">
-                        <span className="capitalize text-ember">
+                        <span className="capitalize text-ember-ink">
                           {UPLOAD_LABEL[uploadStage]}
                         </span>
                         <span>{uploadPercent}%</span>
@@ -411,7 +411,7 @@ export default function NewProductPage() {
                           style={{ width: `${uploadPercent}%` }}
                         />
                       </div>
-                      <div className="flex justify-center text-ember">
+                      <div className="flex justify-center text-ember-ink">
                         {uploadStage === "ready" ? (
                           <CheckCircle2 size={40} className="text-success" />
                         ) : (
@@ -440,7 +440,7 @@ export default function NewProductPage() {
                         className={cn(
                           "w-20 h-20 rounded-3xl flex items-center justify-center mx-auto border-2 transition-all duration-300",
                           dragActive
-                            ? "border-ember bg-ember/10 scale-110"
+                            ? "border-ember-ink bg-ember/10 scale-110"
                             : "border-dashed border-border group-hover:border-ember/50 group-hover:bg-ember/5"
                         )}
                       >
@@ -449,8 +449,8 @@ export default function NewProductPage() {
                           className={cn(
                             "transition-colors duration-300",
                             dragActive
-                              ? "text-ember"
-                              : "text-muted-foreground/50 group-hover:text-ember/60"
+                              ? "text-ember-ink"
+                              : "text-muted-foreground/50 group-hover:text-ember-ink/60"
                           )}
                         />
                       </div>
@@ -460,7 +460,7 @@ export default function NewProductPage() {
                         </p>
                         <p className="text-muted-foreground mt-1">
                           or{" "}
-                          <span className="text-ember font-semibold underline underline-offset-2">
+                          <span className="text-ember-ink font-semibold underline underline-offset-2">
                             click to browse
                           </span>
                         </p>

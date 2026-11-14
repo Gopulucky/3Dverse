@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { preconnect } from "react-dom";
@@ -10,28 +10,35 @@ import { API_URL } from "@/lib/api";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://3dverse.com";
 
-// Display — headlines, hero numbers, section titles
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
+// Brand fonts are self-hosted (latin + latin-ext, which includes ₹) so the
+// build never depends on Google Fonts. Files and OFL licences live in
+// ./fonts; regenerate with scripts/fonts/build_fonts.py.
+
+// Display — headlines, hero numbers, section titles (variable 500–700)
+const spaceGrotesk = localFont({
+  src: [{ path: "./fonts/SpaceGrotesk-500-700.woff2", weight: "500 700", style: "normal" }],
   variable: "--font-space-grotesk",
   display: "swap",
-  weight: ["500", "600", "700"],
+  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
 });
 
-// Body — paragraphs, UI labels, buttons, nav
-const ibmPlexSans = IBM_Plex_Sans({
-  subsets: ["latin"],
+// Body — paragraphs, UI labels, buttons, nav (variable 400–700)
+const ibmPlexSans = localFont({
+  src: [{ path: "./fonts/IBMPlexSans-400-700.woff2", weight: "400 700", style: "normal" }],
   variable: "--font-ibm-plex-sans",
   display: "swap",
-  weight: ["400", "500", "600", "700"],
+  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
 });
 
 // Utility / data — prices, dimensions, order IDs, job IDs
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
+const ibmPlexMono = localFont({
+  src: [
+    { path: "./fonts/IBMPlexMono-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/IBMPlexMono-500.woff2", weight: "500", style: "normal" },
+  ],
   variable: "--font-ibm-plex-mono",
   display: "swap",
-  weight: ["400", "500"],
+  fallback: ["ui-monospace", "monospace"],
   // Only prices/IDs use it; don't spend first-paint bandwidth preloading it.
   preload: false,
 });

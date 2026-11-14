@@ -163,7 +163,9 @@ try {
       tileTop: document.querySelector('.home-tiles').getBoundingClientRect().top,
       card: document.querySelector('.storefront .market-product').getBoundingClientRect().top,
       h1: document.querySelector('h1').getBoundingClientRect().bottom,
-      font: getComputedStyle(document.querySelector('h1')).fontFamily }));
+      font: getComputedStyle(document.querySelector('h1')).fontFamily,
+      // Self-hosted brand faces: the heading's first family is a loaded local font file.
+      brandLoaded: [...document.fonts].some(f => f.status === 'loaded' && getComputedStyle(document.querySelector('h1')).fontFamily.split(',')[0].replace(/["']/g, '').trim() === f.family.replace(/["']/g, '')) }));
     assert.ok(metrics.page <= width, `Horizontal overflow at ${width}: ${JSON.stringify(metrics)}`);
     assert.ok(metrics.tileTop >= 64 && metrics.h1 < height, `Home heading or tiles off screen at ${width}`);
     assert.ok(metrics.card < height, `First product is not on the first screen at ${width}x${height}: ${metrics.card}px`);
@@ -176,7 +178,8 @@ try {
     });
     if (width > 768) assert.equal(rows.lines, 1, `First row wraps to ${rows.lines} lines at ${width}px (${rows.count} cards)`);
     assert.ok(rows.railRight >= rows.containerRight - 24, `Trending stops short of the right edge at ${width}px: ${JSON.stringify(rows)}`);
-    assert.match(metrics.font, /Space_Grotesk|Space Grotesk/);
+    assert.match(metrics.font, /space_?grotesk|space grotesk/i);
+    assert.ok(metrics.brandLoaded, `brand display font not loaded: ${metrics.font}`);
     await page.screenshot({path:`${out}/fixture-home-${width}.png`, fullPage: width === 375 || width === 1440});
   }
   checks.push('320/375/768/1280/1440/1920px: no page overflow; heading, format tiles and the first product on the first screen; brand font loaded.');
@@ -197,6 +200,29 @@ try {
   checks.push('Mobile menu focuses search, closes on Escape and restores focus; mobile search navigates with the query.');
   await context.close();
   assert.deepEqual(errors, []);
+
+  {
+    // Day/night switch: starts from the system scheme, flips the class, survives a reload.
+    const t = await visit({ colorScheme: 'light' });
+    const toggle = t.page.locator('[data-flow="theme"]');
+    await visible(toggle);
+    assert.equal(await toggle.getAttribute('data-state'), 'day');
+    assert.equal(await t.page.getByRole('switch', { name: 'Night mode' }).getAttribute('aria-checked'), 'false');
+    const box = await toggle.boundingBox();
+    assert.ok(box.width >= 44 && box.height >= 44, `theme switch target ${box.width}x${box.height}`);
+    await toggle.click();
+    await t.page.locator('html.dark').waitFor();
+    assert.equal(await toggle.getAttribute('data-state'), 'night');
+    assert.equal(await toggle.getAttribute('aria-checked'), 'true');
+    await t.page.reload();
+    await t.page.locator('html.dark').waitFor();
+    await t.page.locator('[data-flow="theme"][data-state="night"]').waitFor();
+    await t.page.locator('[data-flow="theme"]').click();
+    await t.page.locator('html:not(.dark)').waitFor();
+    assert.equal(await t.page.locator('[data-flow="theme"]').getAttribute('data-state'), 'day');
+    checks.push('Day/night switch: starts from the system scheme, toggles the dark class, persists across reload, 44px target.');
+    await t.context.close();
+  }
 
   for (const scheme of ['light', 'dark']) {
     const v = await visit({ colorScheme: scheme });

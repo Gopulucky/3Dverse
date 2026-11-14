@@ -55,7 +55,7 @@ export function AIInsightsPanel({ insights = mockInsights }: { insights?: Insigh
           if (insight.type === "positive") {
             iconColor = "text-success";
           } else if (insight.type === "warning") {
-            iconColor = "text-warning";
+            iconColor = "text-warning-ink";
           }
           
           return (

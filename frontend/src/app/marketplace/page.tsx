@@ -128,7 +128,7 @@ function MarketplaceContent() {
       </div>}
       {chips.length > 0 && <div role="group" aria-label="Applied filters" className="mb-3 flex flex-wrap gap-2">
         {chips.map(chip => <button key={chip.key} type="button" aria-label={`Remove filter: ${chip.label}`} onClick={() => go(chip.clear)}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 text-sm font-medium hover:border-foreground">{chip.label}<X size={14} aria-hidden="true" /></button>)}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-ember-ink/30 bg-ember-surface px-3 text-sm font-medium text-ember-ink hover:border-ember-ink">{chip.label}<X size={14} aria-hidden="true" /></button>)}
       </div>}
       <div className="flex flex-col md:flex-row gap-8">
         <aside id="catalogue-filters" className={cn("md:w-64 shrink-0 md:sticky md:top-20 md:self-start md:max-h-[calc(100vh-6rem)] md:overflow-y-auto md:rounded-lg md:border md:border-border md:bg-card md:p-4", filtersOpen ? "fixed inset-x-0 bottom-0 top-16 z-40 overflow-y-auto bg-background p-4 md:static md:z-auto md:overflow-visible md:p-0" : "hidden md:block")}>

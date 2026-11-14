@@ -85,7 +85,8 @@ try {
   assert.deepEqual(calls.find(c => c[0]==='PUT capabilities')[1],{items:[{technology:'fdm',material:'PLA'}]});
   assert.equal(await toggle.isDisabled(),false);
   await toggle.click();
-  await page.waitForFunction(() => document.querySelector('[role="switch"]')?.getAttribute('aria-checked') === 'true');
+  // Target this switch by name: the navbar also has a day/night role="switch".
+  await page.locator('[role="switch"][aria-label="Accepting work"][aria-checked="true"]').waitFor();
   assert.deepEqual(calls.find(c => c[0]==='PATCH availability')[1],{accepting_work:true});
 
   // Inbox: grouped, readable labels, next actions.

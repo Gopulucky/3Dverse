@@ -264,10 +264,10 @@ export default function ProductDetailPage({
 
         {product.safety_review_status === "pending" && product.status !== "published" && (
           <div className="mb-8 p-4 bg-ember/10 border border-ember/20 rounded-xl flex items-start gap-3">
-            <AlertTriangle className="text-ember mt-0.5" size={20} />
+            <AlertTriangle className="text-ember-ink mt-0.5" size={20} />
             <div>
-              <h3 className="font-semibold text-ember">Awaiting Safety Review</h3>
-              <p className="text-sm text-ember/80 mt-1">
+              <h3 className="font-semibold text-ember-ink">Awaiting Safety Review</h3>
+              <p className="text-sm text-ember-ink/80 mt-1">
                 Every new listing is screened for restricted or dangerous printable items before it can go
                 live. This is usually quick — you&apos;ll be able to publish as soon as it clears.
               </p>
@@ -282,10 +282,10 @@ export default function ProductDetailPage({
           (product.media?.length ?? 0) === 0 &&
           product.status !== "published" && (
             <div className="mb-8 p-4 bg-ember/10 border border-ember/20 rounded-xl flex items-start gap-3">
-              <AlertTriangle className="text-ember mt-0.5" size={20} />
+              <AlertTriangle className="text-ember-ink mt-0.5" size={20} />
               <div>
-                <h3 className="font-semibold text-ember">Add a photo before publishing</h3>
-                <p className="text-sm text-ember/80 mt-1">
+                <h3 className="font-semibold text-ember-ink">Add a photo before publishing</h3>
+                <p className="text-sm text-ember-ink/80 mt-1">
                   Buyers browse by photos of the finished print, not the model file. Upload at
                   least one image below to publish this listing.
                 </p>
@@ -339,7 +339,7 @@ export default function ProductDetailPage({
             <Card className="p-6 border-border bg-card shadow-sm">
               <div className="flex justify-between items-center mb-5">
                 <h2 className="text-lg font-bold font-display">Media Hub</h2>
-                <label className="cursor-pointer text-sm font-semibold text-ember hover:underline flex items-center gap-1.5">
+                <label className="cursor-pointer text-sm font-semibold text-ember-ink hover:underline flex items-center gap-1.5">
                   <ImageIcon size={16} />
                   Add Images
                   <input
@@ -598,7 +598,7 @@ export default function ProductDetailPage({
                 <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Geometry Files</h2>
               </div>
               
-              <label className="cursor-pointer flex items-center justify-center gap-2 rounded-lg text-sm font-semibold w-full py-2.5 bg-ember/5 text-ember border border-dashed border-ember/30 hover:border-ember/60 hover:bg-ember/10 transition-all mb-4">
+              <label className="cursor-pointer flex items-center justify-center gap-2 rounded-lg text-sm font-semibold w-full py-2.5 bg-ember/5 text-ember-ink border border-dashed border-ember/30 hover:border-ember/60 hover:bg-ember/10 transition-all mb-4">
                 {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                 {uploading ? "Uploading..." : "Upload New STL"}
                 <input type="file" className="hidden" accept=".stl,.obj,.3mf,.step,.fbx,.blend" onChange={(e) => handleFileUpload(e, "model")} disabled={uploading} />

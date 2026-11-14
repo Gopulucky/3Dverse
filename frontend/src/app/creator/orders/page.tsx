@@ -61,7 +61,7 @@ export default function CreatorOrdersPage() {
       <div className="max-w-6xl mx-auto px-6 pt-24 pb-20">
         <div className="mb-8">
           <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-            <ClipboardList className="text-ember" />
+            <ClipboardList className="text-ember-ink" />
             Orders
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
@@ -79,7 +79,7 @@ export default function CreatorOrdersPage() {
               className={cn(
                 "px-4 py-1.5 rounded-full text-sm font-semibold border transition-all",
                 status === f.value
-                  ? "bg-ember-surface text-ember-ink border-ember"
+                  ? "bg-ember-surface text-ember-ink border-ember-ink"
                   : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-ember/40"
               )}
             >

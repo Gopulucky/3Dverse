@@ -102,7 +102,7 @@ export default function CreatorDashboardPage() {
               which features you get.
             </p>
             <p className="text-sm text-muted-foreground max-w-2xl mx-auto mt-4 flex items-center justify-center gap-2">
-              <Lock size={14} className="text-ember" />
+              <Lock size={14} className="text-ember-ink" />
               <span>
                 This choice is <strong className="text-foreground">permanent</strong>. To
                 switch later you'd have to delete your account and start again.
@@ -118,7 +118,7 @@ export default function CreatorDashboardPage() {
                   key={p.type}
                   className={cn(
                     "p-8 border-border bg-card transition-all flex flex-col text-center group",
-                    isConfirming ? "border-ember" : "hover:border-primary/50"
+                    isConfirming ? "border-ember-ink" : "hover:border-primary/50"
                   )}
                 >
                   <div
@@ -153,7 +153,7 @@ export default function CreatorDashboardPage() {
 
                   {isConfirming ? (
                     <div className="mt-auto space-y-2">
-                      <p className="text-xs text-ember font-semibold">
+                      <p className="text-xs text-ember-ink font-semibold">
                         Lock in {p.label} permanently?
                       </p>
                       <div className="flex gap-2">

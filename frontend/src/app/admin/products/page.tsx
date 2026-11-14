@@ -152,7 +152,7 @@ export default function AdminProductsPage() {
             {
               label: "Needs Safety Review",
               value: all.filter((p) => p.safety_review_status === "pending").length,
-              accent: "text-warning",
+              accent: "text-warning-ink",
             },
           ]}
         />
