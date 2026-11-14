@@ -37,7 +37,7 @@ const PORTAL_SETTINGS = [
     label: "Creator Settings",
     description: "Business identity and specializations",
     icon: Palette,
-    iconClass: "text-ember",
+    iconClass: "text-ember-ink",
   },
   {
     href: "/partner/settings",

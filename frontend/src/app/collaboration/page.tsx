@@ -191,7 +191,7 @@ export default function CollaborationPage() {
               <div key={partner.id} className="bg-card border border-border rounded-2xl p-6 hover:border-moss/40 transition-all hover:shadow-2xl hover:shadow-moss/10 flex flex-col">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-bold text-foreground">{partner.name}</h3>
-                  {partner.cost_tier ? <div className="flex text-warning text-sm">{Array(partner.cost_tier).fill('⭐').join('')}</div> : null}
+                  {partner.cost_tier ? <div className="flex text-warning-ink text-sm">{Array(partner.cost_tier).fill('⭐').join('')}</div> : null}
                 </div>
                 
                 <div className="text-muted-foreground text-sm mb-4 flex items-center gap-1">

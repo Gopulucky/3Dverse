@@ -107,7 +107,7 @@ export default function AdminReturnsPage() {
             {
               label: "Awaiting Review",
               value: all.filter((r) => r.status === "requested").length,
-              accent: "text-warning",
+              accent: "text-warning-ink",
             },
             {
               label: "Refunded",

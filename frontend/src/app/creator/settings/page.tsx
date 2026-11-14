@@ -127,9 +127,9 @@ export default function CreatorSettingsPage() {
   }
 
   const TIER_COLORS: Record<string, string> = {
-    bronze: "text-warning",
+    bronze: "text-warning-ink",
     silver: "text-muted-foreground",
-    gold: "text-warning",
+    gold: "text-warning-ink",
     platinum: "text-primary",
   };
 
@@ -138,7 +138,7 @@ export default function CreatorSettingsPage() {
       <div className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-            <Settings className="text-ember" />
+            <Settings className="text-ember-ink" />
             Creator Settings
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
@@ -324,7 +324,7 @@ export default function CreatorSettingsPage() {
                   onClick={() => toggleSpec(spec)}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                     isSelected
-                      ? "bg-ember/15 border-ember text-ember"
+                      ? "bg-ember/15 border-ember-ink text-ember-ink"
                       : "border-border text-muted-foreground hover:border-ember/30"
                   }`}
                 >

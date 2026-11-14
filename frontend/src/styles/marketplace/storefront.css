@@ -65,6 +65,8 @@
 .home-tile small { display: block; margin-top: 0.25rem; font-size: var(--store-body); }
 .home-tile--printed { background: var(--store-action); color: var(--store-action-ink); }
 .home-tile--printed:hover { opacity: 0.92; }
+/* Dark: bright teal-9 suits buttons but glares across a full tile; use the deep step. */
+.dark .home-tile--printed { background: var(--color-violet-8); color: var(--color-slate-12); }
 .home-tile--digital { background: var(--color-slate-2); border: 1px solid var(--color-border); }
 .home-tile--digital small { color: var(--color-muted-foreground); }
 .home-tile--digital:hover { border-color: var(--color-primary-ink); }

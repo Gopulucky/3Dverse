@@ -23,7 +23,7 @@ export function PrinterCard({ printer }: { printer: PrinterData }) {
     statusBg = "bg-muted";
     Icon = Printer;
   } else if (isMaintenance) {
-    statusColor = "text-warning";
+    statusColor = "text-warning-ink";
     statusBg = "bg-warning/20";
     Icon = AlertTriangle;
   }

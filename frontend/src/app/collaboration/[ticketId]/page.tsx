@@ -361,7 +361,7 @@ export default function TicketChatPage({ params }: { params: Promise<{ ticketId:
                           {agreement.creator_confirmed ? (
                             <span className="flex items-center gap-1 text-success font-semibold"><CheckCircle className="w-4 h-4"/> Ready</span>
                           ) : (
-                            <span className="flex items-center gap-1 text-warning font-semibold"><Clock className="w-4 h-4"/> Pending</span>
+                            <span className="flex items-center gap-1 text-warning-ink font-semibold"><Clock className="w-4 h-4"/> Pending</span>
                           )}
                         </div>
                         <div className="flex items-center justify-between text-sm">
@@ -369,7 +369,7 @@ export default function TicketChatPage({ params }: { params: Promise<{ ticketId:
                           {agreement.partner_confirmed ? (
                             <span className="flex items-center gap-1 text-success font-semibold"><CheckCircle className="w-4 h-4"/> Ready</span>
                           ) : (
-                            <span className="flex items-center gap-1 text-warning font-semibold"><Clock className="w-4 h-4"/> Pending</span>
+                            <span className="flex items-center gap-1 text-warning-ink font-semibold"><Clock className="w-4 h-4"/> Pending</span>
                           )}
                         </div>
                       </div>

@@ -90,7 +90,7 @@ export default function SelfFulfillingDashboard() {
           <div className="text-sm font-semibold text-muted-foreground mb-2 flex items-center justify-between">
             Revenue
             <div className="p-2 bg-ember/10 rounded-lg group-hover:bg-ember/20 transition-colors">
-              <DollarSign size={16} className="text-ember" />
+              <DollarSign size={16} className="text-ember-ink" />
             </div>
           </div>
           <p className="text-3xl font-bold font-display text-foreground">
@@ -120,14 +120,14 @@ export default function SelfFulfillingDashboard() {
           <div className="text-sm font-semibold text-muted-foreground mb-2 flex items-center justify-between">
             Models
             <div className="p-2 bg-warning/10 rounded-lg group-hover:bg-warning/20 transition-colors">
-              <Package size={16} className="text-warning" />
+              <Package size={16} className="text-warning-ink" />
             </div>
           </div>
           <p className="text-3xl font-bold font-display text-foreground">
             {data?.published_count || 0}
           </p>
           <p className="text-xs text-muted-foreground flex items-center mt-2 font-medium">
-            <span className="text-warning mr-1">{data?.draft_count || 0}</span> in drafts
+            <span className="text-warning-ink mr-1">{data?.draft_count || 0}</span> in drafts
           </p>
         </div>
 
@@ -135,7 +135,7 @@ export default function SelfFulfillingDashboard() {
           <div className="text-sm font-semibold text-muted-foreground mb-2 flex items-center justify-between">
             Views
             <div className="p-2 bg-ember/10 rounded-lg group-hover:bg-ember/20 transition-colors">
-              <Eye size={16} className="text-ember" />
+              <Eye size={16} className="text-ember-ink" />
             </div>
           </div>
           <p className="text-3xl font-bold font-display text-foreground">
@@ -151,7 +151,7 @@ export default function SelfFulfillingDashboard() {
         <div className="lg:col-span-2 border border-border rounded-2xl bg-card hover-lift transition-all flex flex-col">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
             <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-              <BarChart3 size={14} className="text-ember" /> Net Revenue Over Time
+              <BarChart3 size={14} className="text-ember-ink" /> Net Revenue Over Time
             </h2>
           </div>
           <div className="px-5 py-6 flex-1">

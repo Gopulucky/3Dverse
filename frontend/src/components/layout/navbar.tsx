@@ -19,6 +19,7 @@ import {
   Tag,
   Wand2,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 import { cn } from "@/lib/utils";
 import { useCreatorType } from "@/lib/creator-nav";
@@ -199,7 +200,7 @@ export function Navbar() {
       label: "Creator Studio",
       description: "Sell your designs",
       icon: Palette,
-      iconClass: "text-ember",
+      iconClass: "text-ember-ink",
       active: isCreator,
       allowed: user?.role === "creator" || user?.role === "admin",
     },
@@ -242,7 +243,7 @@ export function Navbar() {
   // only). Creator studio further refines by sub-path (studio/seller/
   // designer) via creatorPath — fall back to ember when that isn't known yet.
   const accentClass = isCreator
-    ? creatorPath?.accent || "text-ember"
+    ? creatorPath?.accent || "text-ember-ink"
     : isPartner
     ? "text-moss"
     : isAdmin
@@ -438,7 +439,7 @@ export function Navbar() {
                       className={cn(
                         "flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-colors whitespace-nowrap",
                         isActive
-                          ? cn(creatorPath?.accentBg || "bg-ember/10", creatorPath?.accent || "text-ember")
+                          ? cn(creatorPath?.accentBg || "bg-ember/10", creatorPath?.accent || "text-ember-ink")
                           : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >
@@ -466,13 +467,16 @@ export function Navbar() {
                 </Link>
               )}
 
+              {/* Day/night switch (every portal, every breakpoint) */}
+              <ThemeToggle />
+
               {/* Cart (marketplace only) */}
               {isMarketplace && (
                 <Link href="/cart" aria-label={`Cart${itemCount ? `, ${itemCount} ${itemCount === 1 ? "item" : "items"}` : ""}`} className="relative flex items-center justify-center gap-2 min-h-11 min-w-11 rounded-md px-2 hover:bg-muted transition-colors">
                   <div className="relative">
                     <ShoppingCart size={24} />
                     {itemCount > 0 && (
-                      <span className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                      <span className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center rounded-full bg-ember text-xs font-medium text-ember-foreground">
                         {itemCount}
                       </span>
                     )}

@@ -33,7 +33,7 @@ const AUDIENCE_ICON = {
 } as const;
 
 const AUDIENCE_ACCENT = {
-  creators: { text: "text-ember", bg: "bg-ember/10", border: "border-ember/20" },
+  creators: { text: "text-ember-ink", bg: "bg-ember/10", border: "border-ember/20" },
   customers: { text: "text-primary", bg: "bg-primary/10", border: "border-primary/20" },
   partners: { text: "text-moss", bg: "bg-moss/10", border: "border-moss/20" },
 } as const;

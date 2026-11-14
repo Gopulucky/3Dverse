@@ -111,7 +111,7 @@ export default function DesignerOnlyDashboard() {
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
             Est. Payout
           </p>
-          <p className="text-3xl font-bold font-data text-ember">${data?.estimated_payout ? (data.estimated_payout * 0.15).toFixed(2) : "0.00"}</p>
+          <p className="text-3xl font-bold font-data text-ember-ink">${data?.estimated_payout ? (data.estimated_payout * 0.15).toFixed(2) : "0.00"}</p>
         </div>
       </div>
 
@@ -119,7 +119,7 @@ export default function DesignerOnlyDashboard() {
       <div className="border border-border rounded-sm bg-card mb-6">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-            <BarChart3 size={14} className="text-ember" /> Royalties Over Time
+            <BarChart3 size={14} className="text-ember-ink" /> Royalties Over Time
           </h2>
         </div>
         <div className="px-4 py-6">
@@ -172,7 +172,7 @@ export default function DesignerOnlyDashboard() {
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Clock size={14} className="text-warning" />
+                <Clock size={14} className="text-warning-ink" />
                 <span className="text-sm text-foreground">Drafts</span>
               </div>
               <span className="text-sm font-bold font-data">{data?.draft_count ?? 0}</span>
@@ -193,7 +193,7 @@ export default function DesignerOnlyDashboard() {
         <div className="lg:col-span-2 border border-border rounded-sm bg-card">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-              <Star size={14} className="text-ember" /> Top Performing Designs
+              <Star size={14} className="text-ember-ink" /> Top Performing Designs
             </h2>
           </div>
           {data?.top_products?.length ? (

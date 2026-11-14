@@ -7,6 +7,9 @@
 /* Hallmark · dropped onMouseDown={() => { setSearchCategory(cat); · Category selection now uses click and preserves the same destination. */
 /* Hallmark · dropped onMouseDown={() => { setShowSuggestions(false); · Product selection now uses click and preserves the same destination. */
 @import "tailwindcss";
+/* `dark:` follows the `.dark` class next-themes sets (system default or the
+   day/night switch), not the OS media query, so a manual choice wins. */
+@custom-variant dark (&:where(.dark, .dark *));
 @import "../styles/marketplace/tokens.css";
 @import "../styles/marketplace/base.css";
 @import "../styles/marketplace/storefront.css";
@@ -22,12 +25,14 @@
   --surface-popover: #FFFFFF;
   --on-solid-primary: #FFFFFF;
   --on-solid-destructive: #FFFFFF;
+  --on-solid-ember: var(--color-slate-12);
 }
 .dark {
   --surface-card: var(--color-slate-2);
   --surface-popover: var(--color-slate-2);
   --on-solid-primary: var(--color-slate-1);
   --on-solid-destructive: var(--color-slate-1);
+  --on-solid-ember: var(--color-slate-1);
 }
 
 /* ================================================================
@@ -42,23 +47,23 @@
    ================================================================ */
 
 @theme inline {
-  /* Brand palette (60/30/10): Chalk + ink neutrals (slate-*, 60%),
-     Neel indigo (violet-*, 30%: trust, primary actions, links), and
-     Terracotta (ember-*, 10%: Buy now, highlights, creator cues).
+  /* Brand palette (60/30/10): Porcelain + ink neutrals (slate-*, 60%),
+     Deep teal (violet-*, 30%: trust, primary actions, links), and
+     Tangerine (ember-*, 10%: Buy now, cart count, creator cues).
      Token names are kept so call sites don't change. Contrast pairs are
      pinned by scripts/machines/brand-palette.test.mjs. */
 
-  /* ---- Neel indigo (violet-*) — primary / customers ---- */
-  --color-violet-1: #FBFCFE;  --color-violet-2: #F8F8FD;  --color-violet-3: #F1F3FC;
-  --color-violet-4: #EBEDFA;  --color-violet-5: #E4E6F9;  --color-violet-6: #DBDEF7;
-  --color-violet-7: #CCD1F4;  --color-violet-8: #AEB5ED;  --color-violet-9: #2E3A87;
-  --color-violet-10: #27317A; --color-violet-11: #34419A; --color-violet-12: #1A2155;
+  /* ---- Deep teal (violet-*) — primary / customers ---- */
+  --color-violet-1: #FAFCFC;  --color-violet-2: #F4F9F9;  --color-violet-3: #E8F2F3;
+  --color-violet-4: #DCECEE;  --color-violet-5: #CFE4E7;  --color-violet-6: #BFDADF;
+  --color-violet-7: #A8CCD3;  --color-violet-8: #84B6C0;  --color-violet-9: #0E5E6F;
+  --color-violet-10: #0A5060; --color-violet-11: #12687A; --color-violet-12: #08323B;
 
-  /* ---- Terracotta (ember-*) — action accent / creators ---- */
-  --color-ember-1: #FEFCFB;  --color-ember-2: #FEF9F7;  --color-ember-3: #FDF4F0;
-  --color-ember-4: #FCEEE9;  --color-ember-5: #FAE8E1;  --color-ember-6: #F9E0D8;
-  --color-ember-7: #F6D4C8;  --color-ember-8: #F1BAA6;  --color-ember-9: #B4441C;
-  --color-ember-10: #9E3A16; --color-ember-11: #A33D18; --color-ember-12: #55200D;
+  /* ---- Tangerine (ember-*) — action accent / creators ---- */
+  --color-ember-1: #FFFCFA;  --color-ember-2: #FFF7F1;  --color-ember-3: #FFEFE3;
+  --color-ember-4: #FFE4D1;  --color-ember-5: #FFD8BE;  --color-ember-6: #FFC9A6;
+  --color-ember-7: #FBB487;  --color-ember-8: #F59A5E;  --color-ember-9: #FF7A1A;
+  --color-ember-10: #F26B0A; --color-ember-11: #B04A00; --color-ember-12: #5A2600;
 
   /* ---- Moss — print partners ---- */
   --color-moss-1: #F9FEFB;  --color-moss-2: #F4FCF8;  --color-moss-3: #E9F9F0;
@@ -66,17 +71,19 @@
   --color-moss-7: #AFDFC7;  --color-moss-8: #8ECEAF;  --color-moss-9: #059669;
   --color-moss-10: #00875E; --color-moss-11: #16805A; --color-moss-12: #0F3F2C;
 
-  /* ---- Chalk + ink (slate-*) — neutral, most of the UI ---- */
-  --color-slate-1: #FBFAF7;  --color-slate-2: #F6F5F1;  --color-slate-3: #EFEEE9;
-  --color-slate-4: #E8E7E1;  --color-slate-5: #E1E0DA;  --color-slate-6: #D7D6D0;
-  --color-slate-7: #C9C8C2;  --color-slate-8: #B3B3AE;  --color-slate-9: #6A7080;
-  --color-slate-10: #5F6574; --color-slate-11: #5B6270; --color-slate-12: #1F2430;
+  /* ---- Porcelain + ink (slate-*) — neutral, most of the UI ---- */
+  --color-slate-1: #F7F6F2;  --color-slate-2: #F2F1EC;  --color-slate-3: #EBEAE4;
+  --color-slate-4: #E4E3DC;  --color-slate-5: #DDDCD5;  --color-slate-6: #D3D2CB;
+  --color-slate-7: #C5C4BD;  --color-slate-8: #8E8D87;  --color-slate-9: #6B7075;
+  --color-slate-10: #60656A; --color-slate-11: #565B61; --color-slate-12: #16191D;
 
-  /* ---- Status — red / amber / green (status only, never decoration) ---- */
+  /* ---- Status — red / amber / green (status only, never decoration).
+     Amber is a yellow-ochre, kept >=15deg of hue away from Tangerine so a
+     warning never reads as the brand accent. ---- */
   --color-red-1: #FFFCFB;   --color-red-3: #FFF0EE;   --color-red-6: #FFD2CC;
   --color-red-9: #DC2626;   --color-red-10: #CC0515;  --color-red-11: #C4332E; --color-red-12: #601915;
-  --color-amber-1: #FFFCFA; --color-amber-3: #FFF1E7; --color-amber-6: #FDD6B9;
-  --color-amber-9: #D97706; --color-amber-10: #C66B00; --color-amber-11: #A65900; --color-amber-12: #512A03;
+  --color-amber-1: #FFFDF5; --color-amber-3: #FEF6D8; --color-amber-6: #F3DC8C;
+  --color-amber-9: #C99A06; --color-amber-10: #B38905; --color-amber-11: #7A5600; --color-amber-12: #3F2D00;
   --color-green-1: #F9FEFA; --color-green-3: #E8FAEA; --color-green-6: #C2EBC8;
   --color-green-9: #16A34A; --color-green-10: #00943F; --color-green-11: #0F823A; --color-green-12: #0D401C;
 
@@ -87,10 +94,11 @@
   --color-destructive: var(--color-red-9);
   --color-moss: var(--color-moss-9);
   --color-ember: var(--color-ember-9);
+  --color-ember-foreground: var(--on-solid-ember);
 
   /* Fixed scrim — deliberately does NOT flip with theme (a modal backdrop
      should stay dark in both light and dark mode). */
-  --color-ink: #0F172A;
+  --color-ink: #16191D;
 
   /* Semantic surface/ink pairs */
   --color-primary-surface: var(--color-violet-3);
@@ -397,11 +405,11 @@ body {
 /* ================================================================
    Gradient text utilities
    ================================================================ */
+/* Wordmark "3D" lead: solid Tangerine. A Tangerine-to-teal gradient passes
+   through a muddy brown midpoint (complementary hues), so it stays flat.
+   Logotypes are exempt from WCAG 1.4.3. Class name kept for call sites. */
 .text-gradient-primary {
-  background: linear-gradient(135deg, var(--color-ember), var(--color-primary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-ember);
 }
 
 .text-gradient-accent {

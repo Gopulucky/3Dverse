@@ -62,9 +62,9 @@ interface FinishOpt {
 
 const CERT_BADGES: { key: string; label: string; color: string }[] = [
   { key: "food_safe", label: "Food Safe", color: "text-success" },
-  { key: "flame_retardant", label: "Fire Retardant", color: "text-warning" },
+  { key: "flame_retardant", label: "Fire Retardant", color: "text-warning-ink" },
   { key: "biocompatible", label: "Biocompatible", color: "text-primary" },
-  { key: "uv_stable", label: "UV Stable", color: "text-warning" },
+  { key: "uv_stable", label: "UV Stable", color: "text-warning-ink" },
   { key: "recyclable", label: "Recyclable", color: "text-success" },
 ];
 
@@ -150,7 +150,7 @@ export default function MaterialsPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-          <Beaker className="text-ember" />
+          <Beaker className="text-ember-ink" />
           Materials & Finishes
         </h1>
         <p className="text-muted-foreground mt-2 text-sm">

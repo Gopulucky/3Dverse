@@ -198,6 +198,29 @@ try {
   await context.close();
   assert.deepEqual(errors, []);
 
+  {
+    // Day/night switch: starts from the system scheme, flips the class, survives a reload.
+    const t = await visit({ colorScheme: 'light' });
+    const toggle = t.page.locator('[data-flow="theme"]');
+    await visible(toggle);
+    assert.equal(await toggle.getAttribute('data-state'), 'day');
+    assert.equal(await t.page.getByRole('switch', { name: 'Night mode' }).getAttribute('aria-checked'), 'false');
+    const box = await toggle.boundingBox();
+    assert.ok(box.width >= 44 && box.height >= 44, `theme switch target ${box.width}x${box.height}`);
+    await toggle.click();
+    await t.page.locator('html.dark').waitFor();
+    assert.equal(await toggle.getAttribute('data-state'), 'night');
+    assert.equal(await toggle.getAttribute('aria-checked'), 'true');
+    await t.page.reload();
+    await t.page.locator('html.dark').waitFor();
+    await t.page.locator('[data-flow="theme"][data-state="night"]').waitFor();
+    await t.page.locator('[data-flow="theme"]').click();
+    await t.page.locator('html:not(.dark)').waitFor();
+    assert.equal(await t.page.locator('[data-flow="theme"]').getAttribute('data-state'), 'day');
+    checks.push('Day/night switch: starts from the system scheme, toggles the dark class, persists across reload, 44px target.');
+    await t.context.close();
+  }
+
   for (const scheme of ['light', 'dark']) {
     const v = await visit({ colorScheme: scheme });
     await visible(v.page.getByRole('link', { name: 'View Sample bench', exact: true }));

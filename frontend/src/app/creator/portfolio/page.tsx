@@ -135,7 +135,7 @@ export default function CreatorPortfolioPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-              <ImageIcon className="text-ember" />
+              <ImageIcon className="text-ember-ink" />
               Portfolio
             </h1>
             <p className="text-muted-foreground mt-2 text-sm">
@@ -276,7 +276,7 @@ export default function CreatorPortfolioPage() {
                       onClick={() => toggleSpec(s)}
                       className={
                         specializations.includes(s)
-                          ? "px-3 py-1 rounded-full text-xs font-semibold bg-ember-surface text-ember-ink border border-ember"
+                          ? "px-3 py-1 rounded-full text-xs font-semibold bg-ember-surface text-ember-ink border border-ember-ink"
                           : "px-3 py-1 rounded-full text-xs font-semibold bg-card text-muted-foreground border border-border hover:border-ember/40"
                       }
                     >
@@ -342,7 +342,7 @@ export default function CreatorPortfolioPage() {
               <Card className="p-6 border-border bg-card">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold font-display flex items-center gap-2">
-                    <Eye size={16} className="text-ember" />
+                    <Eye size={16} className="text-ember-ink" />
                     Your Storefront
                   </h3>
                   <span className="text-xs text-muted-foreground font-data">
@@ -383,7 +383,7 @@ export default function CreatorPortfolioPage() {
                                 {formatMoney(p.price || 0, p.currency)}
                               </span>
                               {p.avg_rating != null && (
-                                <span className="flex items-center gap-0.5 text-xs text-ember font-data">
+                                <span className="flex items-center gap-0.5 text-xs text-ember-ink font-data">
                                   <Star size={10} fill="currentColor" />
                                   {p.avg_rating.toFixed(1)}
                                 </span>
@@ -401,7 +401,7 @@ export default function CreatorPortfolioPage() {
                     </p>
                     <Link
                       href="/creator/products/new"
-                      className="text-ember text-sm font-semibold hover:underline"
+                      className="text-ember-ink text-sm font-semibold hover:underline"
                     >
                       Upload your first design →
                     </Link>

@@ -48,7 +48,7 @@ interface PrinterData {
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
   active: <CheckCircle2 size={14} className="text-success" />,
-  maintenance: <AlertCircle size={14} className="text-warning" />,
+  maintenance: <AlertCircle size={14} className="text-warning-ink" />,
   offline: <WifiOff size={14} className="text-destructive" />,
 };
 
@@ -112,7 +112,7 @@ export default function MyPrintersPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-            <Printer className="text-ember" />
+            <Printer className="text-ember-ink" />
             My Printers
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">

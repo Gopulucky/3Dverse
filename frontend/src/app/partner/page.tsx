@@ -329,13 +329,13 @@ export default function PartnerDashboard() {
                       
                       {currentStepIndex === 1 && (
                         <Card className="p-4 border-warning/30 bg-warning/5">
-                          <p className="text-xs text-warning uppercase tracking-wider mb-2 font-bold font-display">Quality Checklist</p>
+                          <p className="text-xs text-warning-ink uppercase tracking-wider mb-2 font-bold font-display">Quality Checklist</p>
                           <div className="space-y-2">
                             <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                              <input type="checkbox" className="rounded border-muted text-warning focus:ring-warning" /> No layer shifts or stringing
+                              <input type="checkbox" className="rounded border-muted text-warning-ink focus:ring-warning" /> No layer shifts or stringing
                             </label>
                             <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                              <input type="checkbox" className="rounded border-muted text-warning focus:ring-warning" /> Supports removed cleanly
+                              <input type="checkbox" className="rounded border-muted text-warning-ink focus:ring-warning" /> Supports removed cleanly
                             </label>
                           </div>
                         </Card>

@@ -310,7 +310,7 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              <div className="flex items-center gap-1 text-sm text-ember font-semibold mb-4">
+              <div className="flex items-center gap-1 text-sm text-ember-ink font-semibold mb-4">
                 <Star size={16} fill="currentColor" />
                 {avgRating}
                 <span className="text-muted-foreground ml-1 font-normal font-data hover:text-foreground cursor-pointer transition-colors">
@@ -332,7 +332,7 @@ export default function ProductDetailPage() {
                 )}
                 {product.is_mode_4_active && (
                   <Badge variant="outline" className="gap-1 bg-background">
-                    <Wand2 size={12} className="text-ember" /> Custom
+                    <Wand2 size={12} className="text-ember-ink" /> Custom
                   </Badge>
                 )}
               </div>
@@ -388,7 +388,7 @@ export default function ProductDetailPage() {
                             latestVersion.printability_report.status === "pass"
                               ? "text-success"
                               : latestVersion.printability_report.status === "warning"
-                              ? "text-warning"
+                              ? "text-warning-ink"
                               : "text-muted-foreground"
                           )}
                         >
@@ -503,7 +503,7 @@ export default function ProductDetailPage() {
                   <Button
                     onClick={handleBuyNow}
                     disabled={!canPurchase || adding}
-                    className="w-full bg-ember hover:bg-ember/90 text-primary-foreground rounded-full shadow-sm transition-all duration-300"
+                    className="w-full bg-ember hover:bg-ember-10 text-ember-foreground rounded-full shadow-sm transition-all duration-300"
                     size="lg"
                   >
                     Buy Now
@@ -569,7 +569,7 @@ export default function ProductDetailPage() {
                           className={cn(
                             "text-2xl transition-colors",
                             star <= watchRating
-                              ? "text-ember"
+                              ? "text-ember-ink"
                               : "text-muted-foreground/30"
                           )}
                         >
@@ -624,7 +624,7 @@ export default function ProductDetailPage() {
                           <span className="font-bold text-sm">
                             {r.user?.email || "User"}
                           </span>
-                          <span className="text-ember text-sm font-semibold">
+                          <span className="text-ember-ink text-sm font-semibold">
                             {"★".repeat(r.rating)}
                             {"☆".repeat(5 - r.rating)}
                           </span>

@@ -107,7 +107,7 @@ export default function BrowseCreatorsPage() {
                         </Badge>
                       )}
                       {c.creator_tier && (
-                        <span className="flex items-center gap-0.5 text-[10px] text-ember font-semibold">
+                        <span className="flex items-center gap-0.5 text-[10px] text-ember-ink font-semibold">
                           <Star size={10} className="fill-current" />
                           {TIER_LABEL[c.creator_tier] || c.creator_tier}
                         </span>
