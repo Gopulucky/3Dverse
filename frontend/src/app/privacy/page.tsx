@@ -38,6 +38,13 @@ export default function PrivacyPage() {
         <li><strong>Authorities</strong>, where the law requires it.</li>
       </ul>
 
+      <h2>Launch waitlist</h2>
+      <p>
+        If you join the waitlist for printed products, we keep your email, your answers (what you would buy,
+        a price you would pay and, if you give it, your city) and when you agreed. We use them only to email you
+        when printed products launch and to decide what to make first. Email us to be removed at any time.
+      </p>
+
       <h2>Cookies and local storage</h2>
       <p>
         We use your browser&apos;s local storage to keep you signed in and to remember your theme and

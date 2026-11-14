@@ -11,6 +11,8 @@ import type { HomepageData, ProductCardData } from "@/lib/marketplace";
 import { Button } from "@/components/ui/button";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/shared/product-card";
+import { HomeSupport } from "@/components/marketplace/home-support";
+import { HomeWaitlist } from "@/components/marketplace/home-waitlist";
 
 function ProductSection({ title, products, rail = false }: { title: string; products: ProductCardData[]; rail?: boolean }) {
   const titleId = useId();
@@ -62,7 +64,7 @@ function ProductSection({ title, products, rail = false }: { title: string; prod
 }
 
 /** Shared by / and /marketplace/home; catalogue records stay server-prefetched. */
-export function MarketplaceHomeContent({ initialData }: { initialData?: HomepageData }) {
+export function MarketplaceHomeContent({ initialData, supportOpen = false }: { initialData?: HomepageData; supportOpen?: boolean }) {
   const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["homepage"],
     queryFn: () => api.get<HomepageData>("/api/marketplace/homepage"),
@@ -135,6 +137,10 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: Homepage
           </>
         )}
       </div>
+
+      {/* Waits for real data so a slow load never flashes the form at visitors once printing is open. */}
+      {data && !availability.printed && <HomeWaitlist />}
+      {supportOpen && <HomeSupport />}
 
       <section className="home-trust" aria-label="Shopping with 3DVerse">
         <ul className="store-container">

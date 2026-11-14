@@ -16,6 +16,7 @@ from app.models.creator import Creator
 from app.models.notification import Notification
 from app.models.product import Product, ProductVersion, ProductMedia, PrintabilityReport
 from app.models.wishlist import Wishlist
+from app.models.waitlist import WaitlistSignup
 from app.models.review import Review
 from app.models.cart import Cart, CartItem
 from app.models.coupon import Coupon

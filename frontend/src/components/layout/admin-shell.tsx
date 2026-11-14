@@ -10,6 +10,7 @@ import {
   Undo2,
   ShieldCheck,
   Settings,
+  ListChecks,
 } from "lucide-react";
 
 const adminLinks: SidebarLink[] = [
@@ -19,6 +20,7 @@ const adminLinks: SidebarLink[] = [
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/returns", label: "Returns", icon: Undo2 },
   { href: "/admin/trust-safety", label: "Trust & Safety", icon: ShieldCheck },
+  { href: "/admin/waitlist", label: "Waitlist", icon: ListChecks },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

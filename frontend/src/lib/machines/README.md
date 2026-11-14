@@ -25,6 +25,7 @@ dispatches around its own `await`s.
 | `checkout.ts` (payment form) | `payment` | `idle`, `confirming`, `verifying`, `confirmed`, `pending`, `unknown` | `PaymentForm` in the same file |
 | `customer-auth.ts` | `customer-auth` | `idle`, `submitting`, `done`; mode in `data-auth-mode`: `email`, `legacy`, `link` | `components/auth/customer-auth.tsx` |
 | `product-upload.ts` | `product-upload` | `idle`, `creating`, `uploading`, `verifying`, `ready` | `app/creator/products/new/page.tsx` |
+| `waitlist.ts` | `waitlist` | `idle`, `submitting`, `joined`, `error` | `components/marketplace/home-waitlist.tsx` |
 | `search-suggestions.ts` | `search-suggestions` | `closed`, `debouncing`, `open` | `components/layout/navbar.tsx` |
 | `model-viewer.ts` | `model-viewer` | `loading`, `ready`, `error` | `components/shared/advanced-3d-viewer.tsx` |
 | `../order-lifecycle.ts` | `order-status` | `awaiting_payment`, `fulfilment`, `completed`, `closed`, `unknown` | `app/orders/page.tsx`, `app/orders/[id]/page.tsx` |
