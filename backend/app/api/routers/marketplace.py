@@ -9,6 +9,7 @@ from app.models.product import Product, ProductMedia, ProductStatus, ProductVers
 from app.models.review import Review
 from app.models.user import User
 from app.schemas.product import PublicProduct as ProductSchema
+from app.services.availability import store_availability
 
 router = APIRouter()
 
@@ -165,8 +166,14 @@ def _build_homepage(db: Session) -> dict:
         # model_dump(mode="json") so the cached value is plain, immutable-ish data.
         return [ProductSchema.model_validate(by_id[i]).model_dump(mode="json") for i in ids if i in by_id]
 
+    # 4. What the storefront may promise: printed delivery and payment only once they work.
+    has_printed_listing = db.query(
+        db.query(Product.id).filter(published, or_(Product.is_mode_3_active.is_(True), Product.is_mode_4_active.is_(True))).exists()
+    ).scalar()
+
     # Pydantic v2 requires explicit serialization if no response_model is provided
     return {
+        "availability": store_availability(has_printed_listing=bool(has_printed_listing)),
         "categories": categories,
         "popular_creators": popular_creators,
         "featured": shelf(featured_ids),

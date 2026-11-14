@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Mail } from "lucide-react";
 import { LegalPage } from "@/components/legal/legal-page";
 import { SUPPORT_EMAIL } from "@/lib/site";
@@ -21,6 +22,7 @@ export default function ContactPage() {
         <li>What you expected and what happened, with a screenshot or photo if it helps.</li>
         <li>For a copyright or safety report, the link to the listing.</li>
       </ul>
+      <p>Complaints and listing reports go to our grievance officer: see <Link href="/grievances">Grievances and listing reports</Link>.</p>
     </LegalPage>
   );
 }

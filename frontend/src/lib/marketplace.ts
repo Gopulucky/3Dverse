@@ -31,6 +31,8 @@ export interface HomepageData {
   new_arrivals: ProductCardData[];
   categories: { name: string; image?: string }[];
   popular_creators: { name: string; role: string; initials: string; image?: string | null }[];
+  /** What the storefront may promise; read it through storeAvailability(). */
+  availability?: { checkout?: boolean; printed?: boolean };
 }
 
 export type PurchaseType = "digital" | "physical";

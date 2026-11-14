@@ -90,6 +90,7 @@ export default function NewProductPage() {
   const [step, setStep] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
+  const [rightsConfirmed, setRightsConfirmed] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
   const [upload, dispatchUpload] = useReducer(uploadReducer, initialUploadState);
@@ -150,6 +151,10 @@ export default function NewProductPage() {
 
   const handleSubmit = async () => {
     if (upload.status !== "idle") return;
+    if (!rightsConfirmed) {
+      toast.error("Please confirm you have the right to sell this design");
+      return;
+    }
     if (copy.fileRequired && !file) {
       toast.error("Please select a 3D model file to upload");
       return;
@@ -497,6 +502,21 @@ export default function NewProductPage() {
                 </div>
               )}
 
+              {uploadStage === "idle" && (
+                <label className="mt-6 flex items-start gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--store-action)]"
+                    checked={rightsConfirmed}
+                    onChange={(event) => setRightsConfirmed(event.target.checked)}
+                  />
+                  <span>
+                    I made this design or have the right to sell it, including as printed copies, and the details I give
+                    about it are true. Designs shared under a non-commercial licence can&apos;t be sold here.
+                  </span>
+                </label>
+              )}
+
               <div className="flex justify-between gap-4 mt-10">
                 <Button
                   variant="outline"
@@ -510,7 +530,7 @@ export default function NewProductPage() {
                 <Button
                   size="lg"
                   className="rounded-xl flex-1 sm:flex-none sm:px-12"
-                  disabled={(copy.fileRequired && !file) || uploadStage !== "idle"}
+                  disabled={(copy.fileRequired && !file) || !rightsConfirmed || uploadStage !== "idle"}
                   onClick={handleSubmit}
                 >
                   <UploadCloud size={18} className="mr-2" /> Create Listing
