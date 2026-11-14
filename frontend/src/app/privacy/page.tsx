@@ -45,6 +45,16 @@ export default function PrivacyPage() {
         when printed products launch and to decide what to make first. Email us to be removed at any time.
       </p>
 
+      <h2>Audience questions</h2>
+      <p>
+        If you answer our short questions (who you are, your city, what you would use 3DVerse for, how you buy today),
+        we keep your answers to decide what to build and which products to make first. Each step is saved when you press Next,
+        so partial answers are kept. They are linked to the random anonymous ID described below, so we can see what different
+        groups of visitors look at. If you leave your email or WhatsApp number and tick the consent box, we keep them with
+        your answers to tell you when printed products launch and, if you said yes, to ask you a few questions by chat.
+        We do not use them for anything else, and you can ask us to delete them at any time.
+      </p>
+
       <h2>Cookies and local storage</h2>
       <p>
         We use your browser&apos;s local storage to keep you signed in and to remember your theme and

@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 # What a browser may report. `checkout_started` and `paid` are recorded by the server only,
 # so a visitor cannot invent sales. Keep in step with frontend/src/lib/track.ts.
-BrowserEvent = Literal["landing", "product_view", "viewer_opened", "add_to_cart", "buy_now", "payment_opened", "waitlist_joined"]
+BrowserEvent = Literal["landing", "product_view", "viewer_opened", "add_to_cart", "buy_now", "payment_opened", "waitlist_joined", "audience_shown"]
 
 ANON_ID = r"^[A-Za-z0-9_-]{8,64}$"
 TAG = r"^[A-Za-z0-9_.-]{1,64}$"

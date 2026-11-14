@@ -12,7 +12,7 @@ from app.models.funnel_event import FunnelEvent
 
 # Display order of the report, from first contact to money.
 STEPS = ("landing", "product_view", "viewer_opened", "add_to_cart", "buy_now",
-         "checkout_started", "payment_opened", "paid", "waitlist_joined")
+         "checkout_started", "payment_opened", "paid", "waitlist_joined", "audience_shown")
 DIRECT = "direct"  # visitors who arrived without a ?src= or utm_source
 
 

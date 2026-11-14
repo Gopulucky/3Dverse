@@ -64,7 +64,7 @@ export interface WaitlistSignupRow {
 
 const CSV_COLUMNS = ["email", "interest", "price_choice", "city", "source", "created_at"] as const;
 
-function csvCell(value: string | null): string {
+export function csvCell(value: string | null): string {
   let text = value ?? "";
   // A leading = + - @ makes spreadsheets run the cell as a formula.
   if (/^[=+\-@]/.test(text)) text = `'${text}`;

@@ -6,7 +6,7 @@
  * Event names must match backend/app/schemas/funnel.py (`checkout_started` and `paid`
  * are recorded by the server, never by the browser).
  */
-export type TrackEvent = "landing" | "product_view" | "viewer_opened" | "add_to_cart" | "buy_now" | "payment_opened" | "waitlist_joined";
+export type TrackEvent = "landing" | "product_view" | "viewer_opened" | "add_to_cart" | "buy_now" | "payment_opened" | "waitlist_joined" | "audience_shown";
 
 export type Source = { source: string | null; medium: string | null; campaign: string | null };
 export type Visitor = Source & { anon_id: string };
