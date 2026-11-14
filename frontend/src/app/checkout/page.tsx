@@ -10,6 +10,8 @@ import { formatMoney } from "@/lib/currency";
 import { loadRazorpay, type RazorpaySuccess } from "@/lib/razorpay";
 import { checkoutTimeout, formatCountdown, holdSecondsLeft, upiFirstDisplay, usesRedirectFlow } from "@/lib/machines/payment-options";
 import { CART_KEY } from "@/lib/use-cart";
+import { checkoutVisitor, track } from "@/lib/track-client";
+import { BUY_NOW_PARAM, BUY_NOW_VALUE, buyNowKey, directItemBody, readBuyNow, type BuyNowItem } from "@/lib/buy-now";
 import { HOLD_KEY } from "@/components/marketplace/hold-banner";
 import { purchasePrice, type ProductCardData } from "@/lib/marketplace";
 import { Button } from "@/components/ui/button";
@@ -25,7 +27,7 @@ import {
 } from "@/lib/machines/checkout";
 
 type Address = { name: string; street: string; city: string; state: string; zip: string; country: string; phone: string };
-type Attempt = { idempotency_key: string; shipping_method: "standard"; shipping_address: Address | null; coupon_code: string | null };
+type Attempt = { idempotency_key: string; shipping_method: "standard"; shipping_address: Address | null; coupon_code: string | null; direct_item?: BuyNowItem; visitor?: ReturnType<typeof checkoutVisitor> };
 type Checkout = { order_id: number; key_id: string; razorpay_order_id: string; amount_minor: number; hold_expires_at: string; total: number; subtotal: number; shipping_cost: number; currency: string; payment_status: string;
   shipping_address: Address | null; items: { title: string; purchase_type: string; quantity: number; unit_price: number }[] };
 type Cart = { items: { id: number; quantity: number; selected_config?: { purchase_type?: string }; product: ProductCardData }[] };
@@ -69,6 +71,7 @@ function PaymentForm({ checkout, storageKey }: { checkout: Checkout; storageKey:
     dispatchPay({ type: "SUBMITTED" });
     const done = () => {
       sessionStorage.removeItem(storageKey);
+      sessionStorage.removeItem(buyNowKey(user?.id));
       sessionStorage.removeItem("coupon");
       void queryClient.invalidateQueries({ queryKey: CART_KEY });
       void queryClient.invalidateQueries({ queryKey: HOLD_KEY });
@@ -129,6 +132,7 @@ function PaymentForm({ checkout, storageKey }: { checkout: Checkout; storageKey:
     razorpay.on("payment.failed", (failure) => {
       lastFailure.current = failure.error?.description || "That payment did not go through.";
     });
+    track("payment_opened");
     razorpay.open();
   }
 
@@ -158,13 +162,22 @@ export default function CheckoutPage() {
   const preparing = useRef(false);
   const [frozenAttempt, setFrozenAttempt] = useState<Attempt | null>(null);
   const { data, isPending, isError, refetch } = useQuery({
-    queryKey: ["checkout-cart", user?.id], enabled: ready && !!user,
+    queryKey: ["checkout-cart", user?.id], enabled: ready && !!user, gcTime: 0, // never show a previous visit's cart or "buy now" item
     queryFn: async () => {
-      const cart = await api.get<Cart>("/api/cart/");
-      const orderId = new URLSearchParams(window.location.search).get("order_id");
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get("order_id");
+      // "Buy now": this one product is the whole order; the cart is neither read nor changed.
+      const buyNowRequested = params.get(BUY_NOW_PARAM) === BUY_NOW_VALUE && !orderId;
+      const buyNow = buyNowRequested ? readBuyNow(sessionStorage, user?.id) : null;
+      const cart: Cart = buyNow
+        ? { items: [{ id: 0, quantity: 1, selected_config: { purchase_type: buyNow.purchase_type, ...buyNow.selected_config },
+            product: await api.get<ProductCardData>(`/api/marketplace/products/${buyNow.product_id}`) }] }
+        : buyNowRequested ? { items: [] } : await api.get<Cart>("/api/cart/");
       let saved: Attempt | null = null;
       try { saved = JSON.parse(sessionStorage.getItem(storageKey) || "null"); } catch { /* no saved attempt */ }
-      return { cart, saved, orderId: orderId && /^[1-9][0-9]*$/.test(orderId) ? orderId : null };
+      // A saved attempt only continues if it is the same kind of purchase (this item, or the cart).
+      if (saved && JSON.stringify(saved.direct_item ?? null) !== JSON.stringify(buyNow)) saved = null;
+      return { cart, saved, buyNow, buyNowRequested, orderId: orderId && /^[1-9][0-9]*$/.test(orderId) ? orderId : null };
     },
   });
   // Whether the API has Razorpay configured for this environment (no secrets involved).
@@ -194,6 +207,8 @@ export default function CheckoutPage() {
       const attempt: Attempt = savedAttempt || {
         idempotency_key: crypto.randomUUID(), shipping_method: "standard",
         shipping_address: hasPhysical ? address : null, coupon_code: sessionStorage.getItem("coupon"),
+        ...(data?.buyNow ? { direct_item: directItemBody(data.buyNow) } : {}),
+        visitor: checkoutVisitor(), // anonymous id and link source, so a sale can be credited to a channel
       };
       // Freeze both details and key before the request: a timeout can occur
       // after the server has already saved this order.
@@ -201,7 +216,7 @@ export default function CheckoutPage() {
       sessionStorage.setItem(storageKey, JSON.stringify(attempt));
       const response = await api.post<Checkout>("/api/checkout/create-payment-intent", attempt);
       dispatch({ type: "PREPARED", checkout: response });
-      setItemCount(0);
+      if (!data?.buyNow) setItemCount(0); // a "buy now" order never involved the cart
     } catch (failure) {
       if (failure instanceof ApiError && (failure.status === 400 || failure.status === 422 ||
           (failure.status === 409 && failure.message.includes("completed or cancelled")))) {
@@ -217,7 +232,9 @@ export default function CheckoutPage() {
 
   return <MarketplaceShell><main className="mx-auto max-w-4xl px-6 pb-20 pt-24" data-flow="checkout"
     data-state={checkoutViewState({ ready, isPending: isPending || availability.isPending, isError, paymentsAvailable, state: flow })}>
-    <Link href="/cart" className="inline-flex min-h-11 items-center underline text-sm">Back to cart</Link>
+    {data?.buyNowRequested
+      ? <Link href={data.buyNow ? `/marketplace/${data.buyNow.product_id}` : "/marketplace"} className="inline-flex min-h-11 items-center underline text-sm">Back to product</Link>
+      : <Link href="/cart" className="inline-flex min-h-11 items-center underline text-sm">Back to cart</Link>}
     <h1 className="font-display text-3xl font-semibold mb-3">Checkout</h1>
     <p className="text-muted-foreground mb-8">Review your delivery details, then confirm your payment. Downloads unlock after payment is verified.</p>
     {!ready || isPending || availability.isPending ? <p role="status">Loading your checkout...</p> : isError ?
@@ -225,6 +242,9 @@ export default function CheckoutPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="p-6 space-y-5">
           <h2 className="font-display text-xl font-semibold">{checkout ? `Order #${checkout.order_id}` : "1. Review your order"}</h2>
+          {data?.buyNowRequested && !checkout && !resuming && (data.buyNow
+            ? <p className="text-sm text-muted-foreground">You are buying this item on its own. Your cart is not part of this order.</p>
+            : <p role="alert" className="text-sm">We could not find the item you chose. Go back to the product and press Buy Now again.</p>)}
           {(!resuming && !checkout ? items : []).map((item) => <div key={item.id} className="border-b pb-3">
             <p className="font-medium">{item.product.title}</p>
             <p className="text-sm text-muted-foreground">{item.selected_config?.purchase_type === "physical" ? "Printed product" : item.selected_config?.purchase_type === "digital" ? "Digital download" : "Selected option"} · Quantity {item.quantity}</p>

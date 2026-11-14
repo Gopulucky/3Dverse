@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { preconnect } from "react-dom";
 import { Analytics } from "@vercel/analytics/next";
+import { FunnelLanding } from "@/components/analytics/funnel-landing";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { BRAND } from "@/lib/brand";
 import { API_URL } from "@/lib/api";
@@ -88,6 +89,7 @@ export default function RootLayout({
         className="font-sans min-h-screen bg-background text-foreground flex flex-col antialiased"
       >
         <Providers>{children}</Providers>
+        <FunnelLanding />
         {/* Anonymous page views (cookie-free) and real-user speed scores, both free on Vercel Hobby.
             The scripts are served by Vercel from this same origin and are deferred, so they never block first paint. */}
         <Analytics />

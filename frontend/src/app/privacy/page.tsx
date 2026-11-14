@@ -57,6 +57,13 @@ export default function PrivacyPage() {
         pages load for real visitors. They do not set cookies, and we do not use them to follow you across
         other websites or to identify you personally.
       </p>
+      <p>
+        We also keep our own simple record of the steps visitors take on the shop (for example viewing a
+        product, adding it to the cart, or paying) so we can see which links and products work. It uses a
+        random anonymous ID stored in your browser and the link you arrived from, such as an Instagram or
+        WhatsApp link. No name, email or other personal details are attached to it. Clearing your
+        browser&apos;s site data removes the ID.
+      </p>
 
       <h2>Your choices</h2>
       <ul>

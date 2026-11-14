@@ -1,13 +1,23 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List, Optional, Any
 from datetime import datetime
 from app.schemas.product import LineProduct, Product
+
+def public_config(config: Optional[dict]) -> Optional[dict]:
+    """The item options people may see: without the internal `buy_now` marker (see services/payments.py)."""
+    return {key: value for key, value in config.items() if key != "buy_now"} if isinstance(config, dict) else config
+
 
 class OrderItemBase(BaseModel):
     product_id: int
     price_at_purchase: float
     quantity: int = 1
     selected_config: Optional[dict] = None
+
+    @field_validator("selected_config")
+    @classmethod
+    def hide_internal_marker(cls, value):
+        return public_config(value)
 
 class OrderItemResponse(OrderItemBase):
     id: int
