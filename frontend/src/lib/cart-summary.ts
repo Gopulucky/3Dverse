@@ -7,6 +7,8 @@ export interface CartLine {
   quantity: number;
   selected_config?: { purchase_type?: string } | null;
   product: ProductCardData;
+  /** Why the server says this line cannot be bought right now ("Out of stock"); absent when it can. */
+  unavailable_reason?: string | null;
 }
 
 export interface Discount {
@@ -15,7 +17,7 @@ export interface Discount {
   flat_off?: number | null;
 }
 
-export type CartIssue = "mixed_currency" | "non_inr" | "needs_format" | null;
+export type CartIssue = "mixed_currency" | "non_inr" | "needs_format" | "unavailable" | null;
 
 export interface CartSummary {
   itemCount: number;
@@ -25,6 +27,8 @@ export interface CartSummary {
   total: number | null;
   currency: string;
   issue: CartIssue;
+  /** Lines the server says cannot be bought now; they stay visible but are not priced into the total. */
+  unavailableCount: number;
   canCheckout: boolean;
 }
 
@@ -39,12 +43,15 @@ export function summarizeCart(lines: CartLine[], discount: Discount | null): Car
   const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
   const prices = lines.map(unitPrice);
   const unpriced = prices.some((price) => price == null);
+  const unavailableCount = lines.filter((line) => !!line.unavailable_reason).length;
   let issue: CartIssue = null;
   if (currencies.size > 1) issue = "mixed_currency";
   else if (lines.length && currency !== "INR") issue = "non_inr";
   else if (unpriced) issue = "needs_format";
+  else if (unavailableCount > 0) issue = "unavailable";
 
-  const subtotal = unpriced ? null : lines.reduce((sum, line, i) => sum + (prices[i] as number) * line.quantity, 0);
+  const subtotal = unpriced ? null
+    : lines.reduce((sum, line, i) => sum + (line.unavailable_reason ? 0 : (prices[i] as number) * line.quantity), 0);
   let off = 0;
   if (subtotal != null && discount) {
     if (discount.percent_off) off = subtotal * (Math.min(Math.max(discount.percent_off, 0), 100) / 100);
@@ -52,7 +59,7 @@ export function summarizeCart(lines: CartLine[], discount: Discount | null): Car
     off = Math.min(off, subtotal);
   }
   const total = subtotal == null ? null : Math.max(0, subtotal - off);
-  return { itemCount, subtotal, discount: off, total, currency, issue, canCheckout: lines.length > 0 && issue === null };
+  return { itemCount, subtotal, discount: off, total, currency, issue, unavailableCount, canCheckout: lines.length > 0 && issue === null };
 }
 
 /** The lines as they will be once the server accepts a quantity change. Zero removes the line. */

@@ -16,6 +16,7 @@ import { StatusChip } from "@/components/ui/status-chip";
 import { useRequireAuth } from "@/stores/auth-store";
 import { cn, formatDate } from "@/lib/utils";
 import { MarketplaceShell } from "@/components/layout/marketplace-shell";
+import { HoldBanner } from "@/components/marketplace/hold-banner";
 import { orderPhase } from "@/lib/order-lifecycle";
 import { ORDER_FILTERS, filterCounts, filterOrders, orderHeadline, type OrderFilter } from "@/lib/order-view";
 
@@ -183,6 +184,7 @@ export default function OrdersPage() {
     <MarketplaceShell>
       <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6">
         <h1 className="mb-5 font-display text-2xl font-semibold sm:text-3xl">Your orders</h1>
+        <HoldBanner enabled={ready} />
         {body}
       </div>
     </MarketplaceShell>

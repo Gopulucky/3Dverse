@@ -20,7 +20,7 @@ The first launch targets **India, with prices in INR**. The application is under
 | --- | --- |
 | Storefront | Clear print/file entry points, search, format filters, sorting, pagination, and distinct loading, empty and error states |
 | Accounts | Customer-first registration, Firebase Google/email integration, server-owned roles, and explicit linking for existing accounts |
-| Purchasing | Separate digital and physical options; explicit currency; an order snapshot saved before a Stripe payment attempt |
+| Purchasing | Separate digital and physical options; explicit currency; an order snapshot saved before a Razorpay payment attempt |
 | Confirmation | Signed, replay-safe webhooks validate the order, customer, intent, amount and currency before granting payment status |
 | Fulfilment | Guarded production status transitions, parcel/contact validation, and shipping failures that remain visible |
 | Files | Authenticated access to purchased/private files, with a corrected partner identity check |
@@ -39,7 +39,7 @@ This repository is not evidence of a live merchant, shipping or Firebase account
 
 - Create a Firebase project, enable Google and email/password authentication, add the web configuration, and configure server-only Admin credentials.
 - Back up the database and run migrations. Existing USD prices stay USD; creators must explicitly enter INR prices. No automatic currency conversion occurs.
-- Activate and verify the chosen merchant account for the Indian business. The current integration is Stripe; confirm your business can use it before relying on it.
+- Activate and verify the chosen merchant account for the Indian business. The integration is Razorpay: complete its KYC and set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET` (see `docs/customer-launch.md`, section 3).
 - Configure signed webhooks, the INR shipping fee, Shiprocket, private/public object storage, and email delivery. Verify the full flow in the deployed environment.
 - Refund settlement and creator/partner payouts remain operator work. The app blocks unsupported refund completion and production commission/collaboration payment shortcuts.
 - Publish accurate business, contact, privacy, delivery and refund information. Complete a real test order, delivery, cancellation/refund procedure and backup restore drill.
@@ -124,7 +124,7 @@ The analyzer writes timing measurements, slow/unfinished requests and improvemen
 
 ```text
 frontend/     Next.js, React, TypeScript and Tailwind customer/operations UI
-backend/      FastAPI, SQLAlchemy, Alembic, Stripe, Firebase Admin and Celery
+backend/      FastAPI, SQLAlchemy, Alembic, Razorpay, Firebase Admin and Celery
 docs/         Launch and implementation notes
 .github/      Continuous integration
 ```

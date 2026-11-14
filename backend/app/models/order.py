@@ -25,7 +25,9 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     customer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    stripe_payment_intent_id = Column(String, nullable=True, unique=True)
+    razorpay_order_id = Column(String, nullable=True, unique=True)  # provider order this checkout is bound to
+    razorpay_payment_id = Column(String, nullable=True)  # the captured payment, kept for refunds and support
+    coupon_id = Column(Integer, nullable=True)  # coupon use this hold took; returned if the hold is cancelled or expires
     currency = Column(String(3), nullable=False, default="INR", server_default="INR")
     amount_minor = Column(Integer, nullable=True)  # immutable gateway amount; legacy rows null
     payment_verified_at = Column(DateTime, nullable=True)

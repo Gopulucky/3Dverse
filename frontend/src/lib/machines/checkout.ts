@@ -1,8 +1,8 @@
 /**
  * Checkout flow, in two parts:
  *  - the page machine (editing details -> preparing the order -> paying), and
- *  - the payment-form machine (confirming with Stripe -> verifying the order).
- * Pure: the components keep their API/Stripe calls and dispatch around them.
+ *  - the payment-form machine (paying in Razorpay Checkout -> verifying the order).
+ * Pure: the components keep their API/Razorpay calls and dispatch around them.
  */
 
 // ---- Page machine ----------------------------------------------------------
@@ -30,8 +30,11 @@ export function checkoutReducer<C>(state: CheckoutState<C>, event: CheckoutEvent
   }
 }
 
-/** Payment states in which the user must not be asked to pay again. */
-export const SUBMITTED_PAYMENT_STATUSES: readonly string[] = ["succeeded", "processing", "requires_capture"];
+/**
+ * Razorpay order statuses in which the user must not be asked to pay again.
+ * "created" and "attempted" (a failed or abandoned try) can still be paid.
+ */
+export const SUBMITTED_PAYMENT_STATUSES: readonly string[] = ["paid"];
 
 export type CheckoutViewState =
   | "loading"
@@ -72,7 +75,7 @@ export type PaymentState =
 
 export type PaymentEvent =
   | { type: "CONFIRM" }
-  | { type: "STRIPE_ERROR"; error: string }
+  | { type: "PROVIDER_ERROR"; error: string }
   | { type: "SUBMITTED" }
   | { type: "VERIFIED" }
   | { type: "TIMED_OUT" }
@@ -84,7 +87,7 @@ export function paymentReducer(state: PaymentState, event: PaymentEvent): Paymen
   switch (event.type) {
     case "CONFIRM":
       return state.status === "idle" ? { status: "confirming" } : state;
-    case "STRIPE_ERROR":
+    case "PROVIDER_ERROR":
       return state.status === "confirming" ? { status: "idle", error: event.error } : state;
     case "SUBMITTED":
       return state.status === "confirming" ? { status: "verifying" } : state;

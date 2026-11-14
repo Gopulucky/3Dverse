@@ -7,7 +7,7 @@ dispatches around its own `await`s.
 
 ## Rules
 
-- **Pure.** No React, DOM, `fetch` or `@/lib/api` imports. API calls, Stripe
+- **Pure.** No React, DOM, `fetch` or `@/lib/api` imports. API calls, Razorpay
   calls and storage stay in the component.
 - **Ignored events return the same object.** A late response or a double click
   that the current state does not accept changes nothing and does not re-render.

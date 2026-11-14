@@ -59,10 +59,16 @@ class Settings(BaseSettings):
 
     FIREBASE_PROJECT_ID: str | None = None
     GOOGLE_APPLICATION_CREDENTIALS: str | None = None
-    STRIPE_SECRET_KEY: str | None = None
-    STRIPE_WEBHOOK_SECRET: str | None = None
+    # Razorpay. Key id + secret come from Dashboard > Account & Settings > API keys;
+    # the webhook secret is the one you type when adding the webhook. Test keys
+    # (rzp_test_) are accepted only outside production, live keys (rzp_live_) only in it.
+    RAZORPAY_KEY_ID: str | None = None
+    RAZORPAY_KEY_SECRET: str | None = None
+    RAZORPAY_WEBHOOK_SECRET: str | None = None
     # Never a fallback for checkout. Other local demo flows require opt-in.
     ALLOW_MOCK_PAYMENTS: bool = False
+    # How long a started checkout holds stock before it can be released for others.
+    CHECKOUT_HOLD_MINUTES: int = 15
     # Operator-set domestic shipping price in INR; unset blocks physical checkout.
     CHECKOUT_SHIPPING_INR: str | None = None
 

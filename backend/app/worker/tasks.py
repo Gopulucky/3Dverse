@@ -1,17 +1,11 @@
 import logging
-from datetime import datetime, timedelta
 from app.core.celery_app import celery_app
 from app.core.database import SessionLocal
 from app.models.user import User  # Must import so SQLAlchemy registry knows about it
-from app.models.order import Order
-from app.services import stock
+from app.services import payments
 from app.services.printability import analyze_version
 
 logger = logging.getLogger(__name__)
-
-# Abandoned checkouts hold stock hostage forever otherwise -- release it back
-# to the shelf once it's clear the buyer isn't coming back to pay.
-PENDING_ORDER_EXPIRY_MINUTES = 30
 
 
 @celery_app.task
@@ -38,22 +32,12 @@ def compute_embedding(text: str) -> list:
 @celery_app.task
 def expire_pending_orders():
     """Release stock held by checkouts that were never paid, so it doesn't
-    stay reserved forever. Runs on a schedule (see celery_app.conf.beat_schedule)."""
+    stay reserved forever. Same rules as the on-demand expiry the API runs
+    (nothing is released while Razorpay shows money moving). Production runs
+    no worker, so this is optional: the API expires holds itself."""
     db = SessionLocal()
-    cutoff = datetime.utcnow() - timedelta(minutes=PENDING_ORDER_EXPIRY_MINUTES)
-    expired_count = 0
     try:
-        orders = (
-            db.query(Order)
-            .filter(Order.status == "pending_payment", Order.created_at < cutoff)
-            .all()
-        )
-        for order in orders:
-            stock.release_for_order(db, order, reason="pending_payment expired")
-            order.status = "cancelled"
-            db.add(order)
-            db.commit()
-            expired_count += 1
+        expired_count = payments.expire_stale_holds(db)
         logger.info(f"expire_pending_orders: expired {expired_count} order(s)")
     except Exception as e:
         logger.error(f"expire_pending_orders encountered error: {e}")

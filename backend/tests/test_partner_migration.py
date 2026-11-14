@@ -64,9 +64,24 @@ def test_waitlist_migration_only_adds_a_table_after_thumbnails():
     scripts = script_dir()
     revision = scripts.get_revision("d2e8b4c6a913")
     assert revision.down_revision == "c8a3f1d27e54"
-    assert scripts.get_heads() == ["d2e8b4c6a913"]
+    assert len(scripts.get_heads()) == 1  # still one linear history
     upgrade, downgrade = open(revision.path, encoding="utf8").read().split("def downgrade", 1)
     assert re.search(r"create_table\(\s*\"waitlist_signups\"", upgrade)
     assert "drop_table" in downgrade
     for forbidden in ("drop_table", "alter_column", "op.execute", "drop_column", "add_column"):
+        assert forbidden not in upgrade, f"upgrade must not use {forbidden}"
+
+
+def test_razorpay_migration_is_additive_and_keeps_legacy_stripe_data():
+    scripts = script_dir()
+    revision = scripts.get_revision("e5b7c2d9a418")
+    assert revision.down_revision == "d2e8b4c6a913"
+    assert scripts.get_heads() == ["e5b7c2d9a418"]
+    body = open(revision.path, encoding="utf8").read().split("def upgrade", 1)[1]
+    upgrade, downgrade = body.split("def downgrade", 1)
+    for column in ("razorpay_order_id", "razorpay_payment_id", "coupon_id"):
+        assert re.search(rf"add_column\(\"orders\",\s*sa\.Column\(\"{column}\"", upgrade)
+        assert column in downgrade
+    assert "uq_orders_razorpay_order_id" in upgrade
+    for forbidden in ("drop_column", "drop_table", "alter_column", "op.execute", "stripe"):
         assert forbidden not in upgrade, f"upgrade must not use {forbidden}"

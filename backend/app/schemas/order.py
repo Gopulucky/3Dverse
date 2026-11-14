@@ -36,7 +36,7 @@ class OrderBase(BaseModel):
     shipping_package: Optional[dict] = None
     payment_verified_at: Optional[datetime] = None
     status: str = "pending"
-    stripe_payment_intent_id: Optional[str] = None
+    razorpay_order_id: Optional[str] = None
     invoice_url: Optional[str] = None
     print_partner_id: Optional[int] = None
     shiprocket_order_id: Optional[str] = None
