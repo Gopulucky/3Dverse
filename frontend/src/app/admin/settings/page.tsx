@@ -37,14 +37,14 @@ const PORTAL_SETTINGS = [
     label: "Creator Settings",
     description: "Business identity and specializations",
     icon: Palette,
-    iconClass: "text-ember-ink",
+    iconClass: "text-primary",
   },
   {
     href: "/partner/settings",
     label: "Print Partner Settings",
     description: "Facility, service area and capabilities",
     icon: Printer,
-    iconClass: "text-moss",
+    iconClass: "text-primary",
   },
 ];
 

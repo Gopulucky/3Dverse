@@ -150,7 +150,7 @@ export default function MaterialsPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-          <Beaker className="text-ember-ink" />
+          <Beaker className="text-primary" />
           Materials & Finishes
         </h1>
         <p className="text-muted-foreground mt-2 text-sm">

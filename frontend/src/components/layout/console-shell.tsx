@@ -14,9 +14,8 @@ const consoleLinks: SidebarLink[] = [
 
 /**
  * ConsoleShell — Print Partner Console layout.
- * Sidebar + top nav, no footer. Accent is Moss (Calibration Green) per
- * docs/brand/05-applications.md — job-queue status, capacity indicators and
- * the active nav item carry it; the shell itself stays on the shared
+ * Sidebar + top nav, no footer. Uses the marketplace palette (Deep teal identity);
+ * green appears only as success status. The shell stays on the shared
  * light/dark token system, no forced-dark background.
  */
 export function ConsoleShell({ children }: { children: React.ReactNode }) {
@@ -25,7 +24,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
       <Navbar />
       <div className="flex">
         <div className="hidden md:block">
-          <Sidebar links={consoleLinks} portal="console" />
+          <Sidebar links={consoleLinks} />
         </div>
         <main className="flex-1 min-w-0">
           {children}

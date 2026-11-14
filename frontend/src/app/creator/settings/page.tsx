@@ -138,7 +138,7 @@ export default function CreatorSettingsPage() {
       <div className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-            <Settings className="text-ember-ink" />
+            <Settings className="text-primary" />
             Creator Settings
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">

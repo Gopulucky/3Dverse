@@ -13,6 +13,7 @@ import hmac
 import json
 import re
 import logging
+from types import SimpleNamespace as NS
 import requests
 from fastapi import HTTPException
 from sqlalchemy import or_
@@ -21,9 +22,10 @@ from app.core.config import settings
 from app.models.cart import Cart, CartItem
 from app.models.coupon import Coupon
 from app.models.order import Order, OrderItem, OrderMode
+from app.models.product import Product
 from app.models.payment import PaymentEvent
 from app.models.user import User, UserRole
-from app.services import stock
+from app.services import funnel as funnel_events, stock
 from app.services.coupons import InvalidCoupon, get_valid_coupon
 
 logger = logging.getLogger(__name__)
@@ -114,8 +116,20 @@ def price_line(item) -> dict:
     unit = minor_units(product.price if kind == "digital" else product.base_print_price)
     config["purchase_type"] = kind
     config["product_title"] = product.title
+    config.pop("buy_now", None)  # only direct_line may set this; a cart line cannot claim it
     return {"product_id": item.product_id, "quantity": item.quantity,
             "unit_minor": unit, "line_minor": unit * item.quantity, "selected_config": config}
+
+
+def direct_line(db: Session, direct) -> dict:
+    """Price a "buy now" item exactly like a cart line, flagged so a paid order leaves the cart alone."""
+    product = db.query(Product).filter(Product.id == direct.product_id).first()
+    if product is None:
+        raise HTTPException(404, "Product not found")
+    config = {**(direct.selected_config or {}), "purchase_type": direct.purchase_type}
+    line = price_line(NS(product=product, product_id=product.id, quantity=direct.quantity, selected_config=config))
+    line["selected_config"]["buy_now"] = True
+    return line
 
 
 def shipping_minor(has_physical: bool, method: str) -> int:
@@ -167,10 +181,11 @@ def open_hold(db: Session, user_id: int) -> Order | None:
 
 def hold_matches(order: Order, lines: list[dict], address: dict | None, total: int) -> bool:
     """True when a live hold already describes exactly what the cart would buy now."""
+    # A "buy now" hold and a cart hold never stand in for each other: paying one must not touch the cart.
     held = sorted((i.product_id, (i.selected_config or {}).get("purchase_type") or "", i.quantity,
-                   minor_units(i.price_at_purchase)) for i in order.items)
+                   minor_units(i.price_at_purchase), bool((i.selected_config or {}).get("buy_now"))) for i in order.items)
     wanted = sorted((line["product_id"], line["selected_config"]["purchase_type"], line["quantity"],
-                     line["unit_minor"]) for line in lines)
+                     line["unit_minor"], bool(line["selected_config"].get("buy_now"))) for line in lines)
     return held == wanted and order.amount_minor == total and (order.shipping_address or None) == (address or None)
 
 
@@ -196,6 +211,8 @@ def consume_cart(db: Session, order: Order) -> None:
     if cart is None:
         return
     for line in order.items:
+        if (line.selected_config or {}).get("buy_now"):
+            continue  # bought on its own: nothing in the cart was part of this order
         kind = (line.selected_config or {}).get("purchase_type")
         remaining = line.quantity
         for item in list(cart.items):
@@ -276,10 +293,14 @@ def current_hold(db: Session, user: User) -> dict | None:
 
 def prepare_order(db: Session, user: User, request) -> Order:
     """Serialize buyer snapshots, reserve inventory, and persist BEFORE provider I/O."""
-    fingerprint = hashlib.sha256(json.dumps(request.model_dump(), sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    fingerprint = hashlib.sha256(json.dumps(request.model_dump(exclude={"visitor"}), sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     # Free anything stale first (this customer's holds, and anyone's on the same products).
-    carted = [row[0] for row in db.query(CartItem.product_id).join(Cart, Cart.id == CartItem.cart_id)
-              .filter(Cart.user_id == user.id).all()]
+    direct = getattr(request, "direct_item", None)
+    if direct is not None:
+        carted = [direct.product_id]
+    else:
+        carted = [row[0] for row in db.query(CartItem.product_id).join(Cart, Cart.id == CartItem.cart_id)
+                  .filter(Cart.user_id == user.id).all()]
     expire_stale_holds(db, customer_id=user.id, product_ids=carted)
     db.query(User).filter(User.id == user.id).with_for_update().one()
     existing = db.query(Order).filter(Order.customer_id == user.id, Order.idempotency_key == request.idempotency_key).first()
@@ -287,10 +308,13 @@ def prepare_order(db: Session, user: User, request) -> Order:
         if existing.checkout_fingerprint != fingerprint:
             raise HTTPException(409, "This checkout attempt already has different details. Open your orders to continue.")
         return existing
-    cart = db.query(Cart).filter(Cart.user_id == user.id).with_for_update().first()
-    if not cart or not cart.items:
-        raise HTTPException(400, "Your cart is empty. Pending checkouts can be found in your orders.")
-    lines = [price_line(item) for item in cart.items]
+    if direct is not None:
+        lines = [direct_line(db, direct)]
+    else:
+        cart = db.query(Cart).filter(Cart.user_id == user.id).with_for_update().first()
+        if not cart or not cart.items:
+            raise HTTPException(400, "Your cart is empty. Pending checkouts can be found in your orders.")
+        lines = [price_line(item) for item in cart.items]
     physical = any(line["selected_config"]["purchase_type"] == "physical" for line in lines)
     address = validate_address(request.shipping_address, user.email) if physical else None
     subtotal = sum(line["line_minor"] for line in lines)
@@ -491,6 +515,11 @@ def apply_payment(db: Session, order: Order, payment: dict) -> bool:
     newly_paid = settle_payment(order, payment)
     if newly_paid:
         consume_cart(db, order)
+        try:  # a savepoint, so a tracking problem can never undo or block the payment itself
+            with db.begin_nested():
+                funnel_events.record_paid(db, order)
+        except Exception:
+            logger.exception("funnel: could not record paid event for order %s", order.id)
     if newly_paid and order.shipping_address:
         partner = db.query(User).filter(User.role == UserRole.print_partner,
             User.pincode == order.shipping_address["zip"], User.is_active.is_(True)).first()

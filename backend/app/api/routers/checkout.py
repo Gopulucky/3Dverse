@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Literal
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
@@ -7,10 +8,20 @@ from app.api import deps
 from app.core.config import settings
 from app.core.rate_limit import rate_limit
 from app.models.user import User
-from app.services import payments
+from app.schemas.funnel import Visitor
+from app.services import funnel as funnel_service, payments
 from app.services.availability import checkout_ready
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+class DirectItem(BaseModel):
+    """"Buy now": one product bought on its own, without reading or changing the cart."""
+    product_id: int
+    quantity: int = Field(default=1, ge=1, le=100)
+    purchase_type: Literal["digital", "physical"]
+    selected_config: dict | None = None
 
 
 class CheckoutRequest(BaseModel):
@@ -18,6 +29,8 @@ class CheckoutRequest(BaseModel):
     shipping_method: Literal["standard"] = "standard"
     shipping_address: dict | None = None
     coupon_code: str | None = Field(default=None, max_length=100)
+    direct_item: DirectItem | None = None
+    visitor: Visitor | None = None  # anonymous attribution only; not part of what is being bought
 
 
 class CheckoutItem(BaseModel):
@@ -64,7 +77,14 @@ def checkout_status() -> dict:
              dependencies=[Depends(rate_limit("checkout", limit=30, window_seconds=3600))])
 def create_payment_intent(req: CheckoutRequest, db: Session = Depends(deps.get_db),
                           current_user: User = Depends(deps.get_current_active_user)) -> Any:
-    return payments.start_payment(db, current_user, req)
+    result = payments.start_payment(db, current_user, req)
+    try:  # analytics must never fail a checkout
+        funnel_service.record_checkout_started(db, result["order_id"], req.visitor.model_dump() if req.visitor else None)
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("funnel: could not record checkout_started")
+    return result
 
 
 @router.post("/verify", response_model=VerifyResponse,

@@ -4,6 +4,7 @@ import { useId, useReducer, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
+import { track } from "@/lib/track-client";
 import { initialWaitlistState, waitlistReducer } from "@/lib/machines/waitlist";
 import { INTERESTS, PRICE_CHOICES, validateWaitlist, waitlistPayload, type WaitlistErrors, type WaitlistForm, type WaitlistSource } from "@/lib/waitlist";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ export function HomeWaitlist({ source = "home" }: { source?: WaitlistSource }) {
     try {
       await api.post("/api/waitlist", waitlistPayload(form, source));
       dispatch({ type: "JOINED" });
+      track("waitlist_joined");
     } catch (error) {
       const message = error instanceof ApiError && error.status === 429
         ? "Too many tries from this connection. Please wait a while and try again."

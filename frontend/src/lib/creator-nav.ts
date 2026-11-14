@@ -82,8 +82,8 @@ export const CREATOR_PATHS: CreatorPath[] = [
       "Partners handle printing and shipping",
     ],
     icon: Palette,
-    accent: "text-moss",
-    accentBg: "bg-moss/10",
+    accent: "text-foreground",
+    accentBg: "bg-secondary",
     canCollaborate: true,
   },
 ];

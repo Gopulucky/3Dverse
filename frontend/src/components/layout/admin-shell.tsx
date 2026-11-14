@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Settings,
   ListChecks,
+  Filter,
 } from "lucide-react";
 
 const adminLinks: SidebarLink[] = [
@@ -21,13 +22,14 @@ const adminLinks: SidebarLink[] = [
   { href: "/admin/returns", label: "Returns", icon: Undo2 },
   { href: "/admin/trust-safety", label: "Trust & Safety", icon: ShieldCheck },
   { href: "/admin/waitlist", label: "Waitlist", icon: ListChecks },
+  { href: "/admin/funnel", label: "Funnel", icon: Filter },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 /**
  * AdminShell — Admin Panel layout.
- * Sidebar + top nav. Admin is neutral by design (docs/brand/05-applications.md):
- * no audience accent — colour here means status (red/amber/green), not identity.
+ * Sidebar + top nav on the marketplace palette (Deep teal identity); red, amber
+ * and green appear only as status.
  */
 export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
@@ -35,7 +37,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <Navbar />
       <div className="flex">
         <div className="hidden md:block">
-          <Sidebar links={adminLinks} portal="admin" />
+          <Sidebar links={adminLinks} />
         </div>
         <main className="flex-1 min-w-0">
           {children}

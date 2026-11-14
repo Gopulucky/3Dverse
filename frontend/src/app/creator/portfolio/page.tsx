@@ -135,7 +135,7 @@ export default function CreatorPortfolioPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-              <ImageIcon className="text-ember-ink" />
+              <ImageIcon className="text-primary" />
               Portfolio
             </h1>
             <p className="text-muted-foreground mt-2 text-sm">
@@ -202,7 +202,7 @@ export default function CreatorPortfolioPage() {
                   <div className="min-w-0">
                     <p className="font-bold text-lg font-display truncate flex items-center gap-1.5">
                       {displayName}
-                      <BadgeCheck size={16} className="text-moss shrink-0" />
+                      <BadgeCheck size={16} className="text-primary shrink-0" />
                     </p>
                     {profile?.creator_tier && (
                       <Badge variant="secondary" className="capitalize mt-1">
@@ -342,7 +342,7 @@ export default function CreatorPortfolioPage() {
               <Card className="p-6 border-border bg-card">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold font-display flex items-center gap-2">
-                    <Eye size={16} className="text-ember-ink" />
+                    <Eye size={16} className="text-primary" />
                     Your Storefront
                   </h3>
                   <span className="text-xs text-muted-foreground font-data">
@@ -383,7 +383,7 @@ export default function CreatorPortfolioPage() {
                                 {formatMoney(p.price || 0, p.currency)}
                               </span>
                               {p.avg_rating != null && (
-                                <span className="flex items-center gap-0.5 text-xs text-ember-ink font-data">
+                                <span className="flex items-center gap-0.5 text-xs text-primary font-data">
                                   <Star size={10} fill="currentColor" />
                                   {p.avg_rating.toFixed(1)}
                                 </span>
@@ -401,7 +401,7 @@ export default function CreatorPortfolioPage() {
                     </p>
                     <Link
                       href="/creator/products/new"
-                      className="text-ember-ink text-sm font-semibold hover:underline"
+                      className="text-primary text-sm font-semibold hover:underline"
                     >
                       Upload your first design →
                     </Link>

@@ -78,7 +78,7 @@ export default function PartnerDashboard() {
   const { data: printers = [], isLoading: isLoadingPrinters } = useQuery({
     queryKey: ["partner-printers"],
     queryFn: () => api.get<FleetPrinter[]>("/api/partner/printers"),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && activeTab === "fleet",
   });
 
   // Fetch Analytics
@@ -167,7 +167,7 @@ export default function PartnerDashboard() {
     }
   };
 
-  const isLoading = isLoadingJobs || isLoadingTickets || isLoadingPrinters || isLoadingAnalytics;
+  const isLoading = isLoadingJobs || isLoadingAnalytics;
 
   const renderKPIs = () => (
     <div className="flex flex-wrap items-center gap-6 bg-card border border-border p-6 rounded-2xl mb-8 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
@@ -192,7 +192,7 @@ export default function PartnerDashboard() {
       <div className="w-px h-12 bg-border hidden md:block" />
       <div className="flex-1 min-w-[120px]">
         <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5">
-          <CheckCircle2 size={12} className="text-moss" /> Completed
+          <CheckCircle2 size={12} className="text-success" /> Completed
         </p>
         <p className="text-3xl font-bold font-display text-foreground">{jobs.filter(job => job.status === "delivered").length}</p>
       </div>
@@ -218,7 +218,7 @@ export default function PartnerDashboard() {
           const currentStepIndex = STATUS_FLOW.indexOf(job.status);
           
           let borderColor = "border-l-border";
-          if (job.status === "queued") borderColor = "border-l-moss";
+          if (job.status === "queued") borderColor = "border-l-primary";
           else if (job.status === "printing") borderColor = "border-l-warning";
           else if (job.status === "shipped" || job.status === "delivered") borderColor = "border-l-success";
 
@@ -249,7 +249,7 @@ export default function PartnerDashboard() {
                           <div
                             className={cn(
                               "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap",
-                              isPast ? "bg-success-surface text-success-ink" : isCurrent ? "bg-moss-surface text-moss-ink ring-2 ring-moss/30" : "bg-muted text-muted-foreground"
+                              isPast ? "bg-success-surface text-success-ink" : isCurrent ? "bg-primary-surface text-primary-ink ring-2 ring-primary/30" : "bg-muted text-muted-foreground"
                             )}
                           >
                             {isPast && <CheckCircle2 size={12} />}
@@ -263,7 +263,7 @@ export default function PartnerDashboard() {
                 </div>
 
                 {currentStepIndex === 0 || job.status === "paid" ? (
-                  <div className="bg-moss/5 border border-moss/20 rounded-xl p-8 text-center animate-in fade-in zoom-in-95 duration-500 mt-4">
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-8 text-center animate-in fade-in zoom-in-95 duration-500 mt-4">
                     <h3 className="font-bold font-display text-2xl mb-2 text-foreground">New Job Request</h3>
                     <p className="text-sm text-muted-foreground mb-8">Review the requirements and accept the job to begin printing.</p>
                     
@@ -319,7 +319,7 @@ export default function PartnerDashboard() {
                               onClick={() => updateStatus(job.id, status)}
                               variant={isPast ? "secondary" : isCurrent ? "glow" : isNext ? "outline" : "ghost"}
                               size="sm"
-                              className={cn(isPast && "opacity-50", isCurrent && "ring-2 ring-moss/30", isNext && "border-moss text-moss hover:bg-moss hover:text-moss-ink")}
+                              className={cn(isPast && "opacity-50", isCurrent && "ring-2 ring-primary/30", isNext && "border-primary text-primary hover:bg-primary hover:text-primary-foreground")}
                             >
                               {ACTION_LABEL[status]}
                             </Button>
@@ -344,7 +344,7 @@ export default function PartnerDashboard() {
                       {job.tracking_url && (
                         <Card className="mt-6 p-4 border-border">
                           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 font-bold font-display">Shiprocket Info</p>
-                          <a href={job.tracking_url} target="_blank" rel="noopener noreferrer" className="text-moss hover:underline flex items-center text-sm gap-2 font-semibold">
+                          <a href={job.tracking_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center text-sm gap-2 font-semibold">
                             <Truck size={14} /> Track Shipment
                           </a>
                           <p className="text-xs text-muted-foreground mt-2 font-data">AWB / Order: {job.shiprocket_order_id}</p>
@@ -370,7 +370,7 @@ export default function PartnerDashboard() {
         profile={profile} saving={savingProfile} error={profileError} onSave={saveProfile} />
     : <Skeleton className="h-64 w-full" />;
 
-  const renderFleet = () => (
+  const renderFleet = () => isLoadingPrinters ? <Skeleton className="h-40 w-full" /> : (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {printers?.map((printer) => (
         <Card key={printer.id} className="p-6 border-border">
@@ -390,7 +390,7 @@ export default function PartnerDashboard() {
   const content = (
     <div className="max-w-6xl mx-auto px-6 pt-24 pb-20">
       <h1 className="text-3xl font-bold mb-8 flex items-center gap-3 font-display">
-        <Settings className="text-moss" />
+        <Settings className="text-primary" />
         Print Partner Dashboard
       </h1>
 
@@ -407,12 +407,12 @@ export default function PartnerDashboard() {
           ["fleet", "Fleet Management", <Printer key="i" size={16} />, 0],
         ] as const).map(([key, label, icon, badge]) => (
           <button key={key} type="button" aria-pressed={activeTab === key} onClick={() => setActiveTab(key)}
-            className={cn("relative min-h-11 pb-3 text-sm font-semibold transition-colors", activeTab === key ? "text-moss" : "text-muted-foreground hover:text-foreground")}>
+            className={cn("relative min-h-11 pb-3 text-sm font-semibold transition-colors", activeTab === key ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
             <div className="flex items-center gap-2">
               {icon} {label}
-              {badge > 0 && <span className="rounded-full bg-moss-surface px-1.5 py-0.5 text-[10px] font-bold text-moss-ink">{badge}</span>}
+              {badge > 0 && <span className="rounded-full bg-primary-surface px-1.5 py-0.5 text-[10px] font-bold text-primary-ink">{badge}</span>}
             </div>
-            {activeTab === key && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t bg-moss" />}
+            {activeTab === key && <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t bg-primary" />}
           </button>
         ))}
       </div>

@@ -5,15 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import {
   DollarSign,
   TrendingUp,
   Star,
@@ -32,6 +23,7 @@ import {
   Package,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { AreaTrend } from "@/components/shared/lazy-charts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -111,7 +103,7 @@ export default function DesignerOnlyDashboard() {
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
             Est. Payout
           </p>
-          <p className="text-3xl font-bold font-data text-ember-ink">${data?.estimated_payout ? (data.estimated_payout * 0.15).toFixed(2) : "0.00"}</p>
+          <p className="text-3xl font-bold font-data text-primary">${data?.estimated_payout ? (data.estimated_payout * 0.15).toFixed(2) : "0.00"}</p>
         </div>
       </div>
 
@@ -119,36 +111,20 @@ export default function DesignerOnlyDashboard() {
       <div className="border border-border rounded-sm bg-card mb-6">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-            <BarChart3 size={14} className="text-ember-ink" /> Royalties Over Time
+            <BarChart3 size={14} className="text-primary" /> Royalties Over Time
           </h2>
         </div>
         <div className="px-4 py-6">
           <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data?.chart_data || []}>
-                <defs>
-                  <linearGradient id="colorRevenueFinDesigner" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-ember-9)" stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor="var(--color-ember-9)" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-                <XAxis dataKey="date" stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} axisLine={false} className="font-data" />
-                <YAxis stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} axisLine={false} className="font-data" tickFormatter={(v) => `$${(Number(v)*0.15).toFixed(0)}`} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--color-card)",
-                    borderColor: "var(--color-border)",
-                    color: "var(--color-foreground)",
-                    borderRadius: "4px",
-                    fontSize: "12px",
-                    fontFamily: "var(--font-sans)",
-                  }}
-                  formatter={(value: any) => [`$${(Number(value)*0.15).toFixed(2)}`, "Royalties"]}
-                />
-                <Area type="monotone" dataKey="revenue" stroke="var(--color-ember-9)" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenueFinDesigner)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <AreaTrend
+              data={data?.chart_data || []}
+              gradientId="colorRevenueFinDesigner"
+              color="var(--color-ember-9)"
+              strokeWidth={2}
+              tooltipRadius="4px"
+              tickFormatter={(v) => `$${(v * 0.15).toFixed(0)}`}
+              tooltipFormatter={(v) => [`$${(v * 0.15).toFixed(2)}`, "Royalties"]}
+            />
           </div>
         </div>
       </div>
@@ -179,7 +155,7 @@ export default function DesignerOnlyDashboard() {
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Download size={14} className="text-moss" />
+                <Download size={14} className="text-primary" />
                 <span className="text-sm text-foreground">Total Downloads</span>
               </div>
               <span className="text-sm font-bold font-data">{data?.total_sales ?? 0}</span>
@@ -193,7 +169,7 @@ export default function DesignerOnlyDashboard() {
         <div className="lg:col-span-2 border border-border rounded-sm bg-card">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-              <Star size={14} className="text-ember-ink" /> Top Performing Designs
+              <Star size={14} className="text-primary" /> Top Performing Designs
             </h2>
           </div>
           {data?.top_products?.length ? (

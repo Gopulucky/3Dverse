@@ -19,6 +19,7 @@ from app.schemas.user import (
 )
 from app.models.creator import Creator
 from app.core.storage import save_upload_file
+from app.schemas.order import public_config
 
 router = APIRouter()
 
@@ -151,7 +152,7 @@ def get_creator_orders(
             ),
             "quantity": item.quantity,
             "amount": item.price_at_purchase * item.quantity,
-            "selected_config": item.selected_config or {},
+            "selected_config": public_config(item.selected_config) or {},
             "status": order.status,
             "buyer_name": (
                 (order.customer.full_name or order.customer.email.split("@")[0])

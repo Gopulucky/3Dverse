@@ -16,27 +16,21 @@ export interface SidebarLink {
 
 interface SidebarProps {
   links: SidebarLink[];
-  portal: "studio" | "console" | "admin";
 }
 
 /**
- * Collapsible sidebar for Creator Studio, Partner Console and Admin.
+ * Collapsible sidebar for the Print Partner Console and Admin.
  * 72px collapsed / 240px expanded per spec.
  *
- * Active-state colour follows the audience-accent rule in
- * docs/brand/05-applications.md: studio→ember, console→moss, admin→neutral
- * (admin carries no identity accent — colour there means status only).
+ * Every portal shares the marketplace palette (frontend/design.md): the active
+ * item is Deep teal. Tangerine and the status colours are never nav identity.
  */
-const PORTAL_ACTIVE_CLASS: Record<SidebarProps["portal"], string> = {
-  studio: "bg-ember-surface text-ember-ink",
-  console: "bg-moss-surface text-moss-ink",
-  admin: "bg-secondary text-foreground",
-};
+const ACTIVE_CLASS = "bg-primary-surface text-primary-ink";
 
-export function Sidebar({ links, portal }: SidebarProps) {
+export function Sidebar({ links }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
-  const activeClass = PORTAL_ACTIVE_CLASS[portal];
+  const activeClass = ACTIVE_CLASS;
 
   return (
     <aside

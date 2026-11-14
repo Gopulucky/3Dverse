@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { BUY_NOW_PARAM, BUY_NOW_VALUE, saveBuyNow } from "@/lib/buy-now";
+import { track } from "@/lib/track-client";
 import { formatMoney } from "@/lib/currency";
 import { availableFormats, purchasePrice, thumbOf, type PurchaseType } from "@/lib/marketplace";
 import { ProductPrices } from "@/components/shared/product-prices";
@@ -91,7 +93,7 @@ function SpecRow({
 export default function ProductDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { setItemCount } = useCartStore();
   const [purchaseType, setPurchaseType] = useState<PurchaseType | "">("");
   const [selectedConfig, setSelectedConfig] = useState<Record<string, string>>({});
@@ -163,7 +165,15 @@ export default function ProductDetailPage() {
     }
   };
 
-  const addToCart = async (checkout = false) => {
+  // The product's print options as the customer sees them (the first of each is what the selects show).
+  const printConfig = (): Record<string, string> => purchaseType === "physical" ? {
+    material: product?.available_materials?.[0] || "",
+    color: product?.available_colors?.[0] || "",
+    size: product?.available_sizes?.[0] || "",
+    ...selectedConfig,
+  } : {};
+
+  const addToCart = async () => {
     if (adding || !product || purchasePrice(product, purchaseType) == null) return;
     if (!isAuthenticated) {
       router.push(`/login?next=${encodeURIComponent(`/marketplace/${id}`)}`);
@@ -174,25 +184,39 @@ export default function ProductDetailPage() {
     try {
       const cart = await api.post<{ items: unknown[] }>("/api/cart/items", {
         product_id: Number(id), quantity: 1,
-        selected_config: {
-          ...(purchaseType === "physical" ? {
-            material: product.available_materials?.[0] || "",
-            color: product.available_colors?.[0] || "",
-            size: product.available_sizes?.[0] || "",
-            ...selectedConfig,
-          } : {}),
-          purchase_type: purchaseType,
-        },
+        selected_config: { ...printConfig(), purchase_type: purchaseType },
       });
       setItemCount(cart.items.length);
       setCartMessage("Added to cart.");
-      if (checkout) router.push("/checkout");
+      track("add_to_cart", { productId: Number(id) });
     } catch {
       setCartMessage("Could not add this product. Please try again.");
     } finally { setAdding(false); }
   };
   const handleAddToCart = () => void addToCart();
-  const handleBuyNow = () => void addToCart(true);
+  // Buy Now pays for this product alone: it never touches the cart.
+  const handleBuyNow = () => {
+    if (!product || (purchaseType !== "digital" && purchaseType !== "physical") || purchasePrice(product, purchaseType) == null) return;
+    if (!isAuthenticated) {
+      router.push(`/login?next=${encodeURIComponent(`/marketplace/${id}`)}`);
+      return;
+    }
+    track("buy_now", { productId: Number(id) });
+    saveBuyNow(sessionStorage, user?.id, { product_id: Number(id), quantity: 1, purchase_type: purchaseType, selected_config: printConfig() });
+    router.push(`/checkout?${BUY_NOW_PARAM}=${BUY_NOW_VALUE}`);
+  };
+
+  // One anonymous "product viewed" per visit to this product, once it has loaded.
+  const viewedId = product?.id;
+  useEffect(() => {
+    if (viewedId) track("product_view", { productId: viewedId });
+  }, [viewedId]);
+  const [viewerTracked, setViewerTracked] = useState(false);
+  const trackViewerOpened = () => {
+    if (viewerTracked) return;
+    setViewerTracked(true);
+    track("viewer_opened", { productId: Number(id) });
+  };
 
   if (productLoading) {
     return (
@@ -268,7 +292,7 @@ export default function ProductDetailPage() {
           {/* Left Column: 3D Viewer & Media (40%) */}
           <div className="lg:col-span-5 space-y-4">
             {modelUrl ? (
-              <div className="h-[450px] lg:h-[500px]">
+              <div className="h-[450px] lg:h-[500px]" onPointerDownCapture={trackViewerOpened}>
                 <Advanced3DViewer url={modelUrl} />
               </div>
             ) : (

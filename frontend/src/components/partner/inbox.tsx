@@ -39,7 +39,7 @@ export function Inbox({ tickets, busyId, onAccept, onDecline }: {
       <div role="group" aria-label="Inbox filter" className="mb-4 flex flex-wrap gap-2">
         {GROUPS.map(g => (
           <button key={g.key} type="button" aria-pressed={group === g.key} onClick={() => setGroup(g.key)}
-            className={cn("min-h-11 rounded-full border px-4 text-sm font-medium", group === g.key ? "border-moss bg-moss-surface text-moss-ink" : "border-border text-muted-foreground hover:text-foreground")}>
+            className={cn("min-h-11 rounded-full border px-4 text-sm font-medium", group === g.key ? "border-primary bg-primary-surface text-primary-ink" : "border-border text-muted-foreground hover:text-foreground")}>
             {g.label} ({counts[g.key]})
           </button>
         ))}
@@ -64,7 +64,7 @@ export function Inbox({ tickets, busyId, onAccept, onDecline }: {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {next === "accept" && <Button type="button" className="min-h-11" disabled={busyId === t.id} onClick={() => onAccept(t.id)}>Accept</Button>}
-                  {next === "quote" && <Link href={`/collaboration/${t.id}`} className={cn(actionLink, "bg-moss text-white hover:opacity-90")}>Send quote</Link>}
+                  {next === "quote" && <Link href={`/collaboration/${t.id}`} className={cn(actionLink, "bg-primary text-primary-foreground hover:opacity-90")}>Send quote</Link>}
                   <Link href={`/collaboration/${t.id}`} className={cn(actionLink, "border border-border hover:bg-muted")}>Open</Link>
                   {(next === "accept" || next === "quote" || next === "wait") && (
                     <Button type="button" variant="ghost" className="min-h-11 text-destructive" disabled={busyId === t.id} onClick={() => onDecline(t.id)}>Decline</Button>

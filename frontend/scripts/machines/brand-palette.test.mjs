@@ -131,6 +131,29 @@ test('no bare text-ember/text-warning or solid border-ember in src', () => {
   assert.deepEqual(hits, []);
 });
 
+// Portals share the storefront palette: moss is success status only, and
+// decorative page/KPI icons are teal, never tangerine ink.
+test('portals use no moss identity and no tangerine-ink icons', () => {
+  const src = new URL('../../src/', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+  const files = [];
+  const walk = (dir) => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walk(full);
+      else if (/\.tsx?$/.test(name)) files.push(full);
+    }
+  };
+  for (const d of ['app/creator', 'app/partner', 'app/admin', 'components/partner', 'components/creator']) walk(join(src, d));
+  files.push(join(src, 'components/layout/sidebar.tsx'), join(src, 'components/shared/stat-card.tsx'));
+  const hits = [];
+  for (const f of files) {
+    readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+      if (/moss/.test(line) || /<[A-Z]\w*[^>]*className="[^"]*text-ember-ink/.test(line)) hits.push(`${f}:${i + 1}`);
+    });
+  }
+  assert.deepEqual(hits, []);
+});
+
 const hue = (hex) => {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
   const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
