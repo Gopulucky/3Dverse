@@ -22,14 +22,16 @@ Three brand colours, used 60/30/10. Token names are unchanged (`slate-*`,
 `violet-*`, `ember-*`), only their values; `scripts/machines/brand-palette.test.mjs`
 pins the anchors and WCAG AA pairs.
 
-- 60% Porcelain + ink (`slate-*`): page `#F7F6F2`, text `#16191D`; dark `#0F1315` / `#E4E9EB`.
-  Calm surfaces so product photos lead.
+- 60% cool white + ink (`slate-*`): page `#FFFFFF`, image wells `#EEF2F4`, text `#12181B`;
+  dark `#0F1315` / `#E4E9EB`. Neutrals lean cool (never beige) to match the teal and
+  product photography; the palette test enforces it.
 - 30% Deep teal (`violet-*`, `primary`): `#0E5E6F` with white text; dark `#4FC3D4` with dark ink.
   Trust: primary buttons, Add to cart, links, focus. Customers' accent.
 - 10% Tangerine (`ember-*`): `#FF7A1A`; dark `#FF8A3D`. Always dark ink on it
   (`text-ember-foreground`). Purchase intent and warmth: Buy now, cart count,
-  applied-filter chips, the wordmark "3D". Creators' accent.
-- Tangerine is a fill, never text: it is ~2.4:1 on Porcelain. Text and solid
+  Featured badges, applied-filter chips, category-chip hover, the wordmark "3D".
+  Creators' accent.
+- Tangerine is a fill, never text: it is ~2.4:1 on white. Text and solid
   selected borders use `ember-ink` (`#B04A00`); translucent `ember/NN` tints are decorative.
 - Warning amber is a yellow-ochre (`#C99A06`, ink `#7A5600`), held 15° of hue
   away from Tangerine so a warning never reads as the brand. Warning text uses `warning-ink`.

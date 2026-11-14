@@ -1,5 +1,5 @@
 // Brand palette: Deep teal (trust, 30%), Tangerine (action, 10%),
-// Porcelain + ink neutrals (60%). Token names stay violet / ember / slate so
+// cool white + ink neutrals (60%). Token names stay violet / ember / slate so
 // call sites do not change; only their values do. These tests pin the
 // anchors and the WCAG AA pairs the UI actually renders.
 import { test } from 'node:test';
@@ -47,11 +47,11 @@ test('every scale has all 12 steps in light and dark', () => {
   }
 });
 
-test('anchors are Deep teal, Tangerine and Porcelain/ink', () => {
+test('anchors are Deep teal, Tangerine and cool white/ink', () => {
   assert.equal(L.violet[9], '#0E5E6F');
   assert.equal(L.ember[9], '#FF7A1A');
-  assert.equal(L.slate[1], '#F7F6F2');
-  assert.equal(L.slate[12], '#16191D');
+  assert.equal(L.slate[1], '#FFFFFF');
+  assert.equal(L.slate[12], '#12181B');
   assert.equal(D.violet[9], '#4FC3D4');
   assert.equal(D.ember[9], '#FF8A3D');
   assert.equal(D.slate[1], '#0F1315');
@@ -61,7 +61,7 @@ test('anchors are Deep teal, Tangerine and Porcelain/ink', () => {
 test('brand.ts records the same anchors', () => {
   assert.equal(BRAND_COLORS.violet.hex, '#0E5E6F');
   assert.equal(BRAND_COLORS.ember.hex, '#FF7A1A');
-  assert.equal(BRAND_COLORS.slate.hex, '#16191D');
+  assert.equal(BRAND_COLORS.slate.hex, '#12181B');
 });
 
 test('light mode text and solid fills pass WCAG AA', () => {
@@ -111,7 +111,7 @@ test('solid ember fills declare an ink foreground in both modes', () => {
   assert.match(lightCss, /\.dark\s*\{[^}]*--on-solid-ember:\s*var\(--color-slate-1\)/);
 });
 
-// Tangerine and warning amber are fill colours (<3:1 on Porcelain). Text and
+// Tangerine and warning amber are fill colours (<3:1 on white). Text and
 // solid selected borders use the -ink step; translucent tints stay decorative.
 test('no bare text-ember/text-warning or solid border-ember in src', () => {
   const root = new URL('../../src/', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
@@ -157,4 +157,20 @@ test('warning ink passes AA on page and warning surface', () => {
 test('dark printed tile uses the deep teal step, not the bright button fill', () => {
   const storefront = readFileSync(new URL('../../src/styles/marketplace/storefront.css', import.meta.url), 'utf8');
   assert.match(storefront, /\.dark \.home-tile--printed\s*\{\s*background:\s*var\(--color-violet-8\);\s*color:\s*var\(--color-slate-12\)/);
+});
+
+// Warm (beige) neutrals clashed with the cool teal and cool product photos.
+test('light neutrals lean cool, never warm', () => {
+  for (let step = 2; step <= 12; step++) {
+    const hex = L.slate[step];
+    const [r, , b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    assert.ok(b >= r, `slate-${step} ${hex} is warm (red ${r} > blue ${b})`);
+  }
+});
+
+test('Featured badge carries the Tangerine accent with ink text', () => {
+  const storefront = readFileSync(new URL('../../src/styles/marketplace/storefront.css', import.meta.url), 'utf8');
+  const rule = storefront.match(/\.market-product-featured\s*\{([^}]*)\}/)[1];
+  assert.match(rule, /background:\s*var\(--color-ember\)/);
+  assert.match(rule, /color:\s*var\(--color-ember-foreground\)/);
 });
