@@ -47,7 +47,7 @@
    ================================================================ */
 
 @theme inline {
-  /* Brand palette (60/30/10): Porcelain + ink neutrals (slate-*, 60%),
+  /* Brand palette (60/30/10): cool white + ink neutrals (slate-*, 60%),
      Deep teal (violet-*, 30%: trust, primary actions, links), and
      Tangerine (ember-*, 10%: Buy now, cart count, creator cues).
      Token names are kept so call sites don't change. Contrast pairs are
@@ -71,11 +71,11 @@
   --color-moss-7: #AFDFC7;  --color-moss-8: #8ECEAF;  --color-moss-9: #059669;
   --color-moss-10: #00875E; --color-moss-11: #16805A; --color-moss-12: #0F3F2C;
 
-  /* ---- Porcelain + ink (slate-*) — neutral, most of the UI ---- */
-  --color-slate-1: #F7F6F2;  --color-slate-2: #F2F1EC;  --color-slate-3: #EBEAE4;
-  --color-slate-4: #E4E3DC;  --color-slate-5: #DDDCD5;  --color-slate-6: #D3D2CB;
-  --color-slate-7: #C5C4BD;  --color-slate-8: #8E8D87;  --color-slate-9: #6B7075;
-  --color-slate-10: #60656A; --color-slate-11: #565B61; --color-slate-12: #16191D;
+  /* ---- Cool white + ink (slate-*) — neutral, most of the UI ---- */
+  --color-slate-1: #FFFFFF;  --color-slate-2: #F6F8F9;  --color-slate-3: #EEF2F4;
+  --color-slate-4: #E7ECEF;  --color-slate-5: #E0E7EA;  --color-slate-6: #D6DFE3;
+  --color-slate-7: #C6D1D6;  --color-slate-8: #87949B;  --color-slate-9: #66737A;
+  --color-slate-10: #5A666D; --color-slate-11: #4E5A61; --color-slate-12: #12181B;
 
   /* ---- Status — red / amber / green (status only, never decoration).
      Amber is a yellow-ochre, kept >=15deg of hue away from Tangerine so a
@@ -98,7 +98,7 @@
 
   /* Fixed scrim — deliberately does NOT flip with theme (a modal backdrop
      should stay dark in both light and dark mode). */
-  --color-ink: #16191D;
+  --color-ink: #12181B;
 
   /* Semantic surface/ink pairs */
   --color-primary-surface: var(--color-violet-3);
