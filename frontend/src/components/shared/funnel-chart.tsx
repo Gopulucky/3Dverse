@@ -12,7 +12,7 @@ export function FunnelChart() {
   return (
     <Card className="p-5 border-border bg-card hover-lift transition-all h-full flex flex-col">
       <div className="flex items-center gap-2 mb-6">
-        <div className="p-2 bg-success/10 rounded-lg text-success">
+        <div className="p-2 bg-primary/10 rounded-lg text-primary">
           <Filter size={16} />
         </div>
         <div>

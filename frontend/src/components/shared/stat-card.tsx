@@ -69,7 +69,7 @@ export function StatCard({
           <span
             className={cn(
               "text-xs font-semibold ml-auto",
-              trend.direction === "up" && "text-moss",
+              trend.direction === "up" && "text-success",
               trend.direction === "down" && "text-destructive",
               trend.direction === "neutral" && "text-muted-foreground"
             )}

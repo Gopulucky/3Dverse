@@ -234,7 +234,7 @@ export default function ProductDetailPage({
                 Unpublish
               </Button>
             ) : (
-              <Button onClick={handlePublishToggle} variant="secondary" className="bg-ember-surface text-ember-ink hover:bg-ember/20" disabled={saving}>
+              <Button onClick={handlePublishToggle} variant="secondary" className="bg-primary-surface text-primary-ink hover:bg-primary/20" disabled={saving}>
                 {saving && <Loader2 size={16} className="animate-spin mr-2" />}
                 Publish
               </Button>
@@ -264,10 +264,10 @@ export default function ProductDetailPage({
 
         {product.safety_review_status === "pending" && product.status !== "published" && (
           <div className="mb-8 p-4 bg-ember/10 border border-ember/20 rounded-xl flex items-start gap-3">
-            <AlertTriangle className="text-ember-ink mt-0.5" size={20} />
+            <AlertTriangle className="text-warning-ink mt-0.5" size={20} />
             <div>
-              <h3 className="font-semibold text-ember-ink">Awaiting Safety Review</h3>
-              <p className="text-sm text-ember-ink/80 mt-1">
+              <h3 className="font-semibold text-warning-ink">Awaiting Safety Review</h3>
+              <p className="text-sm text-warning-ink/80 mt-1">
                 Every new listing is screened for restricted or dangerous printable items before it can go
                 live. This is usually quick — you&apos;ll be able to publish as soon as it clears.
               </p>
@@ -282,10 +282,10 @@ export default function ProductDetailPage({
           (product.media?.length ?? 0) === 0 &&
           product.status !== "published" && (
             <div className="mb-8 p-4 bg-ember/10 border border-ember/20 rounded-xl flex items-start gap-3">
-              <AlertTriangle className="text-ember-ink mt-0.5" size={20} />
+              <AlertTriangle className="text-warning-ink mt-0.5" size={20} />
               <div>
-                <h3 className="font-semibold text-ember-ink">Add a photo before publishing</h3>
-                <p className="text-sm text-ember-ink/80 mt-1">
+                <h3 className="font-semibold text-warning-ink">Add a photo before publishing</h3>
+                <p className="text-sm text-warning-ink/80 mt-1">
                   Buyers browse by photos of the finished print, not the model file. Upload at
                   least one image below to publish this listing.
                 </p>
@@ -339,7 +339,7 @@ export default function ProductDetailPage({
             <Card className="p-6 border-border bg-card shadow-sm">
               <div className="flex justify-between items-center mb-5">
                 <h2 className="text-lg font-bold font-display">Media Hub</h2>
-                <label className="cursor-pointer text-sm font-semibold text-ember-ink hover:underline flex items-center gap-1.5">
+                <label className="cursor-pointer text-sm font-semibold text-primary hover:underline flex items-center gap-1.5">
                   <ImageIcon size={16} />
                   Add Images
                   <input

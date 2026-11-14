@@ -34,7 +34,7 @@ export function AvailabilitySwitch({ accepting, missing, busy, onToggle, onOpenP
         <button type="button" role="switch" aria-checked={accepting} aria-label="Accepting work" disabled={blocked || busy}
           onClick={() => onToggle(!accepting)}
           className={cn("relative inline-flex h-11 w-20 shrink-0 items-center rounded-full border border-border px-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-            accepting ? "bg-moss" : "bg-muted")}>
+            accepting ? "bg-primary" : "bg-muted")}>
           <span className={cn("flex h-8 w-8 items-center justify-center rounded-full bg-background shadow transition-transform", accepting && "translate-x-9")}>
             {busy && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
           </span>
@@ -46,7 +46,7 @@ export function AvailabilitySwitch({ accepting, missing, busy, onToggle, onOpenP
           <ul className="mt-1 list-disc pl-5 text-muted-foreground">
             {missing.map(key => <li key={key}>{MISSING_LABEL[key] ?? key}</li>)}
           </ul>
-          <button type="button" onClick={onOpenProfile} className="mt-2 inline-flex min-h-11 items-center text-moss underline">Open your profile</button>
+          <button type="button" onClick={onOpenProfile} className="mt-2 inline-flex min-h-11 items-center text-primary underline">Open your profile</button>
         </div>
       )}
     </div>

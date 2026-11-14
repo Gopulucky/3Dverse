@@ -5,15 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import {
   DollarSign,
   Package,
   TrendingUp,
@@ -31,6 +22,7 @@ import {
   Eye,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { AreaTrend } from "@/components/shared/lazy-charts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -89,8 +81,8 @@ export default function SelfFulfillingDashboard() {
         <div className="p-5 border border-border rounded-2xl bg-card hover-lift transition-all group">
           <div className="text-sm font-semibold text-muted-foreground mb-2 flex items-center justify-between">
             Revenue
-            <div className="p-2 bg-ember/10 rounded-lg group-hover:bg-ember/20 transition-colors">
-              <DollarSign size={16} className="text-ember-ink" />
+            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+              <DollarSign size={16} className="text-primary" />
             </div>
           </div>
           <p className="text-3xl font-bold font-display text-foreground">
@@ -104,8 +96,8 @@ export default function SelfFulfillingDashboard() {
         <div className="p-5 border border-border rounded-2xl bg-card hover-lift transition-all group">
           <div className="text-sm font-semibold text-muted-foreground mb-2 flex items-center justify-between">
             Orders
-            <div className="p-2 bg-success/10 rounded-lg group-hover:bg-success/20 transition-colors">
-              <ShoppingCart size={16} className="text-success" />
+            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+              <ShoppingCart size={16} className="text-primary" />
             </div>
           </div>
           <p className="text-3xl font-bold font-display text-foreground">
@@ -119,8 +111,8 @@ export default function SelfFulfillingDashboard() {
         <div className="p-5 border border-border rounded-2xl bg-card hover-lift transition-all group">
           <div className="text-sm font-semibold text-muted-foreground mb-2 flex items-center justify-between">
             Models
-            <div className="p-2 bg-warning/10 rounded-lg group-hover:bg-warning/20 transition-colors">
-              <Package size={16} className="text-warning-ink" />
+            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+              <Package size={16} className="text-primary" />
             </div>
           </div>
           <p className="text-3xl font-bold font-display text-foreground">
@@ -134,8 +126,8 @@ export default function SelfFulfillingDashboard() {
         <div className="p-5 border border-border rounded-2xl bg-card hover-lift transition-all group">
           <div className="text-sm font-semibold text-muted-foreground mb-2 flex items-center justify-between">
             Views
-            <div className="p-2 bg-ember/10 rounded-lg group-hover:bg-ember/20 transition-colors">
-              <Eye size={16} className="text-ember-ink" />
+            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+              <Eye size={16} className="text-primary" />
             </div>
           </div>
           <p className="text-3xl font-bold font-display text-foreground">
@@ -151,37 +143,18 @@ export default function SelfFulfillingDashboard() {
         <div className="lg:col-span-2 border border-border rounded-2xl bg-card hover-lift transition-all flex flex-col">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
             <h2 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-              <BarChart3 size={14} className="text-ember-ink" /> Net Revenue Over Time
+              <BarChart3 size={14} className="text-primary" /> Net Revenue Over Time
             </h2>
           </div>
           <div className="px-5 py-6 flex-1">
             <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data?.chart_data || []}>
-                  <defs>
-                    <linearGradient id="colorRevenueFin" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-ember-9)" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="var(--color-ember-9)" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-                  <XAxis dataKey="date" stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} axisLine={false} className="font-data" />
-                  <YAxis stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} axisLine={false} className="font-data" tickFormatter={(v) => `$${v}`} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--color-card)",
-                      borderColor: "var(--color-border)",
-                      color: "var(--color-foreground)",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                      fontFamily: "var(--font-sans)",
-                      border: "1px solid var(--color-border)",
-                    }}
-                    formatter={(value: any) => [`$${Number(value).toFixed(2)}`, "Net Revenue"]}
-                  />
-                  <Area type="monotone" dataKey="revenue" stroke="var(--color-ember-9)" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenueFin)" />
-                </AreaChart>
-              </ResponsiveContainer>
+              <AreaTrend
+                data={data?.chart_data || []}
+                gradientId="colorRevenueFin"
+                color="var(--color-ember-9)"
+                tickFormatter={(v) => `$${v}`}
+                tooltipFormatter={(v) => [`$${v.toFixed(2)}`, "Net Revenue"]}
+              />
             </div>
           </div>
         </div>

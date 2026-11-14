@@ -36,8 +36,14 @@ pins the anchors and WCAG AA pairs.
   selected borders use `ember-ink` (`#B04A00`); translucent `ember/NN` tints are decorative.
 - Warning amber is a yellow-ochre (`#C99A06`, ink `#7A5600`), held 15° of hue
   away from Tangerine so a warning never reads as the brand. Warning text uses `warning-ink`.
-- Moss (`#059669`) is functional only: success states and the print-partner portal.
-  Never in the logo or marketing.
+- Moss (`#059669`) is functional only: success states. Never identity: not in the
+  logo, marketing or any portal.
+- Portals (Creator Studio, Print Partner Console, Admin) wear the same palette as
+  the storefront: Deep teal is identity (active nav, tabs, page and KPI icons,
+  links, primary buttons). Tangerine stays a fill for selected chips and badges.
+  Green, ochre and red appear only as status. The Creator path badge is the one
+  variation: Studio is a tangerine tint, Seller teal, Designer neutral. Pinned by
+  `scripts/machines/brand-palette.test.mjs`.
 - Input borders (`slate-8`) meet 3:1 non-text contrast on page and card.
 - Day/night: `ThemeToggle` in the navbar (sun in day, moon at night, 44px target,
   `role="switch"` named "Night mode"). Starts from the OS scheme; a click is stored

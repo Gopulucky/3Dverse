@@ -4,17 +4,6 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-} from "recharts";
-import {
   DollarSign,
   Package,
   Users,
@@ -22,6 +11,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { AreaTrend, BarTrend } from "@/components/shared/lazy-charts";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRequireAuth } from "@/stores/auth-store";
@@ -93,32 +83,24 @@ export default function AdminDashboard() {
           label="Platform Revenue"
           value={`$${data?.platform_revenue?.toFixed(2) || "0.00"}`}
           icon={DollarSign}
-          iconBg="bg-success/15"
-          iconColor="text-success"
           trend={{ value: "+18.2%", direction: "up" }}
         />
         <StatCard
           label="Order Volume"
           value={data?.order_volume || 0}
           icon={Package}
-          iconBg="bg-muted"
-          iconColor="text-muted-foreground"
           trend={{ value: "+5.4%", direction: "up" }}
         />
         <StatCard
           label="Active Users"
           value={data?.total_users || 0}
           icon={Users}
-          iconBg="bg-muted"
-          iconColor="text-muted-foreground"
           trend={{ value: "+21.1%", direction: "up" }}
         />
         <StatCard
           label="Physical / Digital"
           value={`${data?.physical_orders || 0} / ${data?.digital_orders || 0}`}
           icon={Printer}
-          iconBg="bg-muted"
-          iconColor="text-muted-foreground"
         />
       </div>
 
@@ -128,58 +110,16 @@ export default function AdminDashboard() {
         <Card className="p-6 border-border bg-card">
           <h3 className="text-xl font-bold mb-6 font-display text-foreground">Platform Revenue</h3>
           <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data?.chart_data || []}>
-                <defs>
-                  <linearGradient id="colorAdminRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-slate-9)" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="var(--color-slate-9)" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="var(--color-border)"
-                />
-                <XAxis
-                  dataKey="date"
-                  stroke="var(--color-muted-foreground)"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  className="font-data"
-                />
-                <YAxis
-                  stroke="var(--color-muted-foreground)"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  className="font-data"
-                  tickFormatter={(value) => `$${value}`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--color-card)",
-                    borderColor: "var(--color-border)",
-                    color: "var(--color-foreground)",
-                    borderRadius: "12px",
-                    fontFamily: "var(--font-sans)",
-                  }}
-                  formatter={(value: any) => [
-                    `$${Number(value).toFixed(2)}`,
-                    "Revenue",
-                  ]}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="var(--color-slate-9)"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorAdminRev)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <AreaTrend
+              data={data?.chart_data || []}
+              gradientId="colorAdminRev"
+              color="var(--color-slate-9)"
+              fillOpacity={0.2}
+              fontSize={12}
+              tooltipRadius="12px"
+              tickFormatter={(v) => `$${v}`}
+              tooltipFormatter={(v) => [`$${v.toFixed(2)}`, "Revenue"]}
+            />
           </div>
         </Card>
 
@@ -187,45 +127,7 @@ export default function AdminDashboard() {
         <Card className="p-6 border-border bg-card">
           <h3 className="text-xl font-bold mb-6 font-display text-foreground">Order Volume</h3>
           <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data?.chart_data || []}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="var(--color-border)"
-                />
-                <XAxis
-                  dataKey="date"
-                  stroke="var(--color-muted-foreground)"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  className="font-data"
-                />
-                <YAxis
-                  stroke="var(--color-muted-foreground)"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  className="font-data"
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--color-card)",
-                    borderColor: "var(--color-border)",
-                    color: "var(--color-foreground)",
-                    borderRadius: "12px",
-                    fontFamily: "var(--font-sans)",
-                  }}
-                  cursor={{ fill: "rgba(255,255,255,0.03)" }}
-                />
-                <Bar
-                  dataKey="orders"
-                  fill="var(--color-slate-9)"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            <BarTrend data={data?.chart_data || []} color="var(--color-slate-9)" />
           </div>
         </Card>
       </div>

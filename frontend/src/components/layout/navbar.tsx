@@ -112,7 +112,7 @@ export function Navbar() {
   const { path: creatorPath, links: creatorLinks, topBarLinks } = useCreatorType([pathname]);
 
   // The cart badge reads the same query the cart page uses, so it is one request, not two.
-  const { data: cartData } = useCart(isAuthenticated);
+  const { data: cartData } = useCart(isAuthenticated && isMarketplace);
   useEffect(() => {
     if (cartData) setItemCount(cartData.items?.length || 0);
   }, [cartData, setItemCount]);
@@ -200,7 +200,7 @@ export function Navbar() {
       label: "Creator Studio",
       description: "Sell your designs",
       icon: Palette,
-      iconClass: "text-ember-ink",
+      iconClass: "text-primary",
       active: isCreator,
       allowed: user?.role === "creator" || user?.role === "admin",
     },
@@ -210,7 +210,7 @@ export function Navbar() {
       label: "Print Partner Hub",
       description: "Manage print orders",
       icon: Printer,
-      iconClass: "text-moss",
+      iconClass: "text-primary",
       active: isPartner,
       allowed: user?.role === "print_partner" || user?.role === "admin",
     },
@@ -220,7 +220,7 @@ export function Navbar() {
       label: "Admin Console",
       description: "Platform management",
       icon: Shield,
-      iconClass: "text-destructive",
+      iconClass: "text-primary",
       active: isAdmin,
       allowed: user?.role === "admin",
     },
@@ -237,24 +237,14 @@ export function Navbar() {
     ? "/admin/settings"
     : "/settings";
 
-  // Accent color logic per portal — docs/brand/05-applications.md:
-  // marketplace/customers→violet (primary), creator studio→ember, partner
-  // console→moss, admin→neutral (no identity accent; colour there is status
-  // only). Creator studio further refines by sub-path (studio/seller/
-  // designer) via creatorPath — fall back to ember when that isn't known yet.
+  // Every portal wears the marketplace palette (frontend/design.md): Deep teal
+  // is identity. Only the creator path badge varies (Studio tangerine tint,
+  // Seller teal, Designer neutral), and the path is known from creatorPath.
   const accentClass = isCreator
-    ? creatorPath?.accent || "text-ember-ink"
-    : isPartner
-    ? "text-moss"
-    : isAdmin
-    ? "text-foreground"
+    ? creatorPath?.accent || "text-primary"
     : "text-primary";
   const accentBgClass = isCreator
-    ? creatorPath?.accentBg || "bg-ember/10"
-    : isPartner
-    ? "bg-moss/10"
-    : isAdmin
-    ? "bg-secondary"
+    ? creatorPath?.accentBg || "bg-primary/10"
     : "bg-primary/10";
 
   return (
@@ -439,7 +429,7 @@ export function Navbar() {
                       className={cn(
                         "flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-semibold transition-colors whitespace-nowrap",
                         isActive
-                          ? cn(creatorPath?.accentBg || "bg-ember/10", creatorPath?.accent || "text-ember-ink")
+                          ? cn(creatorPath?.accentBg || "bg-primary/10", creatorPath?.accent || "text-primary")
                           : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >

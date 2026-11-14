@@ -32,7 +32,9 @@ export default function CreatorDashboardPage() {
 
     // Render immediately from the cached value, then reconcile with the server,
     // which is authoritative — the path is locked there, not in the browser.
-    setCreatorType(readStoredCreatorType());
+    const cached = readStoredCreatorType();
+    setCreatorType(cached);
+    if (cached) setIsLoading(false);
 
     api
       .get<{ creator_type: string | null }>("/api/creator/onboarding/status")
@@ -102,7 +104,7 @@ export default function CreatorDashboardPage() {
               which features you get.
             </p>
             <p className="text-sm text-muted-foreground max-w-2xl mx-auto mt-4 flex items-center justify-center gap-2">
-              <Lock size={14} className="text-ember-ink" />
+              <Lock size={14} className="text-primary" />
               <span>
                 This choice is <strong className="text-foreground">permanent</strong>. To
                 switch later you'd have to delete your account and start again.

@@ -46,7 +46,7 @@ export default function CreatorAnalyticsPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3 font-display">
-            <BarChart3 className="text-ember-ink" />
+            <BarChart3 className="text-primary" />
             Financial Analytics
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
@@ -63,36 +63,26 @@ export default function CreatorAnalyticsPage() {
           label="Total Sales"
           value={`₹${data?.total_sales?.toFixed(2) || "0.00"}`}
           icon={IndianRupee}
-          iconBg="bg-ember/15"
-          iconColor="text-ember-ink"
         />
         <StatCard
           label="Total Earnings"
           value={`₹${data?.total_earnings?.toFixed(2) || "0.00"}`}
           icon={TrendingUp}
-          iconBg="bg-success/15"
-          iconColor="text-success"
         />
         <StatCard
           label="Orders"
           value={`${data?.orders_count || 0}`}
           icon={ShoppingBag}
-          iconBg="bg-ember/15"
-          iconColor="text-ember-ink"
         />
         <StatCard
           label="Avg Order Value"
           value={`₹${data?.average_order_value?.toFixed(2) || "0.00"}`}
           icon={BarChart3}
-          iconBg="bg-ember/15"
-          iconColor="text-ember-ink"
         />
         <StatCard
           label="Platform Fees"
           value={`₹${data?.platform_fees_paid?.toFixed(2) || "0.00"}`}
           icon={Receipt}
-          iconBg="bg-ember/15"
-          iconColor="text-ember-ink"
         />
       </div>
 

@@ -222,7 +222,7 @@ export default function OnboardingPage() {
           {currentStep === 0 && (
             <div className="space-y-5">
               <div className="text-center mb-6">
-                <User size={32} className="mx-auto text-ember-ink mb-2" />
+                <User size={32} className="mx-auto text-primary mb-2" />
                 <h2 className="text-2xl font-bold font-display">Your Profile</h2>
                 <p className="text-sm text-muted-foreground">Basic info about you and your studio</p>
               </div>
@@ -282,7 +282,7 @@ export default function OnboardingPage() {
           {currentStep === 1 && (
             <div className="space-y-5">
               <div className="text-center mb-6">
-                <Printer size={32} className="mx-auto text-ember-ink mb-2" />
+                <Printer size={32} className="mx-auto text-primary mb-2" />
                 <h2 className="text-2xl font-bold font-display">Your Equipment</h2>
                 <p className="text-sm text-muted-foreground">Add at least one 3D printer</p>
               </div>
@@ -343,7 +343,7 @@ export default function OnboardingPage() {
           {currentStep === 2 && (
             <div className="space-y-5">
               <div className="text-center mb-6">
-                <Beaker size={32} className="mx-auto text-ember-ink mb-2" />
+                <Beaker size={32} className="mx-auto text-primary mb-2" />
                 <h2 className="text-2xl font-bold font-display">Your Materials</h2>
                 <p className="text-sm text-muted-foreground">Select the materials you have in stock</p>
               </div>
@@ -390,7 +390,7 @@ export default function OnboardingPage() {
           {currentStep === 3 && (
             <div className="space-y-5">
               <div className="text-center mb-6">
-                <Image size={32} className="mx-auto text-ember-ink mb-2" />
+                <Image size={32} className="mx-auto text-primary mb-2" />
                 <h2 className="text-2xl font-bold font-display">Portfolio Preview</h2>
                 <p className="text-sm text-muted-foreground">
                   Upload photos of your best prints to build trust with customers.
@@ -415,7 +415,7 @@ export default function OnboardingPage() {
           {currentStep === 4 && (
             <div className="space-y-5">
               <div className="text-center mb-6">
-                <Rocket size={32} className="mx-auto text-ember-ink mb-2" />
+                <Rocket size={32} className="mx-auto text-primary mb-2" />
                 <h2 className="text-2xl font-bold font-display">Almost There!</h2>
                 <p className="text-sm text-muted-foreground">
                   Choose your specializations and accept the terms
