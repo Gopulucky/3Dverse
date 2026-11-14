@@ -42,6 +42,9 @@ pins the anchors and WCAG AA pairs.
 - Display: Space Grotesk, 600. Body and controls: IBM Plex Sans.
 - Currency and measurements: IBM Plex Mono with tabular numerals.
 - Font variables belong on `html` so root theme aliases resolve correctly.
+- Fonts are self-hosted in `src/app/fonts` via `next/font/local` (latin + latin-ext, OFL
+  licences alongside); never `next/font/google`, so builds need no network.
+  Regenerate with `scripts/fonts/build_fonts.py`.
 - Container: `--store-container` (90rem), centred, with `--store-gutter`.
 - Column gap below the hero: `--store-gap` (1.5rem).
 - Image radius: `--store-radius` (0.75rem).
