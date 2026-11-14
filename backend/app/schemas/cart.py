@@ -17,6 +17,8 @@ class CartItemResponse(CartItemBase):
     id: int
     cart_id: int
     product: Optional[LineProduct] = None
+    # Why this line cannot be bought right now ("Out of stock", "Only 2 left", ...); None when it can.
+    unavailable_reason: Optional[str] = None
 
     class Config:
         from_attributes = True

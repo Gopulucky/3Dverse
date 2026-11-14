@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { loadTs } from '../load-ts.mjs';
 
 const m = await loadTs('src/lib/machines/checkout.ts');
-const order = { order_id: 5, payment_status: 'requires_payment_method' };
+const order = { order_id: 5, payment_status: 'created' };
 
 test('page machine: happy path editing -> preparing -> payment', () => {
   let s = m.initialCheckoutState;
@@ -49,9 +49,9 @@ test('payment machine: TIMED_OUT -> pending, FAILED -> unknown', () => {
   assert.equal(m.paymentReducer(confirming, { type: 'FAILED' }).status, 'unknown');
 });
 
-test('payment machine: STRIPE_ERROR returns to idle with the message and allows a retry', () => {
+test('payment machine: PROVIDER_ERROR returns to idle with the message and allows a retry', () => {
   const confirming = m.paymentReducer(m.initialPaymentState, { type: 'CONFIRM' });
-  const idle = m.paymentReducer(confirming, { type: 'STRIPE_ERROR', error: 'Card declined' });
+  const idle = m.paymentReducer(confirming, { type: 'PROVIDER_ERROR', error: 'Card declined' });
   assert.deepEqual(idle, { status: 'idle', error: 'Card declined' });
   assert.equal(m.paymentReducer(idle, { type: 'CONFIRM' }).status, 'confirming');
 });
@@ -59,7 +59,7 @@ test('payment machine: STRIPE_ERROR returns to idle with the message and allows 
 test('payment machine ignores out-of-order events', () => {
   const verifying = [{ type: 'CONFIRM' }, { type: 'SUBMITTED' }].reduce(m.paymentReducer, m.initialPaymentState);
   assert.equal(m.paymentReducer(verifying, { type: 'CONFIRM' }), verifying);
-  assert.equal(m.paymentReducer(verifying, { type: 'STRIPE_ERROR', error: 'x' }), verifying);
+  assert.equal(m.paymentReducer(verifying, { type: 'PROVIDER_ERROR', error: 'x' }), verifying);
   assert.equal(m.paymentReducer(m.initialPaymentState, { type: 'VERIFIED' }), m.initialPaymentState);
   const confirmed = m.paymentReducer(verifying, { type: 'VERIFIED' });
   assert.equal(m.paymentReducer(confirmed, { type: 'TIMED_OUT' }), confirmed);
@@ -89,7 +89,9 @@ test('checkoutViewState priority table', () => {
   assert.equal(v({}), 'editing');
   assert.equal(v({ state: { status: 'preparing' } }), 'preparing');
   assert.equal(v({ state: { status: 'payment', checkout: order } }), 'payment');
-  for (const payment_status of ['succeeded', 'processing', 'requires_capture']) {
-    assert.equal(v({ state: { status: 'payment', checkout: { ...order, payment_status } } }), 'already-submitted');
+  // Razorpay order statuses: only "paid" means the customer must not be asked again.
+  assert.equal(v({ state: { status: 'payment', checkout: { ...order, payment_status: 'paid' } } }), 'already-submitted');
+  for (const payment_status of ['created', 'attempted']) {
+    assert.equal(v({ state: { status: 'payment', checkout: { ...order, payment_status } } }), 'payment', `${payment_status} can still be paid`);
   }
 });

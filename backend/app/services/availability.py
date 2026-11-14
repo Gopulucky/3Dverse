@@ -6,13 +6,13 @@ payment, so those claims only appear once they work.
 from fastapi import HTTPException
 
 from app.core.config import settings
-from app.services.payments import payment_key
+from app.services.payments import credentials
 
 
 def checkout_ready() -> bool:
-    """True when a payment key and its webhook secret are configured."""
+    """True when Razorpay keys and the webhook secret are configured for this environment."""
     try:
-        payment_key()
+        credentials()
     except HTTPException:
         return False
     return True

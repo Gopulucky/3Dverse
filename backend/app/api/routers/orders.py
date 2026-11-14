@@ -1,12 +1,13 @@
 from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, defer, joinedload, selectinload
 from app.api import deps
 from app.core.rate_limit import rate_limit
 from app.models.user import User
 from app.models.cart import Cart
-from app.models.order import Order, OrderItem
+from app.models.order import Order, OrderItem, UNPAID_STATUSES
 from app.models.defect_report import DefectReport
 from app.models.return_request import ReturnRequest, ReturnReason, ReturnStatus
 from app.models.product import Product
@@ -42,10 +43,13 @@ def get_orders(
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
+    # Orders are things that were paid for or have progressed. An unpaid checkout
+    # attempt is a hold, shown as a banner (see /api/checkout/hold), never an order.
     return (
         db.query(Order)
         .options(_with_lines())
-        .filter(Order.customer_id == current_user.id)
+        .filter(Order.customer_id == current_user.id,
+                or_(Order.payment_verified_at.isnot(None), Order.status.notin_(UNPAID_STATUSES)))
         .order_by(Order.created_at.desc(), Order.id.desc())
         .all()
     )

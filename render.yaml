@@ -27,9 +27,11 @@ services:
       # Mount Admin credentials securely or supply workload identity separately.
       - key: GOOGLE_APPLICATION_CREDENTIALS
         sync: false
-      - key: STRIPE_SECRET_KEY
+      - key: RAZORPAY_KEY_ID
         sync: false
-      - key: STRIPE_WEBHOOK_SECRET
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
         sync: false
       - key: CHECKOUT_SHIPPING_INR
         sync: false

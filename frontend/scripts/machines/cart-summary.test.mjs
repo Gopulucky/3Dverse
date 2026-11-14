@@ -61,3 +61,34 @@ test('withQuantity changes one line, drops it at zero and clamps the top', () =>
   assert.equal(withQuantity(lines, 2, 999)[1].quantity, MAX_QUANTITY);
   assert.equal(lines[0].quantity, 2, 'input is not mutated');
 });
+
+test('a line the server says cannot be bought stays visible, blocks checkout and is left out of the total', () => {
+  const unavailable = { ...line(2, 1, 'physical'), unavailable_reason: 'Out of stock' };
+  const s = summarizeCart([line(1, 2, 'digital'), unavailable], null);
+  assert.equal(s.issue, 'unavailable');
+  assert.equal(s.unavailableCount, 1);
+  assert.equal(s.canCheckout, false);
+  assert.equal(s.itemCount, 3, 'the cart badge still counts every line');
+  assert.equal(s.subtotal, 200, 'only buyable lines are priced into the total');
+  assert.equal(s.total, 200);
+});
+
+test('once the unavailable line is removed the cart can be checked out', () => {
+  const s = summarizeCart([line(1, 2, 'digital')], null);
+  assert.equal(s.issue, null);
+  assert.equal(s.unavailableCount, 0);
+  assert.equal(s.canCheckout, true);
+});
+
+test('currency and format problems still take priority over unavailable lines', () => {
+  const usd = { ...line(1, 1, 'digital', { currency: 'USD' }), unavailable_reason: 'Priced in USD' };
+  assert.equal(summarizeCart([usd], null).issue, 'non_inr');
+  const noFormat = { ...line(1, 1, undefined), unavailable_reason: 'Choose a format' };
+  assert.equal(summarizeCart([noFormat], null).issue, 'needs_format');
+});
+
+test('a cart made only of unavailable lines has nothing to pay for', () => {
+  const s = summarizeCart([{ ...line(1, 1, 'digital'), unavailable_reason: 'No longer available' }], null);
+  assert.equal(s.total, 0);
+  assert.equal(s.canCheckout, false);
+});

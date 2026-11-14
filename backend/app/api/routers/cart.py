@@ -7,6 +7,8 @@ from app.models.user import User
 from app.models.product import Product
 from app.models.cart import Cart, CartItem
 from app.models.coupon import Coupon
+from app.models.stock import StockItem
+from app.services import payments
 from app.schemas.cart import CartResponse, CartItemCreate, CartItemUpdate, CouponApplyRequest
 
 router = APIRouter()
@@ -41,7 +43,30 @@ def load_cart(db: Session, user_id: int) -> Cart:
     if cart is None:
         get_or_create_cart(db, user_id)
         cart = fetch()
+    annotate_availability(db, cart)
     return cart
+
+
+def annotate_availability(db: Session, cart: Cart) -> None:
+    """Tag each line with why it cannot be bought right now, so the cart says so
+    instead of checkout failing. Units held by the customer's own live checkout
+    count as available to them (they are theirs)."""
+    # Stock only matters for physical prints, so a cart without any costs no extra query.
+    def may_be_physical(item) -> bool:
+        kind = (item.selected_config or {}).get("purchase_type")
+        return kind == "physical" or (kind is None and bool(item.product.is_mode_3_active or item.product.is_mode_4_active))
+    product_ids = [item.product_id for item in cart.items if may_be_physical(item)]
+    stocked = {row.product_id: row for row in
+               db.query(StockItem).filter(StockItem.product_id.in_(product_ids)).all()} if product_ids else {}
+    own_hold = {}
+    live = payments.open_hold(db, cart.user_id) if stocked else None
+    for line in (live.items if live else []):
+        if (line.selected_config or {}).get("purchase_type") == "physical":
+            own_hold[line.product_id] = own_hold.get(line.product_id, 0) + line.quantity
+    for item in cart.items:
+        row = stocked.get(item.product_id)
+        sellable = None if row is None else row.sellable + own_hold.get(item.product_id, 0)
+        item.unavailable_reason = payments.unavailable_reason(item, sellable)
 
 
 @router.get("/", response_model=CartResponse)

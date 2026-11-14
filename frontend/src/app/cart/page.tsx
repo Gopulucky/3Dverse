@@ -17,11 +17,13 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRequireAuth } from "@/stores/auth-store";
 import { MarketplaceShell } from "@/components/layout/marketplace-shell";
+import { HoldBanner } from "@/components/marketplace/hold-banner";
 
 const ISSUE_TEXT = {
   mixed_currency: "Your cart has items in different currencies. Remove the older USD items to check out in INR.",
   non_inr: "These older USD listings need the creator to set an INR price before you can check out.",
   needs_format: "Some items have no format chosen. Remove them and pick a format on the product page.",
+  unavailable: "Some items cannot be bought right now. Remove them to check out; the total above leaves them out.",
 } as const;
 
 function formatLabel(line: CartLine) {
@@ -148,7 +150,8 @@ export default function CartPage() {
                 <div className="flex min-w-0 flex-1 flex-col">
                   <Link href={`/marketplace/${line.product.id}`} className="line-clamp-2 font-display font-semibold hover:underline">{line.product.title}</Link>
                   <p className={price == null ? "mt-0.5 text-sm text-warning-ink" : "mt-0.5 text-sm text-muted-foreground"}>{formatLabel(line)}</p>
-                  <p className="mt-1 font-data text-lg font-semibold">
+                  {line.unavailable_reason && <p data-unavailable className="mt-0.5 text-sm font-medium text-destructive">{line.unavailable_reason}</p>}
+                  <p className={`mt-1 font-data text-lg font-semibold ${line.unavailable_reason ? "text-muted-foreground line-through" : ""}`}>
                     {price == null ? "Price unavailable" : formatMoney(price * line.quantity, line.product.currency)}
                     {price != null && line.quantity > 1 && <span className="ml-2 text-sm font-normal text-muted-foreground">{formatMoney(price, line.product.currency)} each</span>}
                   </p>
@@ -208,6 +211,7 @@ export default function CartPage() {
           </h1>
           {showBar && <Link href="/marketplace" className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4">Continue shopping</Link>}
         </div>
+        <HoldBanner enabled={ready} />
         {body}
       </div>
 

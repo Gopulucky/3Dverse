@@ -8,7 +8,8 @@ import app.main  # noqa: F401  (registers every model, as in production)
 from app.core.config import settings
 from app.services import availability
 
-LIVE = dict(STRIPE_SECRET_KEY="sk_test_" + "x" * 30, STRIPE_WEBHOOK_SECRET="whsec_abc", CHECKOUT_SHIPPING_INR="60")
+LIVE = dict(RAZORPAY_KEY_ID="rzp_test_" + "x" * 14, RAZORPAY_KEY_SECRET="s" * 24,
+            RAZORPAY_WEBHOOK_SECRET="whsec_abc12345", CHECKOUT_SHIPPING_INR="60")
 
 
 def configure(monkeypatch, **values):
@@ -22,12 +23,12 @@ def test_everything_available_when_configured_and_a_print_is_listed(monkeypatch)
 
 
 def test_no_checkout_without_a_payment_key(monkeypatch):
-    configure(monkeypatch, STRIPE_SECRET_KEY=None)
+    configure(monkeypatch, RAZORPAY_KEY_ID=None)
     assert availability.store_availability(has_printed_listing=True) == {"checkout": False, "printed": False}
 
 
 def test_no_checkout_without_a_webhook_secret(monkeypatch):
-    configure(monkeypatch, STRIPE_WEBHOOK_SECRET="")
+    configure(monkeypatch, RAZORPAY_WEBHOOK_SECRET="")
     assert availability.store_availability(has_printed_listing=False)["checkout"] is False
 
 
