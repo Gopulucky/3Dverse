@@ -168,6 +168,22 @@ test('light neutrals lean cool, never warm', () => {
   }
 });
 
+// The blue-grey fill (#F6F8F9 / #EEF2F4) read as a stray tint behind cards,
+// image wells, tabs and badges. Light fills and hairlines are now hue-less.
+test('light fill and hairline neutrals carry no blue tint', () => {
+  for (let step = 2; step <= 7; step++) {
+    const hex = L.slate[step];
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    assert.ok(r === g && g === b, `slate-${step} ${hex} has a colour cast`);
+  }
+});
+
+test('the Digital models tile is a white card, not a tinted fill', () => {
+  const storefront = readFileSync(new URL('../../src/styles/marketplace/storefront.css', import.meta.url), 'utf8');
+  const rule = storefront.match(/\.home-tile--digital\s*\{([^}]*)\}/)[1];
+  assert.match(rule, /background:\s*var\(--color-card\)/);
+});
+
 test('Featured badge carries the Tangerine accent with ink text', () => {
   const storefront = readFileSync(new URL('../../src/styles/marketplace/storefront.css', import.meta.url), 'utf8');
   const rule = storefront.match(/\.market-product-featured\s*\{([^}]*)\}/)[1];

@@ -22,9 +22,10 @@ Three brand colours, used 60/30/10. Token names are unchanged (`slate-*`,
 `violet-*`, `ember-*`), only their values; `scripts/machines/brand-palette.test.mjs`
 pins the anchors and WCAG AA pairs.
 
-- 60% cool white + ink (`slate-*`): page `#FFFFFF`, image wells `#EEF2F4`, text `#12181B`;
-  dark `#0F1315` / `#E4E9EB`. Neutrals lean cool (never beige) to match the teal and
-  product photography; the palette test enforces it.
+- 60% white + ink (`slate-*`): page `#FFFFFF`, image wells `#F0F0F0`, text `#12181B`;
+  dark `#0F1315` / `#E4E9EB`. Light fills and hairlines (`slate-2…7`) are hue-less greys:
+  no blue or beige cast, so nothing tints the page behind the teal and the photography. Cards
+  (including the Digital models tile) are white with a border. The palette test enforces it.
 - 30% Deep teal (`violet-*`, `primary`): `#0E5E6F` with white text; dark `#4FC3D4` with dark ink.
   Trust: primary buttons, Add to cart, links, focus. Customers' accent.
 - 10% Tangerine (`ember-*`): `#FF7A1A`; dark `#FF8A3D`. Always dark ink on it
