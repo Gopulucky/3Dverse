@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Download, Loader2, Package, ShieldCheck, Truck } from "lucide-react";
 import { api } from "@/lib/api";
 import { homeSections } from "@/lib/home-sections";
+import { printedTile, storeAvailability, trustItems } from "@/lib/store-availability";
 import type { HomepageData, ProductCardData } from "@/lib/marketplace";
 import { Button } from "@/components/ui/button";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
@@ -70,6 +71,9 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: Homepage
     retry: false,
   });
   const categories = data?.categories ?? [];
+  const availability = storeAvailability(data?.availability);
+  const printed = printedTile(availability);
+  const trustIcons = { delivery: Truck, downloads: Download, payment: ShieldCheck } as const;
   const { primary, second, empty } = homeSections({
     new_arrivals: data?.new_arrivals, featured: data?.featured, trending: data?.trending,
   });
@@ -90,9 +94,9 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: Homepage
       <section className="store-container home-intro" aria-labelledby="home-title">
         <h1 id="home-title">3D models and finished prints</h1>
         <div className="home-tiles">
-          <Link href="/marketplace?format=physical" className="home-tile home-tile--printed">
+          <Link href="/marketplace?format=physical" className="home-tile home-tile--printed" data-state={printed.comingSoon ? "coming-soon" : "available"}>
             <Package size={36} aria-hidden="true" />
-            <span><strong>Printed products</strong><small>Delivered in India</small></span>
+            <span><strong>Printed products</strong><small>{printed.caption}</small></span>
           </Link>
           <Link href="/marketplace?format=digital" className="home-tile home-tile--digital">
             <Download size={36} aria-hidden="true" />
@@ -134,9 +138,10 @@ export function MarketplaceHomeContent({ initialData }: { initialData?: Homepage
 
       <section className="home-trust" aria-label="Shopping with 3DVerse">
         <ul className="store-container">
-          <li><Truck size={20} aria-hidden="true" />Delivery within India</li>
-          <li><Download size={20} aria-hidden="true" />Digital files unlock after payment</li>
-          <li><ShieldCheck size={20} aria-hidden="true" />Secure payment</li>
+          {trustItems(availability).map(({ key, label }) => {
+            const Icon = trustIcons[key];
+            return <li key={key} data-trust={key}><Icon size={20} aria-hidden="true" />{label}</li>;
+          })}
         </ul>
       </section>
     </div>

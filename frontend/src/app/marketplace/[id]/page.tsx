@@ -515,6 +515,7 @@ export default function ProductDetailPage() {
                   <p>Sold by {product.creator_name || "the listing creator"}</p>
                   <Link href="/shipping" className="underline min-h-11 inline-flex items-center">Shipping information</Link>
                   <Link href="/refund-policy" className="underline min-h-11 inline-flex items-center">Returns and refunds</Link>
+                  <Link href="/grievances#report" className="underline min-h-11 inline-flex items-center">Report this listing</Link>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-border/50 flex justify-center">

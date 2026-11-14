@@ -58,6 +58,7 @@ export function Footer() {
                 { href: "/contact", label: "Contact" },
                 { href: "/shipping", label: "Shipping" },
                 { href: "/refund-policy", label: "Returns & Refunds" },
+                { href: "/grievances", label: "Grievances & reports" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link

@@ -3,10 +3,12 @@
 import { Suspense, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowDownUp, SlidersHorizontal, X } from "lucide-react";
 import { api } from "@/lib/api";
-import { type ProductCardData } from "@/lib/marketplace";
+import { type HomepageData, type ProductCardData } from "@/lib/marketplace";
+import { storeAvailability } from "@/lib/store-availability";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
@@ -38,12 +40,14 @@ function MarketplaceContent() {
   });
   const { data: shelf } = useQuery({
     queryKey: ["catalogue-categories"],
-    queryFn: () => api.get<{ categories?: { name: string }[] }>("/api/marketplace/homepage"),
+    queryFn: () => api.get<Partial<HomepageData>>("/api/marketplace/homepage"),
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
   const liveCategories = Array.isArray(shelf?.categories) ? shelf.categories.map(c => c.name).filter(Boolean) : [];
   const categoryNames = liveCategories.length ? liveCategories : CATEGORIES;
+  // Only once the homepage data has loaded, so a slow request never flashes "coming soon".
+  const printedComingSoon = format === "physical" && shelf !== undefined && !storeAvailability(shelf.availability).printed;
   const products = data.slice(0, PAGE_SIZE);
   const hasNext = data.length > PAGE_SIZE;
   const goToPage = (next: number) => {
@@ -144,7 +148,9 @@ function MarketplaceContent() {
           {isLoading ? <><p role="status" className="mb-5">Loading products…</p><ProductGridSkeleton count={6} /></> : isError ? <div role="alert" className="store-state"><h2>The catalogue couldn’t load.</h2><p>Please try again. Your filters have been kept.</p><Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>{isFetching ? "Trying again…" : "Try again"}</Button></div> : <>
             <p role="status" className="text-sm text-muted-foreground mb-3 md:mb-6">{products.length ? `Showing ${(page - 1) * PAGE_SIZE + 1}–${(page - 1) * PAGE_SIZE + products.length}` : "No matching products"}{search.get("q") ? ` for “${search.get("q")}”` : ""}</p>
             <div className="catalogue-grid grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6">{products.map(p => <ProductCard key={p.id} p={p} format={format} onWishlist={handleAddToWishlist} />)}</div>
-            {!products.length && <div className="store-state"><h2>No products match these filters.</h2><p>Try another format, currency or category. New designs appear as creators publish them.</p></div>}
+            {!products.length && (printedComingSoon
+              ? <div className="store-state" data-state="printed-coming-soon"><h2>Printed products are coming soon.</h2><p>We are still setting up printing and delivery, so finished prints can’t be ordered yet. Digital model files are available now.</p><Link href="/marketplace?format=digital" className="market-text-link">Browse digital models</Link></div>
+              : <div className="store-state"><h2>No products match these filters.</h2><p>Try another format, currency or category. New designs appear as creators publish them.</p></div>)}
             <nav aria-label="Catalogue pages" className="flex items-center gap-4 mt-8"><Button variant="outline" onClick={() => goToPage(page - 1)} disabled={page === 1}>Previous page</Button><span className="text-sm">Page {page}</span><Button variant="outline" onClick={() => goToPage(page + 1)} disabled={!hasNext}>Next page</Button></nav>
           </>}
         </section>
