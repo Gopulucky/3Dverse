@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo, useReducer, type Dispatch } from "react";
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { OrbitControls, Stage, Environment, Grid, Html } from "@react-three/drei";
+import { useEffect, useState, useRef, useReducer, type Dispatch, type ElementRef } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, Stage, Grid } from "@react-three/drei";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { Maximize, RotateCcw, BoxSelect, Sun, Moon, Orbit, Grid3X3, SunMedium, Loader2 } from "lucide-react";
+import { Maximize, Minimize, RotateCcw, BoxSelect, Moon, Orbit, Grid3X3, SunMedium, Loader2, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  initialViewerState, modelExtension, SUPPORTED_MODEL_EXTENSIONS, viewerReducer, type ViewerEvent,
+  controlsReducer, initialControls, initialViewerState, modelExtension, SUPPORTED_MODEL_EXTENSIONS, viewerReducer,
+  type ViewerEvent,
 } from "@/lib/machines/model-viewer";
+
+/** How close and how far the camera may go from the model, so a shopper cannot zoom inside it or lose it. */
+const MIN_DISTANCE = 30;
+const MAX_DISTANCE = 320;
 
 function Model({
   url,
@@ -140,12 +145,37 @@ export function Advanced3DViewer({ url }: { url: string }) {
   const stats = viewer.status === "ready" ? viewer.stats : { polyCount: 0, vertices: 0 };
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<ElementRef<typeof OrbitControls>>(null);
 
-  // Controls
-  const [autoRotate, setAutoRotate] = useState(true);
+  // The spin stops at the first touch and scroll-zoom wakes up only after a click (see machines/model-viewer).
+  const [controls, controlsDispatch] = useReducer(controlsReducer, undefined, () =>
+    initialControls(typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+  );
+  const [hintSeen, setHintSeen] = useState(false);
   const [wireframe, setWireframe] = useState(false);
   const [lighting, setLighting] = useState<"studio" | "city" | "warehouse">("studio");
   const [showGrid, setShowGrid] = useState(true);
+
+  const touch = () => {
+    controlsDispatch({ type: "TOUCH" });
+    setHintSeen(true);
+  };
+
+  const zoomBy = (factor: number) => {
+    const orbit = controlsRef.current;
+    if (!orbit) return;
+    touch();
+    const camera = orbit.object;
+    const offset = camera.position.clone().sub(orbit.target).multiplyScalar(factor)
+      .clampLength(MIN_DISTANCE, MAX_DISTANCE);
+    camera.position.copy(orbit.target).add(offset);
+    orbit.update();
+  };
+
+  const resetView = () => {
+    controlsRef.current?.reset();
+    touch();
+  };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -165,11 +195,22 @@ export function Advanced3DViewer({ url }: { url: string }) {
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
+  // Fullscreen has the whole screen to itself, so the wheel can always zoom there.
+  const wheelZoom = controls.zoomLive || isFullscreen;
+
   return (
     <div
       ref={containerRef}
       data-flow="model-viewer"
       data-state={viewer.status}
+      data-zoom={wheelZoom ? "live" : "locked"}
+      data-spin={controls.autoRotate ? "on" : "off"}
+      onPointerDown={touch}
+      onPointerLeave={(event) => {
+        // A finger lifting is not "leaving"; only a mouse pointer leaving gives the page its wheel back.
+        if (event.pointerType === "mouse") controlsDispatch({ type: "LEAVE" });
+      }}
+      onDoubleClick={resetView}
       className={cn(
         "relative rounded-xl overflow-hidden border border-border bg-gradient-to-b from-muted to-background shadow-sm flex flex-col group",
         isFullscreen ? "h-screen w-screen z-50 rounded-none border-none" : "w-full h-full min-h-[400px] lg:min-h-[500px]"
@@ -193,7 +234,7 @@ export function Advanced3DViewer({ url }: { url: string }) {
       )}
 
       {/* HUD Info */}
-      <div className="absolute top-4 left-4 z-10 flex gap-2">
+      <div className="absolute top-4 left-4 z-10 flex gap-2 pointer-events-none">
         {stats.polyCount > 0 && (
           <div className="bg-background/80 backdrop-blur text-xs px-2 py-1 rounded-md border border-border/50 text-muted-foreground font-mono">
             Polys: {(stats.polyCount / 1000).toFixed(1)}k
@@ -206,14 +247,37 @@ export function Advanced3DViewer({ url }: { url: string }) {
         )}
       </div>
 
+      {/* Tells a first-time visitor what their hands can do, then gets out of the way. */}
+      {viewer.status === "ready" && !hintSeen && (
+        <p className="absolute top-4 right-4 z-10 max-w-[60%] text-right text-xs px-2 py-1 rounded-md bg-background/80 backdrop-blur border border-border/50 text-muted-foreground pointer-events-none">
+          Drag to rotate · click, then scroll to zoom
+        </p>
+      )}
+
       {/* Floating Toolbar */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-background/80 backdrop-blur-md p-1.5 rounded-full border border-border/50 shadow-lg opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+      <div
+        onPointerDown={(event) => event.stopPropagation()}
+        onDoubleClick={(event) => event.stopPropagation()}
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-background/80 backdrop-blur-md p-1.5 rounded-full border border-border/50 shadow-lg opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+      >
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => zoomBy(0.8)} aria-label="Zoom in" title="Zoom in">
+          <ZoomIn size={16} />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => zoomBy(1.25)} aria-label="Zoom out" title="Zoom out">
+          <ZoomOut size={16} />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={resetView} aria-label="Reset view" title="Reset view (double-click)">
+          <RotateCcw size={16} />
+        </Button>
+        <div className="w-px h-4 bg-border/50 mx-1" />
         <Button
-          variant={autoRotate ? "secondary" : "ghost"}
+          variant={controls.autoRotate ? "secondary" : "ghost"}
           size="icon"
           className="h-8 w-8 rounded-full"
-          onClick={() => setAutoRotate(!autoRotate)}
-          title="Toggle Rotation"
+          onClick={() => controlsDispatch({ type: "TOGGLE_ROTATE" })}
+          aria-label="Spin automatically"
+          aria-pressed={controls.autoRotate}
+          title="Spin automatically"
         >
           <Orbit size={16} />
         </Button>
@@ -222,7 +286,9 @@ export function Advanced3DViewer({ url }: { url: string }) {
           size="icon"
           className="h-8 w-8 rounded-full"
           onClick={() => setWireframe(!wireframe)}
-          title="Toggle Wireframe"
+          aria-label="Wireframe"
+          aria-pressed={wireframe}
+          title="Wireframe"
         >
           <BoxSelect size={16} />
         </Button>
@@ -231,7 +297,9 @@ export function Advanced3DViewer({ url }: { url: string }) {
           size="icon"
           className="h-8 w-8 rounded-full"
           onClick={() => setShowGrid(!showGrid)}
-          title="Toggle Grid"
+          aria-label="Grid"
+          aria-pressed={showGrid}
+          title="Grid"
         >
           <Grid3X3 size={16} />
         </Button>
@@ -240,7 +308,8 @@ export function Advanced3DViewer({ url }: { url: string }) {
           size="icon"
           className="h-8 w-8 rounded-full"
           onClick={() => setLighting(l => l === "studio" ? "city" : "studio")}
-          title="Toggle HDRI"
+          aria-label="Change lighting"
+          title="Change lighting"
         >
           {lighting === "studio" ? <SunMedium size={16} /> : <Moon size={16} />}
         </Button>
@@ -250,18 +319,31 @@ export function Advanced3DViewer({ url }: { url: string }) {
           size="icon"
           className="h-8 w-8 rounded-full"
           onClick={toggleFullscreen}
-          title="Fullscreen"
+          aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+          title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
         >
-          <Maximize size={16} />
+          {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
         </Button>
       </div>
 
-      <Canvas camera={{ position: [0, 0, 150], fov: 50 }}>
+      <Canvas camera={{ position: [0, 0, 150], fov: 50 }} style={{ touchAction: wheelZoom ? "none" : "pan-y" }}>
         <Stage environment={lighting} intensity={0.5}>
           <Model url={url} wireframe={wireframe} dispatch={dispatch} />
         </Stage>
         {showGrid && <Grid infiniteGrid fadeDistance={200} cellColor="#64748b" sectionColor="#94a3b8" position={[0, -0.01, 0]} />}
-        <OrbitControls makeDefault autoRotate={autoRotate} autoRotateSpeed={2} />
+        <OrbitControls
+          ref={controlsRef}
+          makeDefault
+          autoRotate={controls.autoRotate}
+          autoRotateSpeed={1.5}
+          enableDamping
+          dampingFactor={0.08}
+          enableZoom={wheelZoom}
+          zoomToCursor
+          minDistance={MIN_DISTANCE}
+          maxDistance={MAX_DISTANCE}
+          onStart={touch}
+        />
       </Canvas>
     </div>
   );

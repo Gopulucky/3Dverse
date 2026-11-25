@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.api.routers import auth, products, marketplace, wishlist, reviews, cart, checkout, orders, partner, analytics, notifications, creator, creator_materials, financial_metrics, admin_metrics, ads, export, admin, onboarding, designer, collaboration, commissions, users, downloads, stock, waitlist, funnel, audience
+from app.api.routers import auth, products, marketplace, wishlist, reviews, cart, checkout, orders, partner, analytics, notifications, creator, creator_materials, financial_metrics, admin_metrics, ads, export, admin, onboarding, designer, collaboration, commissions, users, downloads, stock, waitlist, funnel, audience, creators
 from app.core.config import settings
 from app.core.database import Base, engine
 import logging
@@ -160,6 +160,7 @@ app.include_router(stock.router, prefix=f"{settings.API_V1_STR}/creator/stock", 
 app.include_router(waitlist.router, prefix=f"{settings.API_V1_STR}/waitlist", tags=["waitlist"])
 app.include_router(funnel.router, prefix=f"{settings.API_V1_STR}/events", tags=["events"])
 app.include_router(audience.router, prefix=f"{settings.API_V1_STR}/audience", tags=["audience"])
+app.include_router(creators.router, prefix=f"{settings.API_V1_STR}/creators", tags=["creators"])
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the buy&sell3d API"}

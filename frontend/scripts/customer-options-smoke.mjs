@@ -175,14 +175,19 @@ try {
   assert.equal(await page.getByRole('button', { name: 'Remove filter: Gadgets' }).count(), 0);
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto(`${base}/marketplace/9001`);
-  await page.getByRole('combobox', { name: 'What are you buying?' }).waitFor();
+  await page.getByRole('group', { name: 'What are you buying?' }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Add to cart', exact: true }).isDisabled(), true);
-  await page.getByRole('combobox', { name: 'What are you buying?' }).selectOption('physical');
+  // The price shows before any format is picked, as "From" the cheapest one.
+  assert.equal(await page.locator('[data-flow="product-price"]').getAttribute('data-state'), 'from');
+  assert.match(await page.locator('[data-flow="product-price"]').innerText(), /From\s*₹120\.00/);
+  await page.getByRole('radio', { name: /Finished print/ }).check();
   await page.getByRole('combobox', { name: 'Material', exact: true }).selectOption('PETG');
   await page.getByRole('button', { name: 'Add to cart', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Added to cart.' }).waitFor();
   assert.deepEqual(cartPosts.at(-1), { product_id: 9001, quantity: 1, selected_config: { material: 'PETG', color: 'blue', size: 'S', purchase_type: 'physical' } });
-  await page.getByRole('combobox', { name: 'What are you buying?' }).selectOption('digital');
+  assert.match(await page.locator('[data-flow="product-price"]').innerText(), /₹450\.00/);
+  await page.getByRole('radio', { name: /Digital model file/ }).check();
+  assert.match(await page.locator('[data-flow="product-price"]').innerText(), /₹120\.00/);
   await page.getByRole('button', { name: 'Add to cart', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Added to cart.' }).waitFor();
   assert.deepEqual(cartPosts.at(-1).selected_config, { purchase_type: 'digital' });

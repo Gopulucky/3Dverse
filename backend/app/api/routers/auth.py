@@ -75,6 +75,7 @@ def register(*, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
         hashed_password=get_password_hash(user_in.password),
         role="customer",
         pincode=user_in.pincode,
+        country=user_in.country,
     )
     db.add(user)
     db.commit()

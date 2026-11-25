@@ -3,6 +3,15 @@ from typing import Literal, Optional, List
 from datetime import datetime
 from app.models.user import UserRole, BusinessType, CreatorTier, CreatorType
 
+def clean_country(value: Optional[str]) -> Optional[str]:
+    """A two-letter country code in capitals, or None. Anything else is an error."""
+    if value is None:
+        return None
+    value = value.strip().upper()
+    if len(value) != 2 or not value.isalpha() or not value.isascii():
+        raise ValueError("Country must be a two-letter code such as IN or US")
+    return value
+
 # Shared properties
 class UserBase(BaseModel):
     email: EmailStr
@@ -14,6 +23,12 @@ class UserCreate(UserBase):
     password: str
     # Seller onboarding is explicit; partner/admin roles require operator approval.
     role: Literal[UserRole.customer] = UserRole.customer
+    country: str | None = None
+
+    @field_validator("country")
+    @classmethod
+    def country_code(cls, v: str | None) -> str | None:
+        return clean_country(v)
 
     @field_validator("password")
     @classmethod
@@ -38,6 +53,7 @@ class UserInDBBase(UserBase):
     full_name: str | None = None
     avatar_url: str | None = None
     bio: str | None = None
+    country: str | None = None
     company_name: str | None = None
     business_type: BusinessType | None = None
     website_url: str | None = None
@@ -108,6 +124,13 @@ class AccountProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
+    country: Optional[str] = None
+
+    @field_validator("country")
+    @classmethod
+    def country_code(cls, v: Optional[str]) -> Optional[str]:
+        return clean_country(v)
+
     company_name: Optional[str] = None
     business_type: Optional[BusinessType] = None
     tax_id: Optional[str] = None
@@ -128,6 +151,7 @@ class AccountProfileResponse(BaseModel):
     email_verified: bool = False
     role: UserRole
     creator_type: CreatorType | None = None
+    country: str | None = None
     full_name: str | None = None
     avatar_url: str | None = None
     bio: str | None = None

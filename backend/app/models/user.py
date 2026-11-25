@@ -77,6 +77,10 @@ class User(Base):
     capacity = Column(Integer, nullable=True, default=100) # e.g. prints per week
     capabilities = Column(JSON, nullable=True) # e.g. {"materials": ["PLA", "ABS"], "colors": ["red", "blue"]}
     
+    # Two-letter country code (ISO 3166-1). Chosen at sign-up; drives which
+    # currency prices are *shown* in. Checkout still charges INR.
+    country = Column(String(2), nullable=True)
+
     is_active = Column(Boolean, default=True)
     email_verified = Column(Boolean, default=False, nullable=False, server_default="false")
     # Bumped on password change; embedded in issued JWTs so a token minted

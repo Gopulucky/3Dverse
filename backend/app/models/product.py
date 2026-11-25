@@ -134,6 +134,8 @@ class ProductMedia(Base):
     media_type = Column(String, nullable=False) # e.g., 'image' or 'video'
     thumb_url = Column(String, nullable=True)  # small WebP copy for cards; None = use media_url
     is_primary = Column(Boolean, default=False)
+    # What this picture shows, written by the creator and shown under the image.
+    caption = Column(String(200), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     product = relationship("Product", back_populates="media")
