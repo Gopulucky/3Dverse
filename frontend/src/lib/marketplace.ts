@@ -4,10 +4,13 @@ export interface MediaItem {
   thumb_url?: string | null;
   media_type?: string;
   is_primary?: boolean;
+  /** What the picture shows, written by the creator. */
+  caption?: string | null;
 }
 
 export interface ProductCardData {
   id: number;
+  creator_id?: number;
   title: string;
   category?: string;
   price?: number;
@@ -50,6 +53,20 @@ export function purchasePrice(product: ProductCardData, format?: string): number
   const amount = format === "physical" ? product.base_print_price : product.price;
   if (amount == null || !Number.isFinite(amount) || amount < 0 || (format === "physical" && amount === 0)) return undefined;
   return amount;
+}
+
+/** The lowest price among the formats that can actually be bought, for "From ₹X" before a format is chosen. */
+export function startingPrice(product: ProductCardData): number | undefined {
+  const prices = availableFormats(product)
+    .map((format) => purchasePrice(product, format))
+    .filter((price): price is number => price !== undefined);
+  return prices.length ? Math.min(...prices) : undefined;
+}
+
+/** When a listing sells only one format there is nothing to choose; with two the customer decides. */
+export function defaultFormat(product: ProductCardData): PurchaseType | "" {
+  const formats = availableFormats(product);
+  return formats.length === 1 ? formats[0] : "";
 }
 
 function chosenImage(product: ProductCardData): MediaItem | undefined {

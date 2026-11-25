@@ -8,7 +8,7 @@ from app.api import deps
 from app.core.dispatch import dispatch_task
 from app.models.user import User, UserRole
 from app.models.product import Product, ProductVersion, ProductMedia, ProductStatus, FulfillmentStatus, SafetyReviewStatus, PrintabilityReport
-from app.schemas.product import ProductCreate, ProductUpdate, Product as ProductSchema, ProductVersionResponse as ProductVersionSchema, ProductMedia as ProductMediaSchema
+from app.schemas.product import ProductCreate, ProductUpdate, Product as ProductSchema, ProductVersionResponse as ProductVersionSchema, ProductMedia as ProductMediaSchema, MediaCaptionUpdate
 from starlette.concurrency import run_in_threadpool
 from app.core.images import make_thumbnail
 from app.core.storage import save_upload_file, store_bytes, InvalidUpload, UploadTooLarge, looks_like_image, safe_extension
@@ -90,6 +90,13 @@ def update_product(
     product = get_product(db, product_id, current_user)
     
     update_data = product_in.dict(exclude_unset=True)
+    # Followers hear about a design once, the first time it goes live; unpublishing
+    # and publishing again must not alert them a second time.
+    first_publish = (
+        update_data.get("status") == ProductStatus.published
+        and product.status != ProductStatus.published
+        and product.published_at is None
+    )
 
     # Publishing Validation
     if update_data.get("status") == ProductStatus.published and product.status != ProductStatus.published:
@@ -150,6 +157,14 @@ def update_product(
     db.add(product)
     db.commit()
     db.refresh(product)
+    if first_publish:
+        try:
+            from app.services.follows import notify_followers_of_new_design
+            notify_followers_of_new_design(db, product)
+        except Exception:
+            # The product is live; a failed alert must never undo or fail the publish.
+            db.rollback()
+            logger.exception("New-design alerts failed for product %s", product.id)
     return product
 
 @router.get("/{product_id}/versions", response_model=List[ProductVersionSchema])
@@ -264,9 +279,14 @@ async def upload_media(
     product_id: int,
     file: UploadFile = File(...),
     is_primary: bool = Form(False),
+    caption: str | None = Form(None),
     current_user: User = Depends(deps.get_current_active_user),
 ) -> Any:
     """Upload an image or video for the product."""
+    try:
+        caption = MediaCaptionUpdate(caption=caption).caption
+    except ValueError:
+        raise HTTPException(status_code=422, detail="A caption can be at most 200 characters.")
     product = get_product(db, product_id, current_user)
 
     content_type = file.content_type or ""
@@ -316,9 +336,31 @@ async def upload_media(
         media_url=url,
         thumb_url=thumb_url,
         media_type=media_type,
-        is_primary=is_primary
+        is_primary=is_primary,
+        caption=caption,
     )
     db.add(new_media)
     db.commit()
     db.refresh(new_media)
     return new_media
+
+
+@router.put("/{product_id}/media/{media_id}", response_model=ProductMediaSchema)
+def update_media_caption(
+    *,
+    db: Session = Depends(deps.get_db),
+    product_id: int,
+    media_id: int,
+    body: MediaCaptionUpdate,
+    current_user: User = Depends(deps.get_current_active_user),
+) -> Any:
+    """Write or clear the caption shown under one of the product's images."""
+    product = get_product(db, product_id, current_user)
+    media = db.query(ProductMedia).filter(ProductMedia.id == media_id, ProductMedia.product_id == product.id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Image not found")
+    media.caption = body.caption
+    db.add(media)
+    db.commit()
+    db.refresh(media)
+    return media

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { getQueryClient } from "@/lib/query-client";
 import { useCartStore } from "@/stores/cart-store";
+import { useRegionStore } from "@/stores/region-store";
 
 let sessionGeneration = 0;
 
@@ -15,6 +16,8 @@ export interface User {
   role: "creator" | "customer" | "print_partner" | "admin";
   full_name?: string;
   auth_provider?: "password" | "firebase";
+  /** Two-letter country code saved on the account, if the shopper chose one. */
+  country?: string | null;
 }
 
 interface AuthState {
@@ -44,6 +47,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
     localStorage.setItem("auth_provider", provider);
+    // A saved country follows the shopper to a new device.
+    useRegionStore.getState().adopt(user.country);
     set({ token, user, isAuthenticated: true, hydrated: true });
   },
 
@@ -97,6 +102,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         role: User["role"];
         full_name?: string;
         auth_provider?: "password" | "firebase";
+        country?: string | null;
       }>("/api/users/me");
       if (generation !== sessionGeneration) return;
       const user: User = {
@@ -105,8 +111,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         role: fresh.role,
         full_name: fresh.full_name,
         auth_provider: fresh.auth_provider,
+        country: fresh.country,
       };
       localStorage.setItem("user", JSON.stringify(user));
+      useRegionStore.getState().adopt(fresh.country);
       set({ user });
     } catch (err) {
       if (generation !== sessionGeneration) return;

@@ -38,6 +38,35 @@ test('late LOADED or FAILED after an outcome are ignored (same object)', () => {
   assert.equal(m.viewerReducer(ready, { type: 'FAILED', reason: 'failed' }), ready);
 });
 
+test('the model turns on its own until someone touches it', () => {
+  const start = m.initialControls(false);
+  assert.deepEqual(start, { autoRotate: true, zoomLive: false });
+  assert.deepEqual(m.controlsReducer(start, { type: 'TOUCH' }), { autoRotate: false, zoomLive: true });
+});
+
+test('people who ask for reduced motion never get the spin', () => {
+  assert.equal(m.initialControls(true).autoRotate, false);
+});
+
+test('scroll-zoom only works after a click, and gives the page its scroll back on leaving', () => {
+  const touched = m.controlsReducer(m.initialControls(false), { type: 'TOUCH' });
+  const left = m.controlsReducer(touched, { type: 'LEAVE' });
+  assert.deepEqual(left, { autoRotate: false, zoomLive: false });
+});
+
+test('leaving does not restart the spin, but the toggle can', () => {
+  const touched = m.controlsReducer(m.initialControls(false), { type: 'TOUCH' });
+  assert.equal(m.controlsReducer(touched, { type: 'LEAVE' }).autoRotate, false);
+  assert.equal(m.controlsReducer(touched, { type: 'TOGGLE_ROTATE' }).autoRotate, true);
+});
+
+test('events that change nothing return the same object', () => {
+  const start = m.initialControls(false);
+  assert.equal(m.controlsReducer(start, { type: 'LEAVE' }), start);
+  const touched = m.controlsReducer(start, { type: 'TOUCH' });
+  assert.equal(m.controlsReducer(touched, { type: 'TOUCH' }), touched);
+});
+
 test('LOAD (new URL) resets ready and error to loading, and is a no-op while loading', () => {
   const ready = m.viewerReducer(m.initialViewerState, { type: 'LOADED', stats });
   const error = m.viewerReducer(m.initialViewerState, { type: 'FAILED', reason: 'failed' });

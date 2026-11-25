@@ -20,6 +20,8 @@ import {
   Wand2,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { RegionPicker } from "@/components/layout/region-picker";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 import { cn } from "@/lib/utils";
 import { useCreatorType } from "@/lib/creator-nav";
@@ -98,7 +100,8 @@ export function Navbar() {
   const highlighted = activeSuggestion(search);
 
   // Determine portal context — /collaboration is a Creator Studio surface
-  const isCreator = pathname.startsWith("/creator") || pathname.startsWith("/collaboration");
+  // "/creators/7" is a public shop page, not part of the Studio, so match the Studio's own prefix exactly.
+  const isCreator = pathname === "/creator" || pathname.startsWith("/creator/") || pathname.startsWith("/collaboration");
   const isPartner = pathname.startsWith("/partner");
   const isAdmin = pathname.startsWith("/admin");
   const isAuth = pathname.startsWith("/login") || pathname.startsWith("/register");
@@ -457,6 +460,13 @@ export function Navbar() {
                 </Link>
               )}
 
+              {/* Country and currency: prices are shown in the shopper's currency */}
+              {/* On a phone these two live in the menu panel instead, so the header still fits at 320px. */}
+              {isMarketplace && <div className="hidden sm:block"><RegionPicker /></div>}
+
+              {/* New-design alerts from followed creators */}
+              {isMarketplace && isAuthenticated && <div className="hidden sm:block"><NotificationBell /></div>}
+
               {/* Day/night switch (every portal, every breakpoint) */}
               <ThemeToggle />
 
@@ -642,6 +652,12 @@ export function Navbar() {
                 );
               })}
               {!isAuthenticated && <Link href="/register" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center px-4 text-sm font-medium">Create an account</Link>}
+              {isMarketplace && (
+                <div className="mt-2 border-t border-border pt-2 sm:hidden" data-flow="mobile-menu-tools">
+                  <div className="flex items-center gap-2 px-2"><RegionPicker /><span className="text-sm font-medium">Country and currency</span></div>
+                  {isAuthenticated && <div className="flex items-center gap-2 px-2"><NotificationBell /><span className="text-sm font-medium">Notifications</span></div>}
+                </div>
+              )}
             </nav>
           </div>
         </div>

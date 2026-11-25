@@ -33,6 +33,7 @@ from app.models.reward_ledger import RewardLedger
 from app.models.ad_campaign import AdCampaign
 from app.models.stock import StockItem, StockMovement
 from app.models.return_request import ReturnRequest
+from app.models.follow import CreatorFollow
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

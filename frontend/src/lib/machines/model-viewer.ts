@@ -34,6 +34,36 @@ export function modelExtension(url: string): string {
   return dot > 0 || (dot === 0 && name.length > 1) ? name.slice(dot + 1).toLowerCase() : "";
 }
 
+/**
+ * How the viewer answers a person's hands.
+ * - The model turns by itself until someone touches it, then stays still: a
+ *   spinning model is impossible to inspect, and it kept turning after a zoom.
+ * - Scroll-zoom is live only after a click inside the viewer. Otherwise the
+ *   wheel would zoom the model while the shopper is just scrolling down the page.
+ */
+export type ViewerControls = { autoRotate: boolean; zoomLive: boolean };
+
+export type ControlsEvent =
+  | { type: "TOUCH" }
+  | { type: "LEAVE" }
+  | { type: "TOGGLE_ROTATE" };
+
+/** Reduced-motion users never get the self-spin. */
+export function initialControls(reducedMotion: boolean): ViewerControls {
+  return { autoRotate: !reducedMotion, zoomLive: false };
+}
+
+export function controlsReducer(state: ViewerControls, event: ControlsEvent): ViewerControls {
+  switch (event.type) {
+    case "TOUCH":
+      return !state.autoRotate && state.zoomLive ? state : { autoRotate: false, zoomLive: true };
+    case "LEAVE":
+      return state.zoomLive ? { ...state, zoomLive: false } : state;
+    case "TOGGLE_ROTATE":
+      return { ...state, autoRotate: !state.autoRotate };
+  }
+}
+
 export function viewerReducer(state: ViewerState, event: ViewerEvent): ViewerState {
   switch (event.type) {
     case "LOAD":

@@ -76,10 +76,11 @@ def test_razorpay_migration_is_additive_and_keeps_legacy_stripe_data():
     scripts = script_dir()
     revision = scripts.get_revision("e5b7c2d9a418")
     assert revision.down_revision == "d2e8b4c6a913"
-    # The funnel-events and audience tables sit on top of this revision, in that order.
+    # The funnel-events, audience and follows/captions/country migrations sit on top of this revision, in that order.
     assert scripts.get_revision("a4c9d1e7b236").down_revision == "e5b7c2d9a418"
     assert scripts.get_revision("b7d2e4f1a905").down_revision == "a4c9d1e7b236"
-    assert scripts.get_heads() == ["b7d2e4f1a905"]
+    assert scripts.get_revision("c5e9a3b7d142").down_revision == "b7d2e4f1a905"
+    assert scripts.get_heads() == ["c5e9a3b7d142"]
     body = open(revision.path, encoding="utf8").read().split("def upgrade", 1)[1]
     upgrade, downgrade = body.split("def downgrade", 1)
     for column in ("razorpay_order_id", "razorpay_payment_id", "coupon_id"):

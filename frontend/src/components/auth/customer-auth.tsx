@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { api, API_URL, ApiError } from "@/lib/api";
 import { firebaseConfigured, firebaseAuth, googleSignIn, emailSignIn, signInError } from "@/lib/firebase";
 import { useAuthStore, type User } from "@/stores/auth-store";
+import { useCountry, useRegionStore } from "@/stores/region-store";
+import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/region";
 import { AuthCard } from "@/components/layout/auth-card";
 import { authReducer, initialAuthState, isLegacy } from "@/lib/machines/customer-auth";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,8 @@ const subscribe = () => () => {};
 export function CustomerAuth({ create = false }: { create?: boolean }) {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const country = useCountry();
+  const setCountry = useRegionStore((state) => state.setCountry);
   const ready = useSyncExternalStore(subscribe, () => true, () => false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,6 +36,10 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
 
   function finish(token: string, user: User, provider: "firebase" | "password") {
     setAuth(token, user, provider);
+    // Save the country picked on this form (or earlier in the header) to the new account.
+    // Best effort: a failure here must not get in the way of signing in.
+    const chosen = useRegionStore.getState().country;
+    if (!user.country && (create || chosen !== DEFAULT_COUNTRY)) void api.put("/api/users/me", { country: chosen }).catch(() => {});
     dispatch({ type: "DONE" });
     const next = new URLSearchParams(window.location.search).get("next");
     const safe = next?.startsWith("/") && !next.startsWith("//") && !next.includes("\\") && !/[\u0000-\u001f]/.test(next);
@@ -70,7 +78,7 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
         await completeFirebase(await credential.user.getIdToken());
       } else if (create) {
         if (password !== confirm) { dispatch({ type: "FAILED", error: "Your passwords don’t match." }); return; }
-        await api.post("/api/auth/register", { email: email.trim(), password, role: "customer" });
+        await api.post("/api/auth/register", { email: email.trim(), password, role: "customer", country });
         dispatch({ type: "DONE" });
         toast.success("Account created. Check your email, then sign in."); router.push(`/login${window.location.search}`);
       } else {
@@ -113,6 +121,12 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
               {create && <p className="text-xs text-muted-foreground mt-1">Use at least 8 characters.</p>}
             </div>
             {create && <div><Label htmlFor="confirm-password" className="mb-2 block">Confirm password</Label><Input id="confirm-password" type="password" autoComplete="new-password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} /></div>}
+            {create && <div><Label htmlFor="signup-country" className="mb-2 block">Country</Label>
+              <select id="signup-country" value={country} onChange={(e) => setCountry(e.target.value)} className="w-full min-h-11 rounded-md border border-input bg-background px-3 text-sm">
+                {COUNTRIES.map((option) => <option key={option.code} value={option.code}>{option.name} ({option.currency})</option>)}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">Prices are shown in this currency as an estimate. Orders are charged in INR.</p>
+            </div>}
           </>}
           <Button type="submit" className="w-full" size="lg" disabled={busy || !ready}>{busy ? <Loader2 className="animate-spin" size={18} /> : pendingLink ? "Connect my account" : create ? "Create my account" : "Sign in with email"}</Button>
         </form>

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import List, Optional, Any, Literal
 from datetime import datetime
 from app.models.product import ProductStatus, FulfillmentStatus, SafetyReviewStatus
@@ -60,9 +60,29 @@ class ProductMediaBase(BaseModel):
     media_url: str
     media_type: str
     is_primary: bool = False
+    caption: Optional[str] = None
 
 class ProductMediaCreate(ProductMediaBase):
     pass
+
+def clean_caption(value: Optional[str]) -> Optional[str]:
+    """Trim a caption; blank means "no caption". Longer than the column allows is an error, not a silent cut."""
+    if value is None:
+        return None
+    value = value.strip()
+    if not value:
+        return None
+    if len(value) > 200:
+        raise ValueError("A caption can be at most 200 characters")
+    return value
+
+class MediaCaptionUpdate(BaseModel):
+    caption: Optional[str] = None
+
+    @field_validator("caption")
+    @classmethod
+    def tidy(cls, value: Optional[str]) -> Optional[str]:
+        return clean_caption(value)
 
 class ProductMedia(ProductMediaBase):
     id: int

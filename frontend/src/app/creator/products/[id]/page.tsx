@@ -26,6 +26,7 @@ import { useRequireAuth } from "@/stores/auth-store";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { StudioShell } from "@/components/layout/studio-shell";
+import { MediaCaptionField } from "@/components/creator/media-caption-field";
 
 // Load the three.js viewer on demand (client only) rather than in the page bundle.
 const ModelViewer = dynamic(() => import("@/components/ModelViewer"), {
@@ -377,11 +378,14 @@ export default function ProductDetailPage({
                 <div className="col-span-3 lg:col-span-1 grid grid-cols-3 lg:grid-cols-1 gap-4 overflow-y-auto lg:max-h-[350px] no-scrollbar pr-1">
                   {product.media?.filter((m: any) => m.media_type === "image").length > 0 ? (
                     product.media.filter((m: any) => m.media_type === "image").map((m: any) => (
-                      <div key={m.id} className="relative rounded-xl overflow-hidden border border-border aspect-square bg-muted">
-                        <img src={api.mediaUrl(m.media_url)} className="w-full h-full object-cover" alt="Product preview" />
-                        {m.is_primary && (
-                          <Badge variant="default" className="absolute top-2 right-2 text-[10px] px-2 py-0.5 shadow-sm">Main</Badge>
-                        )}
+                      <div key={m.id} className="space-y-2">
+                        <div className="relative rounded-xl overflow-hidden border border-border aspect-square bg-muted">
+                          <img src={api.mediaUrl(m.media_url)} className="w-full h-full object-cover" alt="Product preview" />
+                          {m.is_primary && (
+                            <Badge variant="default" className="absolute top-2 right-2 text-[10px] px-2 py-0.5 shadow-sm">Main</Badge>
+                          )}
+                        </div>
+                        <MediaCaptionField productId={productId} mediaId={m.id} caption={m.caption} onSaved={fetchProduct} />
                       </div>
                     ))
                   ) : (
