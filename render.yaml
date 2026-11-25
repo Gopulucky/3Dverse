@@ -3,9 +3,12 @@
 # another continent makes each page slower. The worker, beat and Redis must share
 # the web service's region to reach each other. A service's region cannot be
 # changed in place; moving one means creating it again.
+# NOTE: the live API services (buyandsell3d in Ohio, buyandsell3d-sg in Singapore) were
+# created by hand in the Render dashboard and are not managed by this file. Applying
+# this blueprint would create a separate set of services with the names below.
 services:
   - type: web
-    name: 3dverse-api
+    name: buyandsell3d-api
     region: singapore
     runtime: python
     plan: starter
@@ -78,11 +81,11 @@ services:
       - key: REDIS_URL
         fromService:
           type: redis
-          name: 3dverse-redis
+          name: buyandsell3d-redis
           property: connectionString
 
   - type: worker
-    name: 3dverse-celery-worker
+    name: buyandsell3d-celery-worker
     region: singapore
     runtime: python
     plan: starter
@@ -114,11 +117,11 @@ services:
       - key: REDIS_URL
         fromService:
           type: redis
-          name: 3dverse-redis
+          name: buyandsell3d-redis
           property: connectionString
 
   - type: worker
-    name: 3dverse-celery-beat
+    name: buyandsell3d-celery-beat
     region: singapore
     runtime: python
     plan: starter
@@ -149,11 +152,11 @@ services:
       - key: REDIS_URL
         fromService:
           type: redis
-          name: 3dverse-redis
+          name: buyandsell3d-redis
           property: connectionString
 
   - type: redis
-    name: 3dverse-redis
+    name: buyandsell3d-redis
     region: singapore
     plan: starter
     ipAllowList: []

@@ -13,7 +13,7 @@ The default visits the deployed buy&sell3d homepage, marketplace and sign-in thr
 Test a specific page or another website:
 
 ```bash
-npm run perf -- --url https://3dverse-tan.vercel.app/ --profile mobile --runs 3
+npm run perf -- --url https://buyandsell3d.vercel.app/ --profile mobile --runs 3
 npm run perf -- --url https://example.com --url https://example.com/products --runs 2
 ```
 
@@ -48,7 +48,7 @@ Reports also list slow requests, largest transfers, HTTP/network failures and re
 Choose a CSS selector for the content customers are waiting for, not the page heading or a loading placeholder:
 
 ```bash
-npm run perf -- --url https://3dverse-tan.vercel.app/marketplace --ready-selector .market-product --observe-ms 30000 --runs 1
+npm run perf -- --url https://buyandsell3d.vercel.app/marketplace --ready-selector .market-product --observe-ms 30000 --runs 1
 ```
 
 `.market-product` selects an actual buy&sell3d product card. For another website, use its real content selector. If no element becomes visible, the report records that the feature was unavailable within the window. This can mean slow/broken data, an empty result or a selector that needs correcting. The tool does not claim a timeout is automatically a performance defect.

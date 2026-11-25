@@ -20,7 +20,7 @@ export function parseOptions(argv) {
     return value;
   };
   if (!Object.hasOwn(PROFILES, values.profile)) throw new Error('profile must be desktop or mobile');
-  const urls = values.url ?? ['https://3dverse-tan.vercel.app/', 'https://3dverse-tan.vercel.app/marketplace', 'https://3dverse-tan.vercel.app/login'];
+  const urls = values.url ?? ['https://buyandsell3d.vercel.app/', 'https://buyandsell3d.vercel.app/marketplace', 'https://buyandsell3d.vercel.app/login'];
   if (!urls.length || urls.length > 10) throw new Error('Provide between 1 and 10 URLs');
   for (const value of urls) {
     const url = new URL(value);

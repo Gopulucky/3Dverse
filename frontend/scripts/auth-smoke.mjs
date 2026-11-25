@@ -14,7 +14,8 @@ try {
     const second = route.request().postData()?.includes('buyer2') || route.request().headers().authorization === 'Bearer fixture-token-100';
     const user = {id:second ? 100 : 99,email:second ? 'buyer2@example.com' : 'buyer@example.com',role:'customer'};
     if (path.endsWith('/users/me') && !second && holdRefresh) { oldRefresh = route; return; }
-    if (route.request().method() === 'POST') posts.push({path, body: route.request().postData()});
+    // The anonymous funnel tracker posts to /api/events on landing; that is background analytics, not part of the sign-in flow under test.
+    if (route.request().method() === 'POST' && !path.endsWith('/events')) posts.push({path, body: route.request().postData()});
     const orders = [{id:second ? 8100 : 8099,status:'paid',total:100,currency:'INR',created_at:'2026-10-29T10:00:00',items:[]}];
     const json = path.endsWith('/login/access-token') ? {access_token:`fixture-token-${user.id}`,user} : path.endsWith('/users/me') ? user : /\/orders\/?$/.test(path) ? orders : [];
     await route.fulfill({json});
