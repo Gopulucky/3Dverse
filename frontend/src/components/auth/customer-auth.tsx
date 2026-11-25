@@ -45,7 +45,7 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
       finish(token, user, "firebase");
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        dispatch({ type: "LINK_REQUIRED", message: "Already shopped here? Verify your email, then enter your previous 3DVerse password below to connect your account and keep your orders." });
+        dispatch({ type: "LINK_REQUIRED", message: "Already shopped here? Verify your email, then enter your previous buy&sell3d password below to connect your account and keep your orders." });
         return;
       }
       throw err;
@@ -95,7 +95,7 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
   }
 
   return (
-    <AuthCard title={create ? "Your 3DVerse account" : "Sign in to 3DVerse"}
+    <AuthCard title={create ? "Your buy&sell3d account" : "Sign in to buy&sell3d"}
       description={create ? "One account to buy printed products and 3D files. No printer needed to shop printed products." : "Track your orders and access your purchased 3D files."}>
       <div className="space-y-5">
         <Button type="button" variant="outline" className="w-full" disabled={busy || !firebaseConfigured} onClick={google}>Continue with Google</Button>
@@ -104,7 +104,7 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         <form onSubmit={submit} className="space-y-4" data-ready={ready} data-flow="customer-auth" data-state={auth.status} data-auth-mode={auth.mode.kind}>
           {pendingLink ? <>
-            <Label htmlFor="previous-password">Previous 3DVerse password</Label>
+            <Label htmlFor="previous-password">Previous buy&sell3d password</Label>
             <Input id="previous-password" type="password" autoComplete="current-password" required value={previousPassword} onChange={(e) => setPreviousPassword(e.target.value)} />
           </> : <>
             <div><Label htmlFor="email" className="mb-2 block">Email</Label><Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></div>
@@ -116,9 +116,9 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
           </>}
           <Button type="submit" className="w-full" size="lg" disabled={busy || !ready}>{busy ? <Loader2 className="animate-spin" size={18} /> : pendingLink ? "Connect my account" : create ? "Create my account" : "Sign in with email"}</Button>
         </form>
-        {!create && firebaseConfigured && <button type="button" className="text-xs text-primary underline" disabled={busy} onClick={() => dispatch({ type: "TOGGLE_LEGACY" })}>{legacy ? "Use Google or current email sign-in" : "Use my previous 3DVerse sign-in"}</button>}
+        {!create && firebaseConfigured && <button type="button" className="text-xs text-primary underline" disabled={busy} onClick={() => dispatch({ type: "TOGGLE_LEGACY" })}>{legacy ? "Use Google or current email sign-in" : "Use my previous buy&sell3d sign-in"}</button>}
         {legacy && <p className="text-xs text-muted-foreground">For accounts created before Google sign-in was introduced.</p>}
-        <p className="text-sm text-center text-muted-foreground">{create ? "Already have an account? " : "New to 3DVerse? "}<Link href={create ? "/login" : "/register"} onClick={(event) => { event.preventDefault(); router.push(`${create ? "/login" : "/register"}${window.location.search}`); }} className="text-primary underline">{create ? "Sign in" : "Create an account"}</Link></p>
+        <p className="text-sm text-center text-muted-foreground">{create ? "Already have an account? " : "New to buy&sell3d? "}<Link href={create ? "/login" : "/register"} onClick={(event) => { event.preventDefault(); router.push(`${create ? "/login" : "/register"}${window.location.search}`); }} className="text-primary underline">{create ? "Sign in" : "Create an account"}</Link></p>
         {create && <p className="text-xs text-muted-foreground text-center">By creating an account, you agree to our <Link href="/terms" className="underline">Terms</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>.</p>}
         <div className="border-t border-border pt-4 flex flex-col gap-3 text-center text-sm">
           <Link href="/marketplace" className="text-primary underline">Keep browsing without an account</Link>

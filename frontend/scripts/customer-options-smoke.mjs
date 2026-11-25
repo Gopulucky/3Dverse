@@ -90,12 +90,12 @@ try {
   await page.getByRole('link', { name: 'QA model 1', exact: true }).waitFor();
   assert.equal(catalogueRequests.at(-1).currency, 'INR');
   assert.equal(catalogueRequests.at(-1).skip, '0');
-  await page.getByRole('searchbox', { name: 'Search 3DVerse', exact: true }).fill('outage');
-  await page.getByRole('searchbox', { name: 'Search 3DVerse', exact: true }).press('Enter');
+  await page.getByRole('searchbox', { name: 'Search buy&sell3d', exact: true }).fill('outage');
+  await page.getByRole('searchbox', { name: 'Search buy&sell3d', exact: true }).press('Enter');
   await page.getByRole('heading', { name: 'The catalogue couldn’t load.' }).waitFor();
   assert.equal(await page.getByRole('heading', { name: 'No products match these filters.' }).count(), 0);
-  await page.getByRole('searchbox', { name: 'Search 3DVerse', exact: true }).fill('empty');
-  await page.getByRole('searchbox', { name: 'Search 3DVerse', exact: true }).press('Enter');
+  await page.getByRole('searchbox', { name: 'Search buy&sell3d', exact: true }).fill('empty');
+  await page.getByRole('searchbox', { name: 'Search buy&sell3d', exact: true }).press('Enter');
   await page.getByRole('heading', { name: 'No products match these filters.' }).waitFor();
   // Left filter panel: collapsible sections, choices apply at once, Clear all resets.
   await page.goto(`${base}/marketplace`);
@@ -219,7 +219,7 @@ try {
   await page.getByText('QA multi-format model', { exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Download 3D file', exact: true }).count(), 0);
   await page.goto(`${base}/sell`);
-  await page.getByRole('heading', { name: 'Sell with 3DVerse', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Sell with buy&sell3d', exact: true }).waitFor();
   await page.getByRole('combobox', { name: 'Creator path' }).selectOption('designer');
   await page.getByRole('button', { name: 'Set up my creator account', exact: true }).click();
   await page.waitForURL('**/creator/dashboard');

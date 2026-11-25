@@ -8,7 +8,7 @@ Run the analyzer from `frontend/`. It measures public guest page visits and save
 npm run perf
 ```
 
-The default visits the deployed 3DVerse homepage, marketplace and sign-in three times each. Each run observes ten seconds after DOMContentLoaded, so the default takes at least 90 seconds plus navigation time. Requests are sequential; this is a loading diagnostic, not a concurrent load test.
+The default visits the deployed buy&sell3d homepage, marketplace and sign-in three times each. Each run observes ten seconds after DOMContentLoaded, so the default takes at least 90 seconds plus navigation time. Requests are sequential; this is a loading diagnostic, not a concurrent load test.
 
 Test a specific page or another website:
 
@@ -51,7 +51,7 @@ Choose a CSS selector for the content customers are waiting for, not the page he
 npm run perf -- --url https://3dverse-tan.vercel.app/marketplace --ready-selector .market-product --observe-ms 30000 --runs 1
 ```
 
-`.market-product` selects an actual 3DVerse product card. For another website, use its real content selector. If no element becomes visible, the report records that the feature was unavailable within the window. This can mean slow/broken data, an empty result or a selector that needs correcting. The tool does not claim a timeout is automatically a performance defect.
+`.market-product` selects an actual buy&sell3d product card. For another website, use its real content selector. If no element becomes visible, the report records that the feature was unavailable within the window. This can mean slow/broken data, an empty result or a selector that needs correcting. The tool does not claim a timeout is automatically a performance defect.
 
 Use a production build for local comparisons; development compilation/HMR adds overhead:
 

@@ -15,7 +15,7 @@ def _initialize(project_id: str):
     # Never accept credentials, a project ID or an emulator host from a request.
     credential = (credentials.Certificate(settings.GOOGLE_APPLICATION_CREDENTIALS)
                   if settings.GOOGLE_APPLICATION_CREDENTIALS else None)
-    return firebase_admin.initialize_app(credential, options={"projectId": project_id}, name="3dverse-auth")
+    return firebase_admin.initialize_app(credential, options={"projectId": project_id}, name="buyandsell3d-auth")
 
 
 def firebase_app():

@@ -22,7 +22,7 @@ export function ExportExcelButton() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "3dverse-metrics.xlsx";
+      a.download = "buyandsell3d-metrics.xlsx";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

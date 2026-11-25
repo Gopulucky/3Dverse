@@ -12,6 +12,7 @@ import {
   Settings,
   ListChecks,
   Filter,
+  Target,
 } from "lucide-react";
 
 const adminLinks: SidebarLink[] = [
@@ -23,6 +24,7 @@ const adminLinks: SidebarLink[] = [
   { href: "/admin/trust-safety", label: "Trust & Safety", icon: ShieldCheck },
   { href: "/admin/waitlist", label: "Waitlist", icon: ListChecks },
   { href: "/admin/funnel", label: "Funnel", icon: Filter },
+  { href: "/admin/audience", label: "Audience", icon: Target },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

@@ -22,6 +22,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Wordmark } from "@/components/shared/wordmark";
 import { useRequireAuth } from "@/stores/auth-store";
 
 const STEPS = [
@@ -179,8 +180,7 @@ export default function OnboardingPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold font-display">
-            <span className="text-gradient-primary">3D</span>
-            <span>Verse</span>{" "}
+            <Wordmark className="text-3xl" />{" "}
             <span className="text-muted-foreground font-normal">Creator Studio</span>
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -459,7 +459,7 @@ export default function OnboardingPage() {
                   <li>• I agree to the platform's commission structure</li>
                   <li>• I will respond to customer inquiries within 24 hours</li>
                   <li>• I confirm all equipment and material declarations are accurate</li>
-                  <li>• I agree to 3DVerse's IP protection and content policies</li>
+                  <li>• I agree to buy&sell3d's IP protection and content policies</li>
                 </ul>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/shared/product-card";
 import { HomeSupport } from "@/components/marketplace/home-support";
-import { HomeWaitlist } from "@/components/marketplace/home-waitlist";
+import { openAudiencePopup } from "@/lib/audience-schedule";
 
 function ProductSection({ title, products, rail = false }: { title: string; products: ProductCardData[]; rail?: boolean }) {
   const titleId = useId();
@@ -105,6 +105,7 @@ export function MarketplaceHomeContent({ initialData, supportOpen = false }: { i
             <span><strong>Digital models</strong><small>Files for your 3D printer</small></span>
           </Link>
         </div>
+        {printed.comingSoon && <button type="button" className="market-text-link mt-3 min-h-11" onClick={openAudiencePopup}>Tell us what you’d like us to make</button>}
       </section>
 
       <div id="featured" className="scroll-mt-20">
@@ -138,11 +139,9 @@ export function MarketplaceHomeContent({ initialData, supportOpen = false }: { i
         )}
       </div>
 
-      {/* Waits for real data so a slow load never flashes the form at visitors once printing is open. */}
-      {data && !availability.printed && <HomeWaitlist />}
       {supportOpen && <HomeSupport />}
 
-      <section className="home-trust" aria-label="Shopping with 3DVerse">
+      <section className="home-trust" aria-label="Shopping with buy&sell3d">
         <ul className="store-container">
           {trustItems(availability).map(({ key, label }) => {
             const Icon = trustIcons[key];

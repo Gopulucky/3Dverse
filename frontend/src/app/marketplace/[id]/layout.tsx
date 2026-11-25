@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const description =
     product.description?.replace(/\s+/g, " ").trim().slice(0, 160) ||
-    `${product.title} — a printable 3D model on 3DVerse.`;
+    `${product.title} — a printable 3D model on buy&sell3d.`;
   const image = imageUrl(product);
   return {
     title: product.title,

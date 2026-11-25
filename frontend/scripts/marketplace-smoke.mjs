@@ -32,7 +32,7 @@ async function visit({ state = 'full', authenticated = false, colorScheme = 'lig
   // The production CSP deliberately blocks a cross-port HTTP API on localhost.
   // Bypass it only inside this isolated fixture browser; deployment uses HTTPS.
   const context = await browser.newContext({ reducedMotion: 'reduce', colorScheme, viewport, bypassCSP: true });
-  const current = { state, posts: [], waitlist: [], homepageRequests: 0, catalogueRequests: [] };
+  const current = { state, posts: [], waitlist: [], audience: [], homepageRequests: 0, catalogueRequests: [] };
   if (authenticated) await context.addInitScript(() => {
     localStorage.setItem('token', 'qa-only-token');
     localStorage.setItem('user', JSON.stringify({ id: 99, email: 'qa@example.test', role: 'customer' }));
@@ -48,6 +48,10 @@ async function visit({ state = 'full', authenticated = false, colorScheme = 'lig
       if (current.state === 'error') return send({ detail: 'QA simulated outage' }, 503);
       if (current.state === 'loading') await new Promise(resolve => { current.release = resolve; });
       return send(current.state === 'empty' ? empty : current.state === 'printed' ? { ...full, availability: { checkout: true, printed: true } } : full);
+    }
+    if (path.endsWith('/audience') && request.method() === 'POST') {
+      current.audience.push(request.postDataJSON());
+      return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*' } });
     }
     if (path.endsWith('/waitlist') && request.method() === 'POST') {
       current.waitlist.push(request.postDataJSON());
@@ -137,12 +141,12 @@ try {
   const footerText = await footer.innerText();
   assert.ok(!/For Creators|For Print Partners|Become a Creator|Partner Console/i.test(footerText), `Footer still promotes the supply side: ${footerText}`);
   assert.equal(await footer.getByRole('heading', { name: 'Shop', exact: true }).count(), 1);
-  assert.equal(await footer.getByRole('link', { name: 'Sell on 3DVerse', exact: true }).getAttribute('href'), '/sell');
+  assert.equal(await footer.getByRole('link', { name: 'Sell on buy&sell3d', exact: true }).getAttribute('href'), '/sell');
   await page.getByRole('button', { name: 'Account and portals', exact: true }).click();
   await visible(page.getByRole('menuitem', { name: 'My Orders' }));
-  assert.equal(await page.getByRole('menuitem', { name: 'Sell with 3DVerse' }).count(), 0);
+  assert.equal(await page.getByRole('menuitem', { name: 'Sell with buy&sell3d' }).count(), 0);
   await page.keyboard.press('Escape');
-  checks.push('Customer storefront: no seller section on home, no creator/partner footer columns, one footer "Sell on 3DVerse" link, no "Sell with 3DVerse" in the customer account menu.');
+  checks.push('Customer storefront: no seller section on home, no creator/partner footer columns, one footer "Sell on buy&sell3d" link, no "Sell with buy&sell3d" in the customer account menu.');
   await page.locator('.home-tiles').getByRole('link', { name: /Digital models/ }).click();
   await page.waitForURL('**/marketplace?format=digital');
   await visible(page.getByRole('heading', { name: 'Digital models', exact: true }));
@@ -267,40 +271,60 @@ try {
   await failure.context.close();
   checks.push('API outage produces a retry action; retry recovers the catalogue.');
 
-  // Waitlist: shown after the products while printing isn't open; validates, then posts the answers.
+  // Audience popup: no card on the page; opens on request; saves every step; the contact step needs an email and consent.
   const signup = await visit();
-  const waitlist = signup.page.locator('[data-flow="waitlist"]');
-  await visible(waitlist);
-  const order = await signup.page.evaluate(() => {
-    const product = document.querySelector('.storefront .market-product');
-    const form = document.querySelector('[data-flow="waitlist"]');
-    return Boolean(product.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING);
+  await visible(signup.page.getByRole('link', { name: 'View Sample bench', exact: true }));
+  assert.equal(await signup.page.locator('[data-flow="waitlist"]').count(), 0, 'The waitlist card is gone from the home page');
+  assert.equal(await signup.page.locator('[data-flow="audience"]').count(), 0, 'The popup does not open straight away');
+  await signup.page.getByRole('button', { name: 'Tell us what you’d like us to make' }).click();
+  const popup = signup.page.locator('[data-flow="audience"][data-state="open"]');
+  await visible(popup);
+  assert.equal(await popup.getAttribute('data-step'), '1');
+  await popup.getByRole('radio', { name: 'Parent or family' }).check();
+  await popup.getByLabel(/Your city/).fill('  Pune ');
+  await popup.getByRole('button', { name: 'Next' }).click();
+  await popup.getByRole('checkbox', { name: 'Gifts for someone' }).check();
+  await popup.getByRole('checkbox', { name: 'Birthdays' }).check();
+  await popup.getByRole('group', { name: /3D printer/ }).getByRole('radio', { name: 'No' }).check();
+  await popup.getByRole('group', { name: /personalised/ }).getByRole('radio', { name: 'Sometimes' }).check();
+  await popup.getByRole('checkbox', { name: 'Hobby: tabletop, minis, cosplay' }).check();
+  assert.ok(await popup.getByRole('checkbox', { name: 'Decorate my home or room' }).isDisabled(), 'A third use cannot be picked');
+  await popup.getByRole('checkbox', { name: 'Hobby: tabletop, minis, cosplay' }).uncheck();
+  await popup.getByRole('button', { name: 'Next' }).click();
+  await popup.getByRole('group', { name: /where was it from/ }).getByRole('radio', { name: 'A local shop' }).check();
+  await popup.getByRole('group', { name: /how much/ }).getByRole('radio', { name: '₹500–1,500' }).check();
+  await popup.getByLabel(/missing or annoying/).fill('  Nothing   local  ');
+  await popup.screenshot({ path: `${out}/audience-step3.png` });
+  await popup.getByRole('button', { name: 'Next' }).click();
+  assert.equal(await popup.getAttribute('data-step'), '4');
+  assert.equal(signup.current.audience.length, 3, 'Steps 1-3 each save when Next is pressed');
+  assert.deepEqual(signup.current.audience[2], {
+    response_id: signup.current.audience[0].response_id, anon_id: signup.current.audience[0].anon_id, step: 3, role: 'parent', city: 'Pune', uses: ['gifts'],
+    occasions: ['birthday'], owns_printer: 'no', personalise: 'sometimes', bought_where: 'local_shop', spend_band: '500_1500', missing: 'Nothing local',
   });
-  assert.ok(order, 'Waitlist must come after the products');
-  await waitlist.getByRole('button', { name: 'Notify me' }).click();
-  for (const text of ['Enter your email address.', 'Choose what you would buy.', 'Tick the box so we can email you at launch.']) await visible(waitlist.getByText(text));
-  assert.equal(signup.current.waitlist.length, 0);
-  await waitlist.getByRole('textbox', { name: 'Email', exact: true }).fill(' QA@Example.test ');
-  await waitlist.getByLabel('What would you buy first?').selectOption('tabletop');
-  await waitlist.getByRole('radio', { name: '₹499' }).check();
-  await waitlist.getByLabel(/City/).fill('  Pune ');
-  await waitlist.getByRole('checkbox').check();
-  await waitlist.screenshot({ path: `${out}/waitlist.png` });
-  assert.equal(await waitlist.getByText('Enter your email address.').count(), 0, 'Fixed fields drop their error');
-  await waitlist.getByRole('button', { name: 'Notify me' }).click();
-  await signup.page.locator('[data-flow="waitlist"][data-state="joined"]').waitFor();
-  await visible(waitlist.getByText('You’re on the list.'));
-  assert.deepEqual(signup.current.waitlist, [{ email: 'qa@example.test', interest: 'tabletop', price_choice: '499', city: 'Pune', consent: true, source: 'home' }]);
+  await popup.getByRole('button', { name: 'Notify me' }).click();
+  for (const text of ['Enter your email address.', 'Tick the box so we can contact you.']) await visible(popup.getByText(text));
+  assert.equal(signup.current.audience.length, 3, 'Nothing is sent until the contact step is valid');
+  await popup.getByRole('textbox', { name: /^Email/ }).fill(' QA@Example.test ');
+  await popup.getByRole('checkbox', { name: /Contact me about buy&sell3d/ }).check();
+  await popup.screenshot({ path: `${out}/audience-contact.png` });
+  await popup.getByRole('button', { name: 'Notify me' }).click();
+  await signup.page.locator('[data-flow="audience"][data-state="done"]').waitFor();
+  await visible(signup.page.getByText('Thank you. You’re on the list.'));
+  assert.deepEqual(signup.current.audience[3], { response_id: signup.current.audience[0].response_id, anon_id: signup.current.audience[0].anon_id, step: 4,
+    role: 'parent', city: 'Pune', uses: ['gifts'], occasions: ['birthday'], owns_printer: 'no', personalise: 'sometimes', bought_where: 'local_shop',
+    spend_band: '500_1500', missing: 'Nothing local', email: 'qa@example.test', chat_ok: false, consent: true });
   await signup.page.setViewportSize({ width: 375, height: 812 });
-  assert.ok(await signup.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Waitlist must not overflow at 375px');
-  await waitlist.screenshot({ path: `${out}/waitlist-joined-mobile.png` });
+  assert.ok(await signup.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Popup must not overflow at 375px');
+  await signup.page.getByRole('button', { name: 'Close', exact: true }).first().click();
+  await signup.page.locator('[data-flow="audience"]').waitFor({ state: 'detached' });
   await signup.context.close();
   const open = await visit({ state: 'printed' });
   await visible(open.page.getByRole('link', { name: 'View Sample bench', exact: true }));
-  assert.equal(await open.page.locator('[data-flow="waitlist"]').count(), 0);
+  assert.equal(await open.page.getByRole('button', { name: 'Tell us what you’d like us to make' }).count(), 0);
   assert.match(await open.page.locator('.home-tile--printed').innerText(), /Delivered in India/);
   await open.context.close();
-  checks.push('Waitlist: after the products, validates, posts trimmed answers with consent, confirms; hidden once printing is open.');
+  checks.push('Audience popup: no card on the home page; opens on request; saves each step with the visitor id; contact step needs email and consent; no overflow at 375px; the request button is hidden once printing is open.');
 
   writeFileSync(`${out}/results.json`, JSON.stringify({ base, checks, passed: checks.length, fixtureBrowserBypassesCSP: true }, null, 2));
   console.log(JSON.stringify({ passed: checks.length, checks }, null, 2));

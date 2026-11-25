@@ -350,7 +350,7 @@ def apply_watermarks(product_id: int, db):
                 d = ImageDraw.Draw(txt)
                 
                 # Draw a simple repeating watermark or just one in the center
-                text = "3DVERSE WATERMARK " * 5
+                text = "BUY&SELL3D WATERMARK " * 5
                 y = 0
                 while y < img.size[1]:
                     d.text((10, y), text, fill=(255,255,255,100))

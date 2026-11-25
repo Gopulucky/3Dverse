@@ -5,7 +5,7 @@ import { SUPPORT_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Shipping Policy",
-  description: "How and when physical 3DVerse orders are made and delivered.",
+  description: "How and when physical buy&sell3d orders are made and delivered.",
 };
 
 export default function ShippingPage() {

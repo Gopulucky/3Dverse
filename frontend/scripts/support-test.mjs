@@ -10,6 +10,6 @@ const { getSupportPaymentUrl } = await import(`data:text/javascript;base64,${Buf
 for (const input of [undefined, '', '  ', '/pay', 'not a url', 'http://example.test/pay', 'javascript:alert(1)', 'https://user:password@example.test/pay', 'https://user@example.test/pay']) {
   assert.equal(getSupportPaymentUrl(input), null, `Must reject ${String(input)}`);
 }
-assert.equal(getSupportPaymentUrl('https://example.test/support?currency=INR&reference=3dverse'), 'https://example.test/support?currency=INR&reference=3dverse');
+assert.equal(getSupportPaymentUrl('https://example.test/support?currency=INR&reference=buyandsell3d'), 'https://example.test/support?currency=INR&reference=buyandsell3d');
 assert.equal(getSupportPaymentUrl('  https://example.test/support  '), 'https://example.test/support');
 console.log('PASS support destination validation: absent, unsafe and valid HTTPS configuration');

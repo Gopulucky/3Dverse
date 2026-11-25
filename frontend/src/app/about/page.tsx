@@ -105,7 +105,7 @@ export default function AboutPage() {
                 Three sides. One network.
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Every account on 3DVerse belongs to one of three groups. Each has its own portal,
+                Every account on buy&sell3d belongs to one of three groups. Each has its own portal,
                 its own tools, and its own reason to keep the network growing.
               </p>
             </div>
@@ -212,7 +212,7 @@ export default function AboutPage() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-moss/20 rounded-full blur-3xl" />
             <p className="text-sm font-bold uppercase tracking-wider mb-6 text-background/50 relative z-10">
-              <Wordmark size="sm" className="[&_span:last-child]:text-background" />
+              <Wordmark size="sm" tone="inverse" />
             </p>
             <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 relative z-10">
               Every design deserves a marketplace.

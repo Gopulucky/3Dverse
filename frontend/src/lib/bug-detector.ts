@@ -1,5 +1,5 @@
 /**
- * Runtime bug detector for the 3DVerse frontend.
+ * Runtime bug detector for the buy&sell3d frontend.
  *
  * Installs a set of global listeners that capture anything that goes wrong in
  * the browser — thrown errors, rejected promises, console.error output, failed
@@ -7,7 +7,7 @@
  * that look dead (buttons with no handler, links pointing nowhere).
  *
  * Everything is collected into an in-memory ring buffer that is exposed on
- * `window.__3DVERSE_BUGS__` so the Playwright crawler in scripts/ui-scan can
+ * `window.__BUYANDSELL3D_BUGS__` so the Playwright crawler in scripts/ui-scan can
  * read it, and rendered by <BugOverlay /> during development.
  *
  * This module is inert unless enabled — see `isDetectorEnabled()`.
@@ -429,7 +429,7 @@ export function installBugDetector(): void {
   installFetchHook();
 
   // Expose for the Playwright crawler and for manual poking in DevTools.
-  (window as unknown as Record<string, unknown>).__3DVERSE_BUGS__ = {
+  (window as unknown as Record<string, unknown>).__BUYANDSELL3D_BUGS__ = {
     get: getBugs,
     clear: clearBugs,
     audit: auditCurrentPage,

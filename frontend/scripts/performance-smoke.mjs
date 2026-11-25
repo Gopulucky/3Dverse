@@ -108,7 +108,7 @@ try {
   assert.equal(mobile.profile.latencyMs, 150);
   assert.ok(mobile.metrics.fcpMs > 0);
 
-  outputDirectory = await mkdtemp(join(tmpdir(), '3dverse-perf-test-'));
+  outputDirectory = await mkdtemp(join(tmpdir(), 'buyandsell3d-perf-test-'));
   const child = spawn(process.execPath, ['scripts/performance-audit.mjs', '--url', `${base}/error?token=PRIVATE_QUERY`, '--runs=1', '--observe-ms=150', '--out', outputDirectory], { windowsHide: true, stdio: 'pipe' });
   let stdout = '', stderr = '';
   child.stdout.on('data', chunk => { stdout += chunk; });
@@ -130,7 +130,7 @@ try {
   if (outputDirectory) {
     const cleanupPath = resolve(outputDirectory);
     assert.equal(dirname(cleanupPath), resolve(tmpdir()));
-    assert.ok(basename(cleanupPath).startsWith('3dverse-perf-test-'));
+    assert.ok(basename(cleanupPath).startsWith('buyandsell3d-perf-test-'));
     await rm(cleanupPath, { recursive: true, force: true });
   }
 }

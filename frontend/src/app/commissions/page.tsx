@@ -67,7 +67,7 @@ export default function CommissionsInboxPage() {
             <p className="text-muted-foreground mt-1 text-sm">
               {isCreator
                 ? "Custom design work customers have commissioned from you."
-                : "Bespoke designs you've commissioned from 3DVerse creators."}
+                : "Bespoke designs you've commissioned from buy&sell3d creators."}
             </p>
           </div>
           {!isCreator && (

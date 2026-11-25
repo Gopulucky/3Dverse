@@ -59,7 +59,7 @@ export const CREATOR_PATHS: CreatorPath[] = [
     label: "Seller",
     tagline: "I just want to sell my designs",
     description:
-      "Sell your designs directly on the 3DVerse marketplace. No printer, no partners, no logistics — you list, customers buy.",
+      "Sell your designs directly on the buy&sell3d marketplace. No printer, no partners, no logistics — you list, customers buy.",
     bullets: [
       "List and sell designs directly",
       "No hardware required",

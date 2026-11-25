@@ -53,8 +53,8 @@ export function Footer() {
             <ul className="space-y-2.5">
               {[
                 { href: "/about", label: "About" },
-                { href: "/sell", label: "Sell on 3DVerse" },
-                { href: "/support", label: "Support 3DVerse" },
+                { href: "/sell", label: "Sell on buy&sell3d" },
+                { href: "/support", label: "Support buy&sell3d" },
                 { href: "/contact", label: "Contact" },
                 { href: "/shipping", label: "Shipping" },
                 { href: "/refund-policy", label: "Returns & Refunds" },
@@ -77,7 +77,7 @@ export function Footer() {
 
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} 3DVerse. All rights reserved.
+            © {new Date().getFullYear()} buy&sell3d. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">

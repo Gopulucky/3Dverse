@@ -42,7 +42,7 @@ def test_build_all_writes_everything(tmp_path):
         assert set(entry) == KEYS
         assert (tmp_path / entry["stl"]).is_file() and (tmp_path / entry["png"]).is_file()
         assert not entry["stl"].startswith(("/", "\\")) and ".." not in entry["stl"]
-    assert manifest["creator"] == {"name": "3DVerse Originals"}
+    assert manifest["creator"] == {"name": "buy&sell3d Originals"}
 
 
 def test_manifest_values_match_meshes(tmp_path):

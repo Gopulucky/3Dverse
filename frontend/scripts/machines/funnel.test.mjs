@@ -12,7 +12,7 @@ test('share of visitors is a whole percent, or null before anyone has visited', 
 });
 
 test('every step the server reports has a plain-language label', () => {
-  for (const step of ['landing', 'product_view', 'viewer_opened', 'add_to_cart', 'buy_now', 'checkout_started', 'payment_opened', 'paid', 'waitlist_joined']) {
+  for (const step of ['landing', 'product_view', 'viewer_opened', 'add_to_cart', 'buy_now', 'checkout_started', 'payment_opened', 'paid', 'waitlist_joined', 'audience_shown']) {
     assert.ok(f.STEP_LABELS[step], step);
   }
 });

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Wordmark } from "@/components/shared/wordmark";
 
 /** Centered card used by the small account-recovery pages (forgot/reset/verify). */
 export function AuthCard({
@@ -16,9 +17,8 @@ export function AuthCard({
     <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-background">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="text-3xl font-bold tracking-tight font-display inline-block">
-            <span className="text-gradient-primary">3D</span>
-            <span className="text-foreground">Verse</span>
+          <Link href="/" className="inline-block" aria-label="buy&sell3d home">
+            <Wordmark className="text-3xl" />
           </Link>
         </div>
         <Card className="border-border/50">

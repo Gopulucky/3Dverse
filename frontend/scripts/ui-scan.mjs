@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Automated UI bug crawler for the 3DVerse frontend.
+ * Automated UI bug crawler for the buy&sell3d frontend.
  *
  * NOTE on login checks: `next dev` hydrates over an HMR WebSocket, and if
  * that handshake glitches (seen in some headless/proxied environments) the
@@ -268,12 +268,12 @@ async function visitRoute(page, persona, route, allFindings) {
     }
 
     // Trigger the in-app DOM audit for dead buttons/links on this route.
-    await page.evaluate(() => window.__3DVERSE_BUGS__?.audit?.()).catch(() => {});
+    await page.evaluate(() => window.__BUYANDSELL3D_BUGS__?.audit?.()).catch(() => {});
     await clickAround(page, route, pageErrors);
-    await page.evaluate(() => window.__3DVERSE_BUGS__?.audit?.()).catch(() => {});
+    await page.evaluate(() => window.__BUYANDSELL3D_BUGS__?.audit?.()).catch(() => {});
 
     const clientBugs = await page
-      .evaluate(() => window.__3DVERSE_BUGS__?.get?.() ?? [])
+      .evaluate(() => window.__BUYANDSELL3D_BUGS__?.get?.() ?? [])
       .catch(() => []);
 
     allFindings.push({ persona, route, status: res?.status() ?? null, pageErrors, clientBugs });

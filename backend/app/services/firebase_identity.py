@@ -47,11 +47,11 @@ def resolve_identity(db, claims, *, create=False):
             return persist(db, user)
         return user
     if not create:
-        raise HTTPException(401, "Finish signing in to your 3DVerse account")
+        raise HTTPException(401, "Finish signing in to your buy&sell3d account")
     email = email_from(claims)
     existing = db.query(User).filter(User.email.ilike(email)).first()
     if existing:
-        raise HTTPException(409, "This email already has a 3DVerse account. Connect it using your previous password.")
+        raise HTTPException(409, "This email already has a buy&sell3d account. Connect it using your previous password.")
     user = User(email=email, firebase_uid=uid, role=UserRole.customer,
                 hashed_password=get_password_hash(secrets.token_urlsafe(48)),
                 full_name=str(claims.get("name", ""))[:200] or None,
@@ -66,7 +66,7 @@ def link_identity(db, claims, previous_password):
     email = email_from(claims)
     user = db.query(User).filter(User.email.ilike(email)).first()
     if not user or not verify_password(previous_password, user.hashed_password):
-        raise HTTPException(401, "The previous 3DVerse password is incorrect")
+        raise HTTPException(401, "The previous buy&sell3d password is incorrect")
     active(user)
     uid = claims.get("uid")
     if not isinstance(uid, str) or not uid:

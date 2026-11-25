@@ -13,7 +13,8 @@ export const STEP_LABELS: Record<string, string> = {
   checkout_started: "Started checkout",
   payment_opened: "Opened the payment window",
   paid: "Paid",
-  waitlist_joined: "Joined the waitlist",
+  audience_shown: "Saw the questions popup",
+  waitlist_joined: "Left an email at the end",
 };
 
 /** Share of the people who started a visit that reached this step, as a whole percent; null when nobody has visited yet. */

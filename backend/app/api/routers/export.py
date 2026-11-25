@@ -98,5 +98,5 @@ def export_excel(
     return Response(
         content=buf.read(),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename=3dverse-metrics-{current_user.id}.xlsx"},
+        headers={"Content-Disposition": f"attachment; filename=buyandsell3d-metrics-{current_user.id}.xlsx"},
     )

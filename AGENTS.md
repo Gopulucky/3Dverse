@@ -1,4 +1,4 @@
-# 3DVerse development workflow
+# buy&sell3d development workflow
 
 Use the project-local Superpowers skills for work in this repository.
 Start by reading `.agents/skills/using-superpowers/SKILL.md`, including its
@@ -29,7 +29,7 @@ working-tree changes and never silently discard them.
 
 - Frontend work must also follow `frontend/AGENTS.md` and `frontend/design.md`.
   Hallmark supplies visual-design guidance when invoked; Superpowers supplies
-  the development process. Preserve the existing 3DVerse identity and wiring.
+  the development process. Preserve the existing buy&sell3d identity and wiring.
 - Frontend checks, from `frontend/`: `npm run build` and ESLint on changed files.
   In Windows PowerShell, use `npm.cmd` if the npm script shim is restricted.
 - Storefront behaviour: with the local frontend running, execute

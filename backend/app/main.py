@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.api.routers import auth, products, marketplace, wishlist, reviews, cart, checkout, orders, partner, analytics, notifications, creator, creator_materials, financial_metrics, admin_metrics, ads, export, admin, onboarding, designer, collaboration, commissions, users, downloads, stock, waitlist, funnel
+from app.api.routers import auth, products, marketplace, wishlist, reviews, cart, checkout, orders, partner, analytics, notifications, creator, creator_materials, financial_metrics, admin_metrics, ads, export, admin, onboarding, designer, collaboration, commissions, users, downloads, stock, waitlist, funnel, audience
 from app.core.config import settings
 from app.core.database import Base, engine
 import logging
@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 
 from contextlib import asynccontextmanager
 
-logger = logging.getLogger("3dverse")
+logger = logging.getLogger("buyandsell3d")
 
 # Optional error monitoring (free Sentry tier). Does nothing unless SENTRY_DSN is
 # set, and a missing sentry-sdk package never stops the API from starting.
@@ -159,9 +159,10 @@ app.include_router(downloads.router, prefix=f"{settings.API_V1_STR}/downloads", 
 app.include_router(stock.router, prefix=f"{settings.API_V1_STR}/creator/stock", tags=["stock"])
 app.include_router(waitlist.router, prefix=f"{settings.API_V1_STR}/waitlist", tags=["waitlist"])
 app.include_router(funnel.router, prefix=f"{settings.API_V1_STR}/events", tags=["events"])
+app.include_router(audience.router, prefix=f"{settings.API_V1_STR}/audience", tags=["audience"])
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the 3DVerse API"}
+    return {"message": "Welcome to the buy&sell3d API"}
 
 @app.get("/health")
 def health_check():

@@ -9,6 +9,11 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 
+BRAND_NAME = "buy&sell3d"
+# Paragraph parses its text as markup, so the ampersand in the brand name must be escaped
+# or the receipt prints "buy&sell3d;".
+INVOICE_TITLE = f"{escape(BRAND_NAME)} Order Receipt"
+
 def generate_invoice_pdf(order_id: int, customer_name: str, items: list, subtotal: float, shipping: float, total: float, *, currency: str = "USD") -> str:
     if currency not in ("USD", "INR"):
         raise ValueError("Unsupported invoice currency")
@@ -24,7 +29,7 @@ def generate_invoice_pdf(order_id: int, customer_name: str, items: list, subtota
     Story = []
     
     # Title
-    title = Paragraph("3DVerse Order Receipt", styles['Heading1'])
+    title = Paragraph(INVOICE_TITLE, styles['Heading1'])
     Story.append(title)
     Story.append(Spacer(1, 12))
     
