@@ -1,5 +1,6 @@
 """app.core.config validates its environment at import time, so each case runs
 in a fresh interpreter with a controlled environment."""
+import json
 import os
 import subprocess
 import sys
@@ -47,16 +48,60 @@ def test_malformed_postgres_server_is_rejected_with_a_clear_message():
         assert "POSTGRES_SERVER" in r.stderr
 
 
+ORIGINS_CODE = "import app.core.config as c; print('|'.join(c.settings.BACKEND_CORS_ORIGINS))"
+
+
 def test_cors_accepts_comma_list_and_json_and_always_includes_the_vercel_site():
-    code = "import app.core.config as c; print('|'.join(c.settings.BACKEND_CORS_ORIGINS))"
-    comma = run_config({"BACKEND_CORS_ORIGINS": "http://a.test, http://b.test"}, code)
+    comma = run_config({"BACKEND_CORS_ORIGINS": "http://a.test, http://b.test"}, ORIGINS_CODE)
     assert comma.returncode == 0, comma.stderr
     assert "http://a.test" in comma.stdout and "http://b.test" in comma.stdout
-    assert "https://3dverse-tan.vercel.app" in comma.stdout
+    assert "https://buyandsell3d.vercel.app" in comma.stdout.strip().split("|")
 
-    js = run_config({"BACKEND_CORS_ORIGINS": '["http://c.test"]'}, code)
+    js = run_config({"BACKEND_CORS_ORIGINS": '["http://c.test"]'}, ORIGINS_CODE)
     assert js.returncode == 0, js.stderr
     assert "http://c.test" in js.stdout
+
+
+def test_cors_never_trusts_the_retired_vercel_address():
+    # Once a *.vercel.app name is released anyone can register it, so an old
+    # origin left in an env var must not keep working.
+    for configured in ("https://3dverse-tan.vercel.app", '["https://3dverse-tan.vercel.app", "http://c.test"]'):
+        r = run_config({"BACKEND_CORS_ORIGINS": configured}, ORIGINS_CODE)
+        assert r.returncode == 0, r.stderr
+        origins = r.stdout.strip().split("|")
+        assert "https://3dverse-tan.vercel.app" not in origins
+        assert "https://buyandsell3d.vercel.app" in origins
+
+
+def test_preview_origins_are_limited_to_our_own_vercel_team():
+    code = (
+        "import re, json, app.core.config as c\n"
+        "pattern = re.compile(c.PREVIEW_ORIGIN_REGEX)\n"
+        "urls = json.loads(__import__('sys').argv[1])\n"
+        "print(json.dumps({u: bool(pattern.match(u)) for u in urls}))\n"
+    )
+    accepted = [
+        "https://buyandsell3d-gopuluckys-projects.vercel.app",
+        "https://buyandsell3d-git-main-gopuluckys-projects.vercel.app",
+        "https://buyandsell3d-2g996tcgp-gopuluckys-projects.vercel.app",
+    ]
+    rejected = [
+        "https://buyandsell3d-evil.vercel.app",  # same prefix, someone else's project
+        "https://buyandsell3d-x-otherteam-projects.vercel.app",
+        "https://3dverse-tan.vercel.app",
+        "https://3dverse-evil.vercel.app",
+        "http://buyandsell3d-gopuluckys-projects.vercel.app",  # not https
+        "https://buyandsell3d-gopuluckys-projects.vercel.app.evil.com",
+    ]
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("POSTGRES_", "SECRET_KEY", "ENVIRONMENT", "BACKEND_CORS", "REDIS_"))}
+    r = subprocess.run(
+        [sys.executable, "-c", code, json.dumps(accepted + rejected)],
+        cwd=BACKEND, env=env, capture_output=True, text=True, timeout=60,
+    )
+    assert r.returncode == 0, r.stderr
+    result = json.loads(r.stdout)
+    assert all(result[u] for u in accepted), {u: result[u] for u in accepted}
+    assert not any(result[u] for u in rejected), {u: result[u] for u in rejected}
 
 
 def test_database_password_with_special_characters_is_url_encoded():

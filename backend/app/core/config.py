@@ -6,6 +6,22 @@ from typing import List
 
 DEV_SECRET_KEY = "supersecretkey-change-in-production"
 
+# The storefront the API serves. Browsers may call the API from this exact
+# origin, from localhost, and from whatever BACKEND_CORS_ORIGINS adds (for
+# example a custom domain once one is bought).
+PRODUCTION_ORIGIN = "https://buyandsell3d.vercel.app"
+
+# Addresses that used to serve the storefront. A *.vercel.app name can be
+# registered by anyone once it is released, so these are refused even if an
+# env var still lists them.
+RETIRED_ORIGINS = frozenset({"https://3dverse-tan.vercel.app"})
+
+# Vercel gives every preview deployment its own hostname, so a branch build
+# comes from an origin that is not in the fixed list. Matched only inside our
+# own Vercel team ("-gopuluckys-projects"): a bare name-prefix match would also
+# trust any stranger who names a project buyandsell3d-something.
+PREVIEW_ORIGIN_REGEX = r"^https://buyandsell3d(-[a-z0-9-]+)?-gopuluckys-projects\.vercel\.app$"
+
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "buy&sell3d API"
@@ -23,7 +39,7 @@ class Settings(BaseSettings):
     # array -- pydantic-settings would otherwise require strict JSON for a
     # List[str] env var, which is easy to get wrong when pasting by hand.
     BACKEND_CORS_ORIGINS_RAW: str = Field(
-        default="http://localhost:3000,http://127.0.0.1:3000,https://3dverse-tan.vercel.app",
+        default=f"http://localhost:3000,http://127.0.0.1:3000,{PRODUCTION_ORIGIN}",
         validation_alias="BACKEND_CORS_ORIGINS",
     )
 
@@ -82,9 +98,10 @@ class Settings(BaseSettings):
         else:
             origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
         
-        if "https://3dverse-tan.vercel.app" not in origins:
-            origins.append("https://3dverse-tan.vercel.app")
-            
+        origins = [origin for origin in origins if origin not in RETIRED_ORIGINS]
+        if PRODUCTION_ORIGIN not in origins:
+            origins.append(PRODUCTION_ORIGIN)
+
         return origins
 
     @property
