@@ -141,12 +141,12 @@ try {
   const footerText = await footer.innerText();
   assert.ok(!/For Creators|For Print Partners|Become a Creator|Partner Console/i.test(footerText), `Footer still promotes the supply side: ${footerText}`);
   assert.equal(await footer.getByRole('heading', { name: 'Shop', exact: true }).count(), 1);
-  assert.equal(await footer.getByRole('link', { name: 'Sell on 3DVerse', exact: true }).getAttribute('href'), '/sell');
+  assert.equal(await footer.getByRole('link', { name: 'Sell on buy&sell3d', exact: true }).getAttribute('href'), '/sell');
   await page.getByRole('button', { name: 'Account and portals', exact: true }).click();
   await visible(page.getByRole('menuitem', { name: 'My Orders' }));
-  assert.equal(await page.getByRole('menuitem', { name: 'Sell with 3DVerse' }).count(), 0);
+  assert.equal(await page.getByRole('menuitem', { name: 'Sell with buy&sell3d' }).count(), 0);
   await page.keyboard.press('Escape');
-  checks.push('Customer storefront: no seller section on home, no creator/partner footer columns, one footer "Sell on 3DVerse" link, no "Sell with 3DVerse" in the customer account menu.');
+  checks.push('Customer storefront: no seller section on home, no creator/partner footer columns, one footer "Sell on buy&sell3d" link, no "Sell with buy&sell3d" in the customer account menu.');
   await page.locator('.home-tiles').getByRole('link', { name: /Digital models/ }).click();
   await page.waitForURL('**/marketplace?format=digital');
   await visible(page.getByRole('heading', { name: 'Digital models', exact: true }));
@@ -306,7 +306,7 @@ try {
   for (const text of ['Enter your email address.', 'Tick the box so we can contact you.']) await visible(popup.getByText(text));
   assert.equal(signup.current.audience.length, 3, 'Nothing is sent until the contact step is valid');
   await popup.getByRole('textbox', { name: /^Email/ }).fill(' QA@Example.test ');
-  await popup.getByRole('checkbox', { name: /Contact me about 3DVerse/ }).check();
+  await popup.getByRole('checkbox', { name: /Contact me about buy&sell3d/ }).check();
   await popup.screenshot({ path: `${out}/audience-contact.png` });
   await popup.getByRole('button', { name: 'Notify me' }).click();
   await signup.page.locator('[data-flow="audience"][data-state="done"]').waitFor();

@@ -4,14 +4,14 @@ import { SUPPORT_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "What personal data 3DVerse collects, why, and the choices you have.",
+  description: "What personal data buy&sell3d collects, why, and the choices you have.",
 };
 
 export default function PrivacyPage() {
   return (
     <LegalPage title="Privacy Policy">
       <p>
-        3DVerse is a marketplace where creators sell 3D designs and print partners make physical
+        buy&sell3d is a marketplace where creators sell 3D designs and print partners make physical
         prints. This policy explains what we collect when you use it and what we do with it.
       </p>
 
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
       <h2>Who sees it</h2>
       <ul>
         <li><strong>Creators and print partners</strong> see only what they need to fulfil an order, such as the item and delivery details.</li>
-        <li><strong>Service providers</strong> that host or process data for us: our hosting, database and file-storage providers, and a payment processor once online payments are enabled. Card details go directly to the payment processor and are never stored by 3DVerse.</li>
+        <li><strong>Service providers</strong> that host or process data for us: our hosting, database and file-storage providers, and a payment processor once online payments are enabled. Card details go directly to the payment processor and are never stored by buy&sell3d.</li>
         <li><strong>Authorities</strong>, where the law requires it.</li>
       </ul>
 
@@ -47,7 +47,7 @@ export default function PrivacyPage() {
 
       <h2>Audience questions</h2>
       <p>
-        If you answer our short questions (who you are, your city, what you would use 3DVerse for, how you buy today),
+        If you answer our short questions (who you are, your city, what you would use buy&sell3d for, how you buy today),
         we keep your answers to decide what to build and which products to make first. Each step is saved when you press Next,
         so partial answers are kept. They are linked to the random anonymous ID described below, so we can see what different
         groups of visitors look at. If you leave your email or WhatsApp number and tick the consent box, we keep them with
@@ -89,7 +89,7 @@ export default function PrivacyPage() {
       </p>
 
       <h2>Children</h2>
-      <p>3DVerse is not intended for children under 13, and we do not knowingly collect their data.</p>
+      <p>buy&sell3d is not intended for children under 13, and we do not knowingly collect their data.</p>
 
       <h2>Changes and contact</h2>
       <p>

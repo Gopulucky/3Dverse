@@ -107,7 +107,7 @@ function PaymentForm({ checkout, storageKey }: { checkout: Checkout; storageKey:
     }
     const razorpay = new window.Razorpay({
       key: checkout.key_id, order_id: checkout.razorpay_order_id, amount: checkout.amount_minor, currency: checkout.currency,
-      name: "3DVerse", description: `Order #${checkout.order_id}`,
+      name: "buy&sell3d", description: `Order #${checkout.order_id}`,
       prefill: { name: checkout.shipping_address?.name || user?.full_name, email: user?.email, contact: checkout.shipping_address?.phone },
       theme: { color: BRAND_COLORS.violet.hex },
       config: { display: upiFirstDisplay() },

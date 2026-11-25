@@ -21,7 +21,7 @@ export default function NotFound() {
           404
         </h1>
         <h2 className="text-2xl md:text-3xl font-semibold text-foreground mb-4">
-          Lost in the 3Dverse
+          Lost in the 3D world
         </h2>
         <p className="text-muted-foreground text-lg mb-10 max-w-md">
           The page or model you're looking for doesn't exist, has been moved, or is currently unavailable.

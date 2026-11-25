@@ -100,7 +100,7 @@ export default function CreatorDashboardPage() {
           <div className="text-center mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <h1 className="text-4xl font-bold font-display mb-4">Choose Your Creator Path</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              How do you want to operate on 3DVerse? This shapes your studio tools and
+              How do you want to operate on buy&sell3d? This shapes your studio tools and
               which features you get.
             </p>
             <p className="text-sm text-muted-foreground max-w-2xl mx-auto mt-4 flex items-center justify-center gap-2">

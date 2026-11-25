@@ -19,29 +19,10 @@ export default function Image() {
           background: "#0F1315",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", marginBottom: 36 }}>
-          <div
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: 14,
-              background: "#4FC3D4",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 20,
-            }}
-          >
-            <svg width="34" height="34" viewBox="0 0 32 32" fill="none">
-              <path d="M6 9H26" stroke="#0F1315" strokeWidth="2.6" strokeLinecap="round" />
-              <path d="M9 16H23" stroke="#0F1315" strokeWidth="2.6" strokeLinecap="round" opacity="0.85" />
-              <path d="M12 23H20" stroke="#0F1315" strokeWidth="2.6" strokeLinecap="round" opacity="0.7" />
-            </svg>
-          </div>
-          <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: "white" }}>
-            <span style={{ color: "#FF8A3D" }}>3D</span>
-            <span>Verse</span>
-          </div>
+        <div style={{ display: "flex", fontSize: 76, fontWeight: 700, color: "white", letterSpacing: -2, marginBottom: 40 }}>
+          <span>{BRAND.wordmark.before}</span>
+          <span style={{ color: "#FF8A3D" }}>{BRAND.wordmark.accent}</span>
+          <span>{BRAND.wordmark.after}</span>
         </div>
         <div style={{ display: "flex", fontSize: 54, fontWeight: 700, color: "white", maxWidth: 900, lineHeight: 1.1 }}>
           {BRAND.tagline}

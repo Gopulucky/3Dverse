@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 
 from contextlib import asynccontextmanager
 
-logger = logging.getLogger("3dverse")
+logger = logging.getLogger("buyandsell3d")
 
 # Optional error monitoring (free Sentry tier). Does nothing unless SENTRY_DSN is
 # set, and a missing sentry-sdk package never stops the API from starting.
@@ -162,7 +162,7 @@ app.include_router(funnel.router, prefix=f"{settings.API_V1_STR}/events", tags=[
 app.include_router(audience.router, prefix=f"{settings.API_V1_STR}/audience", tags=["audience"])
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the 3DVerse API"}
+    return {"message": "Welcome to the buy&sell3d API"}
 
 @app.get("/health")
 def health_check():

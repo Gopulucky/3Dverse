@@ -1,8 +1,8 @@
-# 3DVerse
+# buy&sell3d
 
 **Buy a finished 3D-printed product, or download a 3D file to print yourself.**
 
-3DVerse is a customer marketplace for independent 3D creators. Customers can browse without an account, choose a printed product or a digital download, and use their account to track orders and access purchased files. Creators manage their listings; print partners handle production and delivery.
+buy&sell3d is a customer marketplace for independent 3D creators. Customers can browse without an account, choose a printed product or a digital download, and use their account to track orders and access purchased files. Creators manage their listings; print partners handle production and delivery.
 
 The first launch targets **India, with prices in INR**. The application is under active development. Google sign-in, payments and shipping require the operator setup below before they can serve real customers.
 
@@ -27,9 +27,9 @@ The first launch targets **India, with prices in INR**. The application is under
 | Operations | Creator and partner portals, PostgreSQL migrations, Redis/Celery jobs, and CI checks |
 | Startup support | Optional one-time contributions through an owner-configured hosted payment page at `/support` |
 
-## Support 3DVerse
+## Support buy&sell3d
 
-The footer links to `/support`, where visitors can help with hosting, maintenance and product development. Contributions are optional and separate from shopping; no 3DVerse account is required.
+The footer links to `/support`, where visitors can help with hosting, maintenance and product development. Contributions are optional and separate from shopping; no buy&sell3d account is required.
 
 To accept contributions, configure `SUPPORT_PAYMENT_URL` on the **frontend** host with your live HTTPS merchant payment-page URL, then redeploy. Until configured, the page clearly says contributions are unavailable. The provider displays the recipient, amount and currency and handles payment confirmation and receipts. See the [support activation steps](docs/customer-launch.md#6-optional-startup-support) before enabling it.
 

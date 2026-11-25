@@ -23,7 +23,7 @@ import sys
 from datetime import datetime
 
 ORIGINALS_EMAIL = "originals@3dverse.invalid"      # reserved TLD: can never receive mail or log in
-ORIGINALS_NAME = "3DVerse Originals"
+ORIGINALS_NAME = "buy&sell3d Originals"
 LOCAL_HOSTS = {"localhost", "127.0.0.1"}
 
 
@@ -62,7 +62,7 @@ def product_fields(entry: dict, creator_id: int, with_print: bool, now: datetime
         "license_type": "Personal Use", "status": ProductStatus.published, "is_published": True,
         "published_at": now, "creator_id": creator_id,
         "safety_review_status": SafetyReviewStatus.approved, "safety_reviewed_at": now,
-        "safety_review_note": "Original 3DVerse design.",
+        "safety_review_note": "Original buy&sell3d design.",
         "is_featured": bool(entry["featured"]), "mock_order_count": 0,
         "is_mode_2_active": True, "digital_download_enabled": True,
         "is_mode_3_active": with_print,
@@ -133,7 +133,7 @@ def _creator_fields() -> dict:
 
     return {
         "email": ORIGINALS_EMAIL, "full_name": ORIGINALS_NAME, "company_name": ORIGINALS_NAME,
-        "bio": "Original designs made by the 3DVerse team.",
+        "bio": "Original designs made by the buy&sell3d team.",
         # Random and discarded: nobody can sign in as this account.
         "hashed_password": get_password_hash(secrets.token_urlsafe(32)),
         "role": UserRole.creator, "creator_type": CreatorType.seller,

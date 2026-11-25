@@ -54,7 +54,7 @@ function Choice({ name, option, type, checked, disabled, onChange }: {
 }
 
 /**
- * The "help us build 3DVerse around you" questions. Opens once on the storefront (after a short
+ * The "help us build buy&sell3d around you" questions. Opens once on the storefront (after a short
  * while, or on a second product page), then stays away. Each step saves when the visitor presses
  * Next, so partial answers still count; only the email at the end is awaited.
  */
@@ -169,7 +169,7 @@ export function AudiencePopup() {
           ) : (
             <>
               <div>
-                <DialogTitle className="font-display text-xl">Help us build 3DVerse around you</DialogTitle>
+                <DialogTitle className="font-display text-xl">Help us build buy&sell3d around you</DialogTitle>
                 <DialogDescription id={`${id}-desc`}>About a minute. Your answers decide what we make first.</DialogDescription>
                 <p className="mt-3 text-xs text-muted-foreground" aria-live="polite">Step {step || STEP_COUNT} of {STEP_COUNT}</p>
                 <div className="mt-1 h-1.5 rounded-full bg-muted" aria-hidden="true">
@@ -193,7 +193,7 @@ export function AudiencePopup() {
 
               {step === 2 && (
                 <div className="grid gap-5">
-                  <Question title="What would you mainly use 3DVerse for?" hint="(pick up to two)">
+                  <Question title="What would you mainly use buy&sell3d for?" hint="(pick up to two)">
                     {USES.map((option) => <Choice key={option.value} name={`${id}-use`} type="checkbox" option={option}
                       checked={form.uses.includes(option.value)} onChange={() => set("uses", toggleUse(form.uses, option.value))}
                       disabled={!form.uses.includes(option.value) && form.uses.length >= 2} />)}
@@ -263,7 +263,7 @@ export function AudiencePopup() {
                         aria-invalid={Boolean(errors.consent)} aria-describedby={errors.consent ? `${id}-consent-error` : undefined}
                         className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--store-action)]" />
                       <span>
-                        Contact me about 3DVerse. We use your details only for this, and you can ask us to delete them at any time.
+                        Contact me about buy&sell3d. We use your details only for this, and you can ask us to delete them at any time.
                         See our <Link href="/privacy" className="underline">privacy policy</Link>.
                       </span>
                     </label>

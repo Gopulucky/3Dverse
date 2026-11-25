@@ -11,7 +11,7 @@ import sys
 
 from . import models, quality, render
 
-CREATOR = {"name": "3DVerse Originals"}
+CREATOR = {"name": "buy&sell3d Originals"}
 
 
 class QualityError(Exception):

@@ -7,8 +7,8 @@ import { SUPPORT_EMAIL } from "@/lib/site";
 import { getSupportPaymentUrl } from "@/lib/support";
 
 export const metadata: Metadata = {
-  title: "Support 3DVerse",
-  description: "Make an optional one-time contribution to help maintain and grow 3DVerse.",
+  title: "Support buy&sell3d",
+  description: "Make an optional one-time contribution to help maintain and grow buy&sell3d.",
 };
 
 export default async function SupportPage() {
@@ -21,10 +21,10 @@ export default async function SupportPage() {
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16 items-start">
           <header className="min-w-0">
             <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight break-words">
-              Support 3DVerse
+              Support buy&sell3d
             </h1>
             <p className="mt-5 max-w-lg text-lg text-muted-foreground leading-relaxed">
-              Help keep 3DVerse running and give our startup room to grow.
+              Help keep buy&sell3d running and give our startup room to grow.
             </p>
             <Button asChild variant="link" className="mt-6 px-0 text-base min-h-11">
               <Link href="/marketplace">Keep exploring the marketplace</Link>
@@ -44,12 +44,12 @@ export default async function SupportPage() {
                   </a>
                 </Button>
                 <p id="payment-details" className="mt-4 text-sm text-muted-foreground leading-relaxed">
-                  Opens the payment provider in a new tab. Review the recipient, amount and currency there before paying. No 3DVerse sign-in needed.
+                  Opens the payment provider in a new tab. Review the recipient, amount and currency there before paying. No buy&sell3d sign-in needed.
                 </p>
               </>
             ) : (
               <p role="status" className="mt-6 border-l-2 border-primary pl-4 leading-relaxed">
-                Contributions aren’t available yet. You can still help by sharing 3DVerse or sending us feedback.
+                Contributions aren’t available yet. You can still help by sharing buy&sell3d or sending us feedback.
               </p>
             )}
           </section>
@@ -73,7 +73,7 @@ export default async function SupportPage() {
           <p>Contributions support the business. They don’t purchase products, shares or special account benefits, and we make no charitable tax-deduction claim.</p>
           <p>For payment confirmation, use the provider’s receipt. Questions about a contribution or a refund?</p>
           <Button asChild variant="link" className="px-0 min-h-11">
-            <a href={`mailto:${SUPPORT_EMAIL}`}>Contact the 3DVerse team</a>
+            <a href={`mailto:${SUPPORT_EMAIL}`}>Contact the buy&sell3d team</a>
           </Button>
         </div>
       </article>

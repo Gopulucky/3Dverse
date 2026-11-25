@@ -100,7 +100,7 @@ export default function AdminAudiencePage() {
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <Breakdown title="Who they are" counts={data.by_role} options={ROLES} />
-          <Breakdown title="What they want from 3DVerse" counts={data.by_use} options={USES} />
+          <Breakdown title="What they want from buy&sell3d" counts={data.by_use} options={USES} />
           <Breakdown title="Gift occasions" counts={data.by_occasion} options={OCCASIONS} />
           <Breakdown title="Own a 3D printer?" counts={data.by_printer} options={PRINTERS} />
           <Breakdown title="Want it personalised?" counts={data.by_personalise} options={PERSONALISE} />

@@ -141,7 +141,7 @@ export function MarketplaceHomeContent({ initialData, supportOpen = false }: { i
 
       {supportOpen && <HomeSupport />}
 
-      <section className="home-trust" aria-label="Shopping with 3DVerse">
+      <section className="home-trust" aria-label="Shopping with buy&sell3d">
         <ul className="store-container">
           {trustItems(availability).map(({ key, label }) => {
             const Icon = trustIcons[key];

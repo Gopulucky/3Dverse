@@ -15,19 +15,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { SUPPORT_EMAIL } from "@/lib/site";
 
 /** Where creator-account requests go. Update when a real support desk exists. */
-const SELLER_CONTACT = "sellers@3dverse.com";
+const SELLER_CONTACT = SUPPORT_EMAIL;
 
 /**
- * "Sell with 3Dverse" entry point.
+ * "Sell with buy&sell3d" entry point.
  *
  * Creator accounts are approved manually, so this resolves three ways:
  *   - creator/admin  → straight into the Studio
  *   - signed out     → sign in first; we can't tell what account they hold
  *   - everyone else  → explain the approval process and how to request access
  */
-export function SellWith3DverseLink({ className }: { className?: string }) {
+export function SellWithBrandLink({ className }: { className?: string }) {
   const router = useRouter();
   const { user, isAuthenticated, hydrated } = useAuthStore();
   const [askOpen, setAskOpen] = useState(false);
@@ -58,7 +59,7 @@ export function SellWith3DverseLink({ className }: { className?: string }) {
           className
         )}
       >
-        Sell with 3DVerse
+        Sell with buy&sell3d
       </Link>
 
       <Dialog open={askOpen} onOpenChange={setAskOpen}>
@@ -67,7 +68,7 @@ export function SellWith3DverseLink({ className }: { className?: string }) {
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-2">
               <Store size={24} className="text-primary" />
             </div>
-            <DialogTitle className="text-xl">Start selling on 3DVerse</DialogTitle>
+            <DialogTitle className="text-xl">Start selling on buy&sell3d</DialogTitle>
             <DialogDescription className="pt-1">
               You&apos;re signed in as a customer. Selling needs a separate creator
               account, and those are reviewed and approved by our team before they

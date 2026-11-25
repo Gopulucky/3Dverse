@@ -1,14 +1,14 @@
-# Design: 3DVerse storefront
+# Design: buy&sell3d storefront
 
 Shared by `/` and `/marketplace/home`. Both routes render the same homepage (products first, see below).
-Uses the existing 3DVerse colour and type values captured from the project
+Uses the existing buy&sell3d colour and type values captured from the project
 and recorded below. `src/lib/brand.ts` holds the shared identity and copy.
 
 ## System
 
 - Genre: modern-minimal.
 - Shape: Catalogue, with a Stage hero when catalogue imagery is available.
-- Theme: existing 3DVerse brand; restrained colour and still composition.
+- Theme: existing buy&sell3d brand; restrained colour and still composition.
 - Signature: a real catalogue object with its actual title, creator and price.
 - No catalogue data: a typographic hero and an honest loading, empty or error state.
 - Keep actual content, links and API wiring. Never invent products or social proof.

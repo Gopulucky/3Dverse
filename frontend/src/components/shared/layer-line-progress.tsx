@@ -13,7 +13,7 @@ interface LayerLineProgressProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 /**
- * Layer-Line Progress — the signature 3DVerse motion element.
+ * Layer-Line Progress — the signature buy&sell3d motion element.
  * 
  * A horizontal layer-by-layer stripe animation filling bottom-to-top,
  * mimicking the additive manufacturing process. Used for:

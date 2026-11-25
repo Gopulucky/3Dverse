@@ -18,7 +18,7 @@ export function HomeSupport() {
             </div>
           </div>
           <Button asChild size="lg" className="min-h-12 shrink-0">
-            <Link href="/support">Support 3DVerse</Link>
+            <Link href="/support">Support buy&sell3d</Link>
           </Button>
         </div>
       </div>

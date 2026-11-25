@@ -20,7 +20,7 @@ try {
     await route.fulfill({json});
   });
   await page.goto(`${base}/login?next=%2F%5Cevil.example`, {waitUntil:'domcontentloaded'});
-  await page.getByRole('heading', {name:'Sign in to 3DVerse',exact:true}).waitFor();
+  await page.getByRole('heading', {name:'Sign in to buy&sell3d',exact:true}).waitFor();
   await page.locator('form[data-ready="true"]').waitFor();
   assert.match(await page.locator('body').innerText(), /Track your orders and access your purchased 3D files/);
   await page.getByRole('link', {name:'Keep browsing without an account'}).waitFor();
@@ -57,7 +57,7 @@ try {
     assert.equal(await page.getByText('buyer@example.com',{exact:true}).count(),0,'late refresh must not overwrite a newer session');
   }
   await page.goto(`${base}/register`);
-  await page.getByRole('heading',{name:'Your 3DVerse account',exact:true}).waitFor();
+  await page.getByRole('heading',{name:'Your buy&sell3d account',exact:true}).waitFor();
   assert.equal(await page.getByRole('radio').count(),0,'customer sign-up has no role puzzle');
   await page.getByRole('link',{name:'Want to sell your designs?'}).waitFor();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth),'mobile auth must fit');

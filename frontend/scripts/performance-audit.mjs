@@ -7,7 +7,7 @@ import { audit } from './performance/collect.mjs';
 
 const HELP = `Website performance analysis (fresh guest browser visits)
   npm run perf -- --url https://example.com --profile mobile --runs 3
-  --url URL             Repeat up to 10 times; defaults to 3DVerse /, /marketplace, /login
+  --url URL             Repeat up to 10 times; defaults to buy&sell3d /, /marketplace, /login
   --profile NAME        desktop (default) or mobile (shaped network, 4x CPU)
   --runs N              1-10 runs per URL; default 3
   --observe-ms N        100-60000ms after DOMContentLoaded; default 10000

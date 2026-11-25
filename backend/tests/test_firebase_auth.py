@@ -130,7 +130,7 @@ def test_admin_credentials_path_from_dotenv_is_used(tmp_path, monkeypatch):
     try:
         assert firebase_auth.firebase_app() == "initialized-app"
         certificate.assert_called_once_with("C:/private/firebase.json")
-        initializer.assert_called_once_with(credential, options={"projectId": "demo-test"}, name="3dverse-auth")
+        initializer.assert_called_once_with(credential, options={"projectId": "demo-test"}, name="buyandsell3d-auth")
     finally:
         firebase_auth._initialize.cache_clear()
 
@@ -145,7 +145,7 @@ def test_admin_without_key_file_preserves_default_credentials(monkeypatch):
     firebase_auth._initialize.cache_clear()
     try:
         assert firebase_auth.firebase_app() == "default-app"
-        initializer.assert_called_once_with(None, options={"projectId": "demo-default"}, name="3dverse-auth")
+        initializer.assert_called_once_with(None, options={"projectId": "demo-default"}, name="buyandsell3d-auth")
     finally:
         firebase_auth._initialize.cache_clear()
 

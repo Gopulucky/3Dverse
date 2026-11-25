@@ -1,5 +1,5 @@
 /**
- * Centralized API client for 3DVerse backend.
+ * Centralized API client for buy&sell3d backend.
  * Replaces all hardcoded http://127.0.0.1:8000 URLs.
  */
 

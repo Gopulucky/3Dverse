@@ -1,5 +1,5 @@
 /**
- * 3DVerse brand system — single source of truth.
+ * buy&sell3d brand system — single source of truth.
  *
  * Full brand book: docs/brand/ at the repo root. This file mirrors that
  * document — colour and type values here must match the tokens defined
@@ -10,9 +10,10 @@
  */
 
 export const BRAND = {
-  name: "3DVerse",
-  /** Wordmark split — the two halves are styled differently everywhere. */
-  wordmark: { lead: "3D", tail: "Verse" },
+  name: "buy&sell3d",
+  /** The logo is the name alone. Only the "&" takes the Tangerine accent; everything
+   *  else is ink. before + accent + after must equal `name`. */
+  wordmark: { before: "buy", accent: "&", after: "sell3d" },
   /** Storefront line, for buyers. */
   tagline: "Finished prints, delivered. Digital models, ready to print.",
   /** Creator pitch, shown on /sell. */
@@ -20,7 +21,7 @@ export const BRAND = {
   positioning: "3D models and finished prints",
   /** One sentence. Used for metadata and the about hero. */
   oneLiner:
-    "Buy finished 3D printed products delivered in India, or download digital models for your own 3D printer. Explore the formats offered by each creator on 3DVerse.",
+    "Buy finished 3D printed products delivered in India, or download digital models for your own 3D printer. Explore the formats offered by each creator on buy&sell3d.",
 } as const;
 
 /* ================================================================
@@ -57,9 +58,9 @@ export const BRAND_TYPE = {
 } as const;
 
 export const LOGO_RULES = [
-  "The name is always 3DVerse — capital 3, capital D, no space, capital V, lowercase erse. Never 3Dverse, 3D-Verse, 3DVERSE, or 3dverse.",
+  "The name is always buy&sell3d — all lowercase, with an ampersand and no spaces. Never Buy&Sell3D, BuyAndSell3D or 'buy and sell 3D'. Where & is not allowed (domains, file names, handles) write buyandsell3d.",
   "Do not rewrite the wordmark in a different typeface if Space Grotesk isn't loaded yet on some surface — fix the font loading instead.",
-  "Keep the 3D / Verse split — the gradient half (3D) always leads; it does not move to Verse.",
+  "The logo is the name alone — never add a symbol or icon beside it. Only the & is coloured (Tangerine); buy, sell and 3d stay one ink colour.",
   "Minimum size: wordmark not smaller than 16px cap-height in UI contexts.",
   "Clear space: padding equal to the cap-height of the '3', on all sides, before any other element.",
 ] as const;
@@ -128,7 +129,7 @@ export const AUDIENCES: Audience[] = [
     label: "Creators",
     headline: "Designers who turn files into a business.",
     summary:
-      "Creators are the supply side of 3DVerse. They upload the models, set the terms, and own the customer relationship. A creator can run the whole operation from a laptop and never touch a printer — or plug in their own machines and fulfil their orders themselves.",
+      "Creators are the supply side of buy&sell3d. They upload the models, set the terms, and own the customer relationship. A creator can run the whole operation from a laptop and never touch a printer — or plug in their own machines and fulfil their orders themselves.",
     capabilities: [
       "Upload STL, OBJ and GLTF models and get an automated printability report before publishing",
       "Sell the same design as a digital download, a printed product, or both",
@@ -161,7 +162,7 @@ export const AUDIENCES: Audience[] = [
     label: "Print Partners",
     headline: "Print shops that turn idle machines into income.",
     summary:
-      "Print partners are the manufacturing layer. Most 3D printers on earth sit idle most of the time. Partners connect their capacity to 3DVerse and receive routed, pre-validated jobs with the material and settings already resolved.",
+      "Print partners are the manufacturing layer. Most 3D printers on earth sit idle most of the time. Partners connect their capacity to buy&sell3d and receive routed, pre-validated jobs with the material and settings already resolved.",
     capabilities: [
       "Receive print jobs routed by location, material and machine capability",
       "Accept or decline each job — capacity stays under the shop's control",

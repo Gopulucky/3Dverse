@@ -8,7 +8,7 @@ DEV_SECRET_KEY = "supersecretkey-change-in-production"
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "3DVerse API"
+    PROJECT_NAME: str = "buy&sell3d API"
     VERSION: str = "0.2.0"
     API_V1_STR: str = "/api"
     # "development" | "production". Anything other than development is treated
@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: str | None = None
     SMTP_PASSWORD: str | None = None
-    EMAIL_FROM: str = "3DVerse <no-reply@3dverse.local>"
+    EMAIL_FROM: str = "buy&sell3d <no-reply@3dverse.local>"
 
     # Optional error monitoring (free Sentry tier). Unset = disabled.
     SENTRY_DSN: str | None = None

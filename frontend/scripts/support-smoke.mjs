@@ -12,8 +12,8 @@ try {
   await context.route('**/api/**', route => route.fulfill({ json: [], headers: { 'access-control-allow-origin': '*' } }));
   const page = await context.newPage();
   await page.goto(`${base}/support?success=true&payment_status=paid`, { waitUntil: 'networkidle' });
-  await page.getByRole('heading', { name: 'Support 3DVerse', exact: true }).waitFor();
-  assert.equal(await page.getByRole('link', { name: 'Support 3DVerse', exact: true }).getAttribute('href'), '/support');
+  await page.getByRole('heading', { name: 'Support buy&sell3d', exact: true }).waitFor();
+  assert.equal(await page.getByRole('link', { name: 'Support buy&sell3d', exact: true }).getAttribute('href'), '/support');
   assert.equal(await page.getByRole('link', { name: 'Keep exploring the marketplace' }).getAttribute('href'), '/marketplace');
   assert.match(await page.locator('main').innerText(), /voluntary, one-time contribution/i);
   assert.doesNotMatch(await page.locator('main').innerText(), /payment successful|thank you for (your )?(payment|contribution)/i);
@@ -34,7 +34,7 @@ try {
     assert.equal(await action.count(), 0);
     await page.getByRole('status').filter({ hasText: 'Contributions aren’t available yet' }).waitFor();
   }
-  assert.match(await page.getByRole('link', { name: 'Contact the 3DVerse team' }).getAttribute('href'), /^mailto:/);
+  assert.match(await page.getByRole('link', { name: 'Contact the buy&sell3d team' }).getAttribute('href'), /^mailto:/);
   assert.equal(await page.evaluate(() => localStorage.getItem('token')), null);
   await mkdir('.hallmark/verification', { recursive: true });
   for (const width of [375, 1280]) {

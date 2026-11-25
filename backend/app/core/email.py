@@ -40,8 +40,8 @@ def send_verification_email(to: str, token: str) -> bool:
     link = f"{settings.FRONTEND_URL.rstrip('/')}/verify-email?token={token}"
     return send_email(
         to,
-        "Confirm your 3DVerse email",
-        f"Welcome to 3DVerse!\n\nConfirm your email address by opening this link "
+        "Confirm your buy&sell3d email",
+        f"Welcome to buy&sell3d!\n\nConfirm your email address by opening this link "
         f"(valid for 48 hours):\n{link}\n\nIf you didn't create an account, ignore this email.",
     )
 
@@ -50,7 +50,7 @@ def send_password_reset_email(to: str, token: str) -> bool:
     link = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?token={token}"
     return send_email(
         to,
-        "Reset your 3DVerse password",
+        "Reset your buy&sell3d password",
         f"We received a request to reset your password.\n\nChoose a new one here "
         f"(valid for 1 hour, single use):\n{link}\n\nIf you didn't ask for this, ignore "
         f"this email -- your password has not changed.",

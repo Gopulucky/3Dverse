@@ -1,8 +1,8 @@
 import { ImageResponse } from "next/og";
 
-// 3DVerse glyph mark — a stacked-layer "3" built from the layer-line
-// motif. Single-colour on the Deep teal (violet-9) solid fill; this is
-// the icon.tsx fallback for browsers/contexts that don't read favicon.ico.
+// The logo is the name alone, so the browser-tab icon is the one character of the
+// name that is ours: a Tangerine "&" on the Deep teal (violet-9) tile. This is the
+// icon.tsx fallback for browsers/contexts that don't read favicon.ico.
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
 
@@ -15,16 +15,16 @@ export default function Icon() {
           height: "100%",
           borderRadius: 7,
           background: "#0E5E6F",
+          color: "#FF7A1A",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          fontSize: 25,
+          fontWeight: 700,
+          lineHeight: 1,
         }}
       >
-        <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-          <path d="M6 9H26" stroke="white" strokeWidth="2.8" strokeLinecap="round" />
-          <path d="M9 16H23" stroke="white" strokeWidth="2.8" strokeLinecap="round" opacity="0.85" />
-          <path d="M12 23H20" stroke="white" strokeWidth="2.8" strokeLinecap="round" opacity="0.7" />
-        </svg>
+        &amp;
       </div>
     ),
     { ...size }

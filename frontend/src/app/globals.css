@@ -1,6 +1,6 @@
 /* Hallmark · shape: Catalogue · genre: modern-minimal · theme: brand · redesign: full · hero: Stage · nav: search-led · footer: index · signature: a real catalogue object · v2.0.0 */
 /* Hallmark · pre-emit critique: P4 H4 E3 S4 R4 V4 · weakest: E, check state transitions and small-screen navigation */
-/* Hallmark · hero-review: subagent ship · finish-review: subagent ship after image recapture · brand exception: existing 3DVerse wordmark gradient retained */
+/* Hallmark · hero-review: subagent ship · finish-review: subagent ship after image recapture · brand exception: existing buy&sell3d wordmark gradient retained */
 /* Hallmark · dropped setImgFailed · Image errors now use the shared ProductImage fallback with recovery when the source changes. */
 /* Hallmark · dropped e.currentTarget.style.visibility · Category photos became text links; failed product images retain a labelled fallback. */
 /* Hallmark · dropped onMouseDown={() => handleSearch()} · Search suggestions now use click so keyboard activation works as well as pointer activation. */
@@ -36,7 +36,7 @@
 }
 
 /* ================================================================
-   3DVerse Design Token System — see frontend/design.md and src/lib/brand.ts.
+   buy&sell3d Design Token System — see frontend/design.md and src/lib/brand.ts.
 
    Every brand colour uses the existing 12-step palette.
    Steps: 1-2 background · 3-5 component · 6-8 border · 9-10 solid fill ·
@@ -204,7 +204,7 @@
    Keyframes
    ================================================================ */
 
-/* Layer-line build — the signature 3DVerse progress motif */
+/* Layer-line build — the signature buy&sell3d progress motif */
 @keyframes layer-line-fill {
   0% {
     background-size: 100% 0%;
@@ -405,9 +405,14 @@ body {
 /* ================================================================
    Gradient text utilities
    ================================================================ */
-/* Wordmark "3D" lead: solid Tangerine. A Tangerine-to-teal gradient passes
-   through a muddy brown midpoint (complementary hues), so it stays flat.
-   Logotypes are exempt from WCAG 1.4.3. Class name kept for call sites. */
+/* Wordmark "&": solid Tangerine, the only coloured character in the logo.
+   A Tangerine-to-teal gradient passes through a muddy brown midpoint
+   (complementary hues), so it stays flat. Logotypes are exempt from WCAG 1.4.3,
+   and the name stays fully readable in ink without the accent. */
+.wordmark-amp {
+  color: var(--color-ember);
+}
+
 .text-gradient-primary {
   color: var(--color-ember);
 }

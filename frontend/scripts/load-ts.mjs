@@ -13,7 +13,7 @@ const frontendRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
  * Dependency-free on purpose: the repo's other unit tests do the same in memory.
  */
 export async function loadTs(path) {
-  const outDir = join(tmpdir(), `3dverse-ts-${createHash('sha1').update(frontendRoot).digest('hex').slice(0, 10)}`);
+  const outDir = join(tmpdir(), `buyandsell3d-ts-${createHash('sha1').update(frontendRoot).digest('hex').slice(0, 10)}`);
   mkdirSync(outDir, { recursive: true });
   const done = new Map();
 

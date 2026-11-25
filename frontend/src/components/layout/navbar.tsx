@@ -312,8 +312,8 @@ export function Navbar() {
                   </select>
                   <input
                     type="search"
-                    aria-label="Search 3DVerse"
-                    placeholder="Search 3DVerse"
+                    aria-label="Search buy&sell3d"
+                    placeholder="Search buy&sell3d"
                     className="flex-1 min-w-0 h-full px-4 bg-transparent text-base"
                     value={searchQuery}
                     onChange={(e) => {

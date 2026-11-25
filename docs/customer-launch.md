@@ -21,7 +21,7 @@ This is an operator guide for the India/INR launch. Local fixture checks do not 
 
 The Firebase Admin SDK verifies token signatures, audience, issuer, expiry and revocation. The marketplace resolves the verified Firebase UID to its own user row; client claims never select an admin or partner role. New accounts begin as customers. Orders and products remain in PostgreSQL.
 
-Existing password accounts are retained. They can use **Use my previous 3DVerse sign-in** while migrating. An existing email is never silently attached to a new Firebase identity. Linking requires a verified Firebase email and the previous marketplace password. Linking preserves the user ID and orders, increments the old token version, and disables old local-password login/reset for that linked account. A customer who lost the previous password must recover the previous account before linking; use the previous-account reset path. Do not manually link accounts using email coincidence alone.
+Existing password accounts are retained. They can use **Use my previous buy&sell3d sign-in** while migrating. An existing email is never silently attached to a new Firebase identity. Linking requires a verified Firebase email and the previous marketplace password. Linking preserves the user ID and orders, increments the old token version, and disables old local-password login/reset for that linked account. A customer who lost the previous password must recover the previous account before linking; use the previous-account reset path. Do not manually link accounts using email coincidence alone.
 
 Without Firebase configuration, existing email authentication remains available and Google is visibly unavailable. No Firebase project has been created by the code changes.
 
@@ -44,7 +44,7 @@ Checkout uses **Razorpay** (Orders API + Standard Checkout). The business must i
 **Setup, in order**
 
 1. In the Razorpay Dashboard, in **Test mode**, generate API keys (Account & Settings → API keys). Set backend `RAZORPAY_KEY_ID` (`rzp_test_…`) and `RAZORPAY_KEY_SECRET`. The frontend needs **no** payment variable: the API hands the browser only the public key id for each order.
-2. Dashboard → Webhooks → Add. URL: **`https://<your-api-host>/api/checkout/webhook`**. Active events: `payment.captured`, `order.paid`, `payment.failed`. Type a long random secret and set it as backend `RAZORPAY_WEBHOOK_SECRET` (it is *not* the API key secret). Razorpay can also deliver webhooks for a Payment Page (e.g. `/support`); events for payments that are not 3DVerse orders are acknowledged and ignored.
+2. Dashboard → Webhooks → Add. URL: **`https://<your-api-host>/api/checkout/webhook`**. Active events: `payment.captured`, `order.paid`, `payment.failed`. Type a long random secret and set it as backend `RAZORPAY_WEBHOOK_SECRET` (it is *not* the API key secret). Razorpay can also deliver webhooks for a Payment Page (e.g. `/support`); events for payments that are not buy&sell3d orders are acknowledged and ignored.
 3. Settings → Payment capture: keep **automatic capture** on. Only captured payments mark an order paid; authorised-but-uncaptured payments are auto-refunded by Razorpay after its window.
 4. Go live only after KYC: swap in `rzp_live_…` keys and register a **live-mode** webhook with its own secret. The backend refuses test keys when `ENVIRONMENT=production` and live keys otherwise. `GET /api/checkout/status` reports whether checkout is currently available.
 
@@ -74,7 +74,7 @@ Configure the Shiprocket credentials and pickup location shown in the backend en
 
 The production sequence is queued → printing → quality check → packed → shipped → delivered. The app requires confirmed shipment/tracking evidence before later states, and records delivery time once. A provider failure must not appear as successful dispatch.
 
-If creating a shipment times out, the request may have been accepted. A persisted `shipment_creation_started` history entry prevents blind duplicate creation. Reconcile using the stable 3DVerse order ID in Shiprocket. Restore confirmed carrier IDs through audited maintenance if the shipment exists. Clear the attempt marker only after proving the carrier did not create it. AWB-only failures retry the already confirmed shipment. There is no public reconciliation endpoint.
+If creating a shipment times out, the request may have been accepted. A persisted `shipment_creation_started` history entry prevents blind duplicate creation. Reconcile using the stable buy&sell3d order ID in Shiprocket. Restore confirmed carrier IDs through audited maintenance if the shipment exists. Clear the attempt marker only after proving the carrier did not create it. AWB-only failures retry the already confirmed shipment. There is no public reconciliation endpoint.
 
 Return windows start from the recorded delivery time: 48 hours for a defect report and seven days for eligible returns. Digital items are excluded from physical return requests. Legacy delivered orders without reliable timestamps remain closed until an operator backfills evidence; do not invent a date to open or close a claim. Review the customer-facing policy and actual support procedure before launch.
 
@@ -94,7 +94,7 @@ The public `/support` page offers voluntary, one-time support for maintenance an
 2. Configure the actual business/recipient name, INR currency, one-time amount options, contact/refund information and receipts on that page. Confirm those details yourself before publishing the link.
 3. In **Vercel → frontend project → Settings → Environment Variables**, add `SUPPORT_PAYMENT_URL` with the full live **HTTPS** page URL. This is a destination, not an API key. Do not add provider secret keys or service-account credentials. Select the intended deployment environments and redeploy. Locally, use `frontend/.env.local` and restart the server.
 4. Open `/support` as a signed-out visitor and follow **Make a contribution**. Verify the provider's recipient, INR amount and one-time payment before completing a real operator-approved transaction. Check its receipt and support/refund process. A return URL or browser message is never proof of a completed transfer.
-5. Reconcile contributions and any refunds using the provider dashboard and business accounting. There is no contribution ledger, webhook, subscription or automated refund in 3DVerse. Store orders and their Razorpay webhooks remain separate.
+5. Reconcile contributions and any refunds using the provider dashboard and business accounting. There is no contribution ledger, webhook, subscription or automated refund in buy&sell3d. Store orders and their Razorpay webhooks remain separate.
 
 Missing or invalid configuration removes the payment action and leaves an honest unavailable message. To stop taking contributions, remove the environment value and redeploy. Build/browser fixtures test the UI and URL handling, not a live transfer.
 

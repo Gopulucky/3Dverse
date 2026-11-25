@@ -32,7 +32,7 @@ alembic upgrade head
 python -m scripts.catalogue.import_catalogue --manifest-dir scripts/catalogue/out
 ```
 
-- Products belong to the creator `3DVerse Originals` (`originals@3dverse.invalid`, an
+- Products belong to the creator `buy&sell3d Originals` (`originals@3dverse.invalid`, an
   unusable random password, so nobody can sign in as it).
 - They are published, **digital download only**, priced in INR. Prices are placeholders:
   edit `price_inr` / `print_price_inr` in `models.py` and regenerate.
