@@ -12,6 +12,7 @@ import type { HomepageData, ProductCardData } from "@/lib/marketplace";
 import { Button } from "@/components/ui/button";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/shared/product-card";
+import { ChipRow } from "@/components/marketplace/chip-row";
 import { HomeSupport } from "@/components/marketplace/home-support";
 import { HomeHero } from "@/components/marketplace/home-hero";
 
@@ -87,11 +88,12 @@ export function MarketplaceHomeContent({ initialData, supportOpen = false }: { i
 
   return (
     <div className="storefront">
-      {categories.length > 0 && <nav className="home-chips" aria-label="Shop by category">
-        <div className="store-container home-chips-list">
-          {orderCategories(categories.map(category => category.name)).map(name => <Link key={name} href={`/marketplace?category=${encodeURIComponent(name)}`} className="home-chip">{name}</Link>)}
-        </div>
-      </nav>}
+      {categories.length > 0 && <div className="store-container home-categories">
+        <ChipRow label="Shop by category" items={[
+          { label: "All", href: "/marketplace" },
+          ...orderCategories(categories.map(category => category.name)).map(name => ({ label: name, href: `/marketplace?category=${encodeURIComponent(name)}` })),
+        ]} />
+      </div>}
 
       <HomeHero availability={availability} />
 

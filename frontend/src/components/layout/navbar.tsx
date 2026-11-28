@@ -297,12 +297,12 @@ export function Navbar() {
             {/* Central Search Bar (Marketplace only) */}
             {isMarketplace && (
               <div ref={searchRef} className="hidden md:flex flex-1 max-w-3xl px-4 lg:px-8 relative" data-flow="search-suggestions" data-state={search.status}>
-                <form role="search" onSubmit={(event) => { event.preventDefault(); handleSearch(); }} className="search-pill relative w-full rounded-full flex bg-card border border-input h-11">
+                <form role="search" onSubmit={(event) => { event.preventDefault(); handleSearch(); }} className="search-pill relative w-full rounded-lg flex bg-card border border-input h-11">
                   <input
                     type="search"
                     aria-label="Search buy&sell3d"
                     placeholder="Search buy&sell3d"
-                    className="flex-1 min-w-0 h-full rounded-l-full pl-5 pr-4 bg-transparent text-base"
+                    className="flex-1 min-w-0 h-full rounded-l-lg pl-4 pr-4 bg-transparent text-base"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -338,7 +338,7 @@ export function Navbar() {
                   <button
                     type="submit"
                     aria-label="Search"
-                    className="w-14 shrink-0 h-full flex items-center justify-center rounded-r-full bg-primary-surface hover:bg-muted text-primary-ink transition-colors cursor-pointer"
+                    className="w-14 shrink-0 h-full flex items-center justify-center rounded-r-lg bg-primary-surface hover:bg-muted text-primary-ink transition-colors cursor-pointer"
                   >
                     <Search size={20} aria-hidden="true" />
                   </button>

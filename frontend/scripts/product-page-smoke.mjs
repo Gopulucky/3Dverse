@@ -86,11 +86,21 @@ try {
   // --- Layout, gallery, price, format -------------------------------------------------
   const { context, page, errors } = await open('no-preference');
 
+  const sections = await page.locator('main section > h2').allInnerTexts();
+  assert.deepEqual(sections.map((t) => t.replaceAll('’', "'")), ['About this design', "What's included", 'Printing specifications', 'Creator', 'Reviews']);
+  const columns = await page.evaluate(() => {
+    const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+    const [gallery, title, details, layout] = [box('[data-flow="product-gallery"]'), box('h1'), box('.product-details'), box('.product-layout')];
+    return { beside: title.left >= gallery.right, share: gallery.width / layout.width, fullWidth: Math.abs(details.width - layout.width) <= 1 };
+  });
+  assert.ok(columns.beside, 'the title sits in the purchase column, beside the viewer');
+  assert.ok(columns.share > 0.55 && columns.share < 0.62, `viewer takes about 60% (${columns.share})`);
+  assert.ok(columns.fullWidth, 'the sections below use the full page width');
+
   const order = await page.evaluate(() => {
     const top = (selector) => document.querySelector(selector)?.getBoundingClientRect().top;
     return { title: top('h1'), gallery: top('[data-flow="product-gallery"]'), price: top('[data-flow="product-price"]') };
   });
-  assert.ok(order.title < order.gallery, 'the title sits above the gallery');
   assert.ok(order.price != null, 'the price is on the page');
 
   const gallery = page.locator('[data-flow="product-gallery"]');
@@ -113,7 +123,7 @@ try {
   // What the buyer gets, once each, before paying.
   const included = await page.getByRole('region', { name: "What's included" }).innerText();
   for (const fact of ['STL, 2 KB', '80 × 120 × 160 mm', '357.3 cm³', 'Passed', 'Personal Use', 'Download after payment']) assert.ok(included.includes(fact), fact);
-  const printing = await page.getByRole('region', { name: 'Printing it' }).innerText();
+  const printing = await page.getByRole('region', { name: 'Printing specifications' }).innerText();
   for (const fact of ['PLA, PETG', '0.2 mm', 'Not required']) assert.ok(printing.includes(fact), fact);
   assert.equal((await page.locator('main').innerText()).split('80 × 120 × 160 mm').length - 1, 1, 'the size is stated once');
   // One clear purchase order, no repeated seller line, nothing about shipping a file.
@@ -214,6 +224,12 @@ try {
   await phone.page.reload();
   await phone.page.getByRole('heading', { level: 1, name: 'QA dice tower' }).waitFor();
   assert.equal(await phone.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'no sideways scroll on a phone');
+  // One column on a phone: name, then the viewer, then price and buttons.
+  const stack = await phone.page.evaluate(() => ['h1', '[data-flow="product-gallery"]', '[data-flow="product-price"]'].map((q) => document.querySelector(q).getBoundingClientRect().top));
+  assert.ok(stack[0] < stack[1] && stack[1] < stack[2], `phone order is name, viewer, price: ${stack}`);
+  await phone.page.locator('[data-flow="model-viewer"][data-state="ready"]').waitFor({ timeout: 20000 });
+  const targets = await phone.page.locator('[data-flow="model-viewer"] button').evaluateAll((buttons) => buttons.map((b) => Math.min(b.offsetWidth, b.offsetHeight)));
+  assert.ok(targets.length >= 4 && targets.every((size) => size >= 44), `viewer buttons are touch sized: ${targets}`);
   if (process.env.SMOKE_SHOTS) await phone.page.screenshot({ path: `${process.env.SMOKE_SHOTS}/product-phone.png`, fullPage: true });
   await phone.context.close();
 

@@ -1,7 +1,11 @@
 /* Hallmark · theme: brand · buy&sell3d palette and shared layout scale · v2.0.0 */
 :root {
-  --store-container: 90rem;
-  --store-gutter: clamp(1rem, 4.4vw, 4rem);
+  /* One width for header, pages and footer: at most 1600px of content, 32-48px
+     outer margins on desktop, 16px on a phone. */
+  --store-gutter: clamp(1rem, 2.5vw, 3rem);
+  --store-container: calc(100rem + 2 * var(--store-gutter));
+  /* Space between the sections of a page. */
+  --store-stack: 2.5rem;
   --store-gap: 1.5rem;
   --space-xs: 0.5rem;
   --space-sm: 0.75rem;
@@ -17,8 +21,8 @@
   --store-title: 1.125rem;
   --store-body: 1rem;
   --store-small: 0.875rem;
-  /* Pictures have crisp corners, like a printed block; controls stay pill shaped. */
-  --store-radius: 0.25rem;
+  /* Cards and pictures. Text fields use --radius-lg too; buttons and chips stay pill shaped. */
+  --store-radius: 0.75rem;
   --store-duration: 160ms;
   --store-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --store-focus: var(--color-violet-11);

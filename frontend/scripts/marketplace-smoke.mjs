@@ -142,17 +142,24 @@ try {
   assert.equal(await header.getByRole('button', { name: /Country and currency/ }).count(), 0);
   assert.equal(await page.locator('footer [data-flow="theme"]').count(), 1);
   assert.equal(await page.locator('footer').getByRole('button', { name: /Country and currency/ }).count(), 1);
-  // Full catalogue cards keep their detail.
+  // Catalogue cards: badge, category, name, creator, one price and one action.
   await page.goto(`${base}/marketplace`, { waitUntil: 'domcontentloaded' });
   await visible(page.getByRole('link', { name: 'View Sample bench', exact: true }));
-  assert.equal(await page.locator('.market-product-reviews').first().innerText(), '4.5\n2 reviews');
+  const card = page.locator('.market-product').first();
+  assert.equal(await card.locator('.market-product-badge').innerText(), 'Digital + print');
+  assert.equal(await card.locator('.market-product-category').textContent(), 'Home Decor');
+  assert.match(await card.locator('.market-product-price').innerText(), /From\s*₹120(?![\d.])/);
+  assert.equal(await card.getByRole('link', { name: 'QA catalogue', exact: true }).getAttribute('href'), '/creators/7');
+  assert.equal(await card.getByRole('link', { name: 'View product', exact: true }).getAttribute('href'), '/marketplace/9001');
+  assert.equal(await card.getByRole('button', { name: 'Save Sample bench to wishlist', exact: true }).count(), 1);
+  assert.equal(await card.getByRole('button', { name: /to cart/ }).count(), 0, 'one action per card');
+  assert.equal(await card.locator('.market-product-reviews, .market-product-featured, .market-product-modes').count(), 0, 'no extra metadata');
   assert.equal(await page.getByText('Printability passed').count(), 0, 'cards carry no repeated badge');
-  assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'QA catalogue', exact: true }).getAttribute('href'), '/creators/7');
   assert.equal(await page.getByRole('button', { name: 'Follow', exact: true }).count(), 0);
   assert.equal(await page.locator('.market-product a button').count(), 0);
-  assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'View product', exact: true }).getAttribute('href'), '/marketplace/9001');
-  assert.equal(await page.getByRole('link', { name: 'Choose options' }).count(), 0, 'one action per card');
-  assert.equal(await page.locator('.market-product').first().getByRole('button', { name: 'Add Sample bench to cart', exact: true }).count(), 0);
+  const media = await card.locator('.market-product-image').evaluate(el => ({ ratio: el.clientWidth / el.clientHeight, fit: getComputedStyle(el.querySelector('img')).objectFit }));
+  assert.ok(Math.abs(media.ratio - 4 / 3) < 0.03, `card picture is not 4:3 (${media.ratio})`);
+  assert.equal(media.fit, 'contain', 'renders are never cropped');
   await page.goto(base, { waitUntil: 'domcontentloaded' });
   await visible(page.getByRole('link', { name: 'View Sample bench', exact: true }));
   // The storefront speaks to buyers: no creator/partner promotion outside one quiet footer link.
@@ -170,21 +177,24 @@ try {
   await page.locator('.home-tiles').getByRole('link', { name: /Digital models/ }).click();
   await page.waitForURL('**/marketplace?format=digital');
   await visible(page.getByRole('heading', { name: 'Digital models', exact: true }));
-  const add = page.getByRole('button', { name: 'Add Sample bench to cart', exact: true });
-  // With a format chosen the card's one action adds to the cart.
-  assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'View product' }).count(), 0);
-  await add.click();
-  await visible(page.locator('.market-cart-message').filter({ hasText: 'Added to cart.' }).first());
-  assert.deepEqual(current.posts, [{ product_id: 9001, quantity: 1, selected_config: { purchase_type: 'digital' } }]);
+  await visible(page.locator('.market-product-badge').first().filter({ hasText: /^Digital model$/ }));
+  assert.match(await page.locator('.market-product-price').first().innerText(), /^₹120(?![\d.])/);
   assert.equal(current.catalogueRequests.at(-1).format, 'digital');
+  await page.locator('.market-product').first().getByRole('link', { name: 'View product', exact: true }).click();
+  await page.waitForURL('**/marketplace/9001**');
+  await page.getByRole('radio', { name: /Digital model file/ }).check();
+  const add = page.getByRole('button', { name: 'Add to cart', exact: true });
+  await add.click();
+  await visible(page.getByRole('status').filter({ hasText: 'Added to cart.' }));
+  assert.deepEqual(current.posts, [{ product_id: 9001, quantity: 1, selected_config: { purchase_type: 'digital' } }]);
   await visible(page.getByRole('link', { name: 'Cart, 1 item', exact: true }));
   await add.click();
-  await page.waitForFunction(() => !document.querySelector('[aria-label="Add Sample bench to cart"]').disabled);
+  await page.waitForFunction(() => [...document.querySelectorAll('[data-flow="buy-box"] button')].some(b => b.textContent.trim() === 'Add to cart' && !b.disabled));
   assert.equal(current.posts.length, 2);
   await visible(page.getByRole('link', { name: 'Cart, 1 item', exact: true }));
   await page.goto(base, { waitUntil: 'domcontentloaded' });
   await visible(page.getByRole('link', { name: 'View Sample bench', exact: true }));
-  checks.push('Products-first home with two format tiles; generic cards require options; digital catalogue sends explicit purchase_type; duplicate additions preserve unique-item cart count.');
+  checks.push('Products-first home with two format tiles; cards lead to the product page; digital catalogue sends explicit purchase_type; duplicate additions preserve unique-item cart count.');
 
   for (const [width, height] of [[320,812], [375,812], [768,1024], [1280,800], [1440,900], [1920,1080]]) {
     await page.setViewportSize({width,height});
@@ -318,6 +328,32 @@ try {
     assert.equal(await one.page.getByRole('searchbox', { name: 'Search models' }).count(), 0, 'the menu does not repeat the page search');
     await one.context.close();
     checks.push('A single page of results shows a count and no pager; the phone catalogue has one search box.');
+  }
+
+  {
+    // One wide container shared by header, page and footer; 4, 3 then 2 columns.
+    const l = await visit();
+    await l.page.goto(`${base}/marketplace`, { waitUntil: 'domcontentloaded' });
+    await visible(l.page.getByRole('link', { name: 'View Sample bench', exact: true }));
+    for (const [width, columns] of [[1920, 4], [1440, 4], [1280, 4], [1024, 4], [768, 3], [375, 2], [320, 2]]) {
+      await l.page.setViewportSize({ width, height: 900 });
+      await l.page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      const layout = await l.page.evaluate(() => {
+        const content = (selector) => { const el = document.querySelector(selector), s = getComputedStyle(el), r = el.getBoundingClientRect(); return [Math.round(r.left + parseFloat(s.paddingLeft)), Math.round(r.right - parseFloat(s.paddingRight))]; };
+        const cards = [...document.querySelectorAll('.catalogue-grid .market-product')];
+        return { columns: cards.filter(c => c.offsetTop === cards[0].offsetTop).length, view: document.documentElement.clientWidth,
+          edges: ['nav.site-header .store-container', 'main .store-container', 'footer .store-container'].map(content),
+          overflow: document.documentElement.scrollWidth - innerWidth };
+      });
+      assert.equal(layout.columns, columns, `${layout.columns} columns at ${width}px`);
+      assert.ok(layout.overflow <= 0, `sideways scroll at ${width}px`);
+      assert.equal(new Set(layout.edges.map(String)).size, 1, `header, page and footer do not line up at ${width}px: ${JSON.stringify(layout.edges)}`);
+      const [left, right] = layout.edges[0];
+      if (width === 1280 || width === 1440) assert.ok((right - left) / layout.view >= 0.935, `content is only ${right - left}px of ${layout.view}`);
+      if (width === 1920) assert.ok(Math.abs(right - left - 1600) <= 1, `content caps at 1600px, got ${right - left}`);
+    }
+    await l.context.close();
+    checks.push('Catalogue: header, page and footer share one wide container (1600px cap); 4, 3 and 2 columns without sideways scroll.');
   }
 
   const loading = await visit({ state: 'loading' });

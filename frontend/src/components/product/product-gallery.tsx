@@ -29,7 +29,7 @@ export function ProductGallery({
 
   if (!selected) {
     return (
-      <div className="h-[420px] lg:h-[520px] rounded-xl border border-border bg-muted flex items-center justify-center text-muted-foreground">
+      <div className="h-[420px] lg:h-[600px] rounded-[var(--store-radius)] border border-border bg-muted flex items-center justify-center text-muted-foreground">
         No preview available
       </div>
     );
@@ -39,7 +39,7 @@ export function ProductGallery({
 
   return (
     <div data-flow="product-gallery" data-selected={selected.kind} className="space-y-3">
-      <div className="relative h-[420px] lg:h-[600px] rounded-sm border border-border overflow-hidden bg-muted">
+      <div className="relative h-[420px] lg:h-[600px] rounded-[var(--store-radius)] border border-border overflow-hidden bg-muted">
         {/* The viewer stays mounted while an image is shown, so coming back keeps the model and the camera. */}
         {model && (
           <div className={cn("absolute inset-0", selected.kind !== "model" && "hidden")}>

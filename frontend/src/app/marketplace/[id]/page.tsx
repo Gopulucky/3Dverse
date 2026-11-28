@@ -203,9 +203,9 @@ export default function ProductDetailPage() {
   if (productLoading) {
     return (
       <MarketplaceShell>
-        <div className="max-w-7xl mx-auto px-6 pt-24 pb-20">
-          <div className="grid md:grid-cols-2 gap-12">
-            <Skeleton className="aspect-square rounded-xl" />
+        <div className="store-container pt-6 pb-24">
+          <div className="product-layout">
+            <Skeleton className="h-[420px] lg:h-[600px] rounded-[var(--store-radius)]" />
             <div className="space-y-4">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-10 w-3/4" />
@@ -266,14 +266,9 @@ export default function ProductDetailPage() {
           <Link href={`/marketplace?category=${encodeURIComponent(product.category || "")}`} className="inline-flex min-h-11 items-center hover:text-foreground">{product.category}</Link>
         </nav>
 
-        {/* The name leads the page, above the pictures, the way a catalogue entry does. */}
-        <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight mb-6 font-display leading-tight">
-          {product.title}
-        </h1>
-
         <div className="product-layout">
           {/* Every view of the product: 3D model, photos, videos */}
-          <div className="min-w-0" onPointerDownCapture={trackViewerOpened}>
+          <div className="product-media" onPointerDownCapture={trackViewerOpened}>
             <ProductGallery
               key={product.id}
               items={gallery}
@@ -283,7 +278,10 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="product-buy" data-flow="buy-box">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            {/* On a phone this block moves above the pictures. */}
+            <div className="product-heading">
+              <h1 className="display text-2xl sm:text-3xl lg:text-4xl">{product.title}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               {product.creator_name && (
                 <p>By{" "}{product.creator_id
                   ? <Link href={`/creators/${product.creator_id}`} data-flow="creator-link" className="font-semibold text-primary-ink underline-offset-2 hover:underline">{product.creator_name}</Link>
@@ -295,6 +293,7 @@ export default function ProductDetailPage() {
                   <Star size={14} aria-hidden="true" /> {avgRating} <span className="text-muted-foreground">({reviewCount})</span>
                 </a>
               )}
+              </div>
             </div>
 
             <div data-flow="product-price" data-state={selectedPrice != null ? "chosen" : fromPrice != null ? "from" : "none"}>
@@ -348,7 +347,7 @@ export default function ProductDetailPage() {
                 {product.available_materials?.length > 0 && (
                   <div>
                     <Label className="mb-1.5 block text-sm">Material</Label>
-                    <select aria-label="Material" value={selectedConfig.material || product.available_materials?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, material: event.target.value })} className="w-full h-11 rounded-full border border-input bg-background px-4 text-sm">
+                    <select aria-label="Material" value={selectedConfig.material || product.available_materials?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, material: event.target.value })} className="w-full h-11 rounded-lg border border-input bg-background px-3 text-sm">
                       {product.available_materials.map((option: string) => <option key={option}>{option}</option>)}
                     </select>
                   </div>
@@ -356,7 +355,7 @@ export default function ProductDetailPage() {
                 {product.available_colors?.length > 0 && (
                   <div>
                     <Label className="mb-1.5 block text-sm">Color</Label>
-                    <select aria-label="Color" value={selectedConfig.color || product.available_colors?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, color: event.target.value })} className="w-full h-11 rounded-full border border-input bg-background px-4 text-sm">
+                    <select aria-label="Color" value={selectedConfig.color || product.available_colors?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, color: event.target.value })} className="w-full h-11 rounded-lg border border-input bg-background px-3 text-sm">
                       {product.available_colors.map((option: string) => <option key={option}>{option}</option>)}
                     </select>
                   </div>
@@ -364,7 +363,7 @@ export default function ProductDetailPage() {
                 {product.available_sizes?.length > 0 && (
                   <div>
                     <Label className="mb-1.5 block text-sm">Size</Label>
-                    <select aria-label="Size" value={selectedConfig.size || product.available_sizes?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, size: event.target.value })} className="w-full h-11 rounded-full border border-input bg-background px-4 text-sm">
+                    <select aria-label="Size" value={selectedConfig.size || product.available_sizes?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, size: event.target.value })} className="w-full h-11 rounded-lg border border-input bg-background px-3 text-sm">
                       {product.available_sizes.map((option: string) => <option key={option}>{option}</option>)}
                     </select>
                   </div>
@@ -408,6 +407,22 @@ export default function ProductDetailPage() {
         </div>
 
         <div className="product-details">
+          {product.description && (
+            <section className="product-section" aria-labelledby="about-heading">
+              <h2 id="about-heading">About this design</h2>
+              <div>
+              <p id="product-description" className={cn("max-w-[70ch] whitespace-pre-line leading-relaxed text-muted-foreground", !descriptionOpen && "line-clamp-5")}>
+                {product.description}
+              </p>
+              {product.description.length > 260 && (
+                <button type="button" onClick={() => setDescriptionOpen(open => !open)} aria-expanded={descriptionOpen} aria-controls="product-description" className="mt-1 min-h-11 text-sm font-semibold text-primary-ink underline">
+                  {descriptionOpen ? "Show less" : "Read more"}
+                </button>
+              )}
+              </div>
+            </section>
+          )}
+
           {included.length > 0 && (
             <section className="product-section" aria-labelledby="included-heading">
               <h2 id="included-heading">What&apos;s included</h2>
@@ -417,29 +432,15 @@ export default function ProductDetailPage() {
 
           {printing.length > 0 && (
             <section className="product-section" aria-labelledby="printing-heading">
-              <h2 id="printing-heading">Printing it</h2>
+              <h2 id="printing-heading">Printing specifications</h2>
               <DetailTable rows={printing} />
-            </section>
-          )}
-
-          {product.description && (
-            <section className="product-section" aria-labelledby="about-heading">
-              <h2 id="about-heading">About this design</h2>
-              <p id="product-description" className={cn("whitespace-pre-line leading-relaxed text-muted-foreground", !descriptionOpen && "line-clamp-5")}>
-                {product.description}
-              </p>
-              {product.description.length > 260 && (
-                <button type="button" onClick={() => setDescriptionOpen(open => !open)} aria-expanded={descriptionOpen} aria-controls="product-description" className="mt-1 min-h-11 text-sm font-semibold text-primary-ink underline">
-                  {descriptionOpen ? "Show less" : "Read more"}
-                </button>
-              )}
             </section>
           )}
 
           {product.creator_id && product.creator_name && (
             <section className="product-section" aria-labelledby="creator-heading">
               <h2 id="creator-heading">Creator</h2>
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4 max-w-2xl">
                 <Avatar className="h-12 w-12">
                   <AvatarFallback className="bg-primary-surface text-primary-ink font-semibold">{product.creator_name.slice(0, 1).toUpperCase()}</AvatarFallback>
                 </Avatar>
@@ -455,6 +456,7 @@ export default function ProductDetailPage() {
 
           <section id="reviews" className="product-section" aria-labelledby="reviews-heading">
             <h2 id="reviews-heading">Reviews</h2>
+            <div>
             {reviews.length === 0
               ? <p className="text-muted-foreground">No reviews yet.</p>
               : <p className="mb-2 text-muted-foreground">{avgRating} out of 5 from {reviewCount}</p>}
@@ -502,14 +504,15 @@ export default function ProductDetailPage() {
                 </div>
               </form>
             )}
+            </div>
           </section>
         </div>
 
         {similarProducts.length > 0 && (
-          <section className="product-section" aria-labelledby="similar-heading">
+          <section className="product-section product-section--wide" aria-labelledby="similar-heading">
             <h2 id="similar-heading">Similar designs</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
-              {(similarProducts as ProductCardData[]).map((p) => <ProductCard key={p.id} p={p} compact />)}
+            <div className="catalogue-grid">
+              {(similarProducts as ProductCardData[]).map((p) => <ProductCard key={p.id} p={p} />)}
             </div>
           </section>
         )}
