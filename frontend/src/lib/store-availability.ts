@@ -28,3 +28,10 @@ export function printedTile(availability: StoreAvailability): { caption: string;
     ? { caption: "Delivered in India", comingSoon: false }
     : { caption: "Coming soon", comingSoon: true };
 }
+
+/** The one sentence under the home headline. Delivery is promised only when prints can be bought. */
+export function heroSentence(availability: StoreAvailability): string {
+  return availability.printed
+    ? "Finished 3D prints delivered in India, and digital models ready for your own printer."
+    : "Digital models ready for your own printer. Finished prints are coming soon.";
+}

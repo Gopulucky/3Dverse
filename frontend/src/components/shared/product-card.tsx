@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Star, Download, Printer, Wand2, Loader2, Heart } from "lucide-react";
+import { Star, Wand2, Loader2, Heart } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -102,8 +102,6 @@ export function ProductCard({
           {printable && <span className="market-product-verified">Printability passed</span>}
         </div>
         <div className="market-product-modes">
-          {p.is_mode_2_active && p.digital_download_enabled && <span><Download size={14} aria-hidden="true" /> Digital file</span>}
-          {(p.is_mode_3_active || p.is_mode_4_active) && <span><Printer size={14} aria-hidden="true" /> Physical print</span>}
           {p.is_mode_4_active && <span><Wand2 size={14} aria-hidden="true" /> Customizable</span>}
         </div>
         <div className="market-product-footer">

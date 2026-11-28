@@ -17,10 +17,15 @@
   --store-title: 1.125rem;
   --store-body: 1rem;
   --store-small: 0.875rem;
-  --store-radius: 0.75rem;
+  /* Pictures have crisp corners, like a printed block; controls stay pill shaped. */
+  --store-radius: 0.25rem;
   --store-duration: 160ms;
   --store-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --store-focus: var(--color-violet-11);
+  --motion-hover: 220ms;
+  /* Printed layers: the lines that make cards and hero buttons look solid. */
+  --layer-line: var(--color-slate-7);
+  --layer-gap: var(--color-slate-1);
   --store-action: var(--color-violet-10);
   --store-action-ink: #FFFFFF;
   --store-image-surface: var(--color-slate-3);

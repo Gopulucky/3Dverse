@@ -253,15 +253,16 @@ export function Navbar() {
   return (
     <>
       <nav
+        data-scrolled={scrolled}
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 h-16 transition-colors duration-200",
+          "site-header fixed top-0 left-0 right-0 z-50 h-16 transition-colors duration-200",
           scrolled
-            ? "bg-background border-b border-border"
+            ? "border-b border-border"
             : "bg-background border-b border-border/50"
         )}
       >
         <div className="store-container h-full">
-          <div className="flex justify-between h-full items-center gap-3">
+          <div className="flex justify-between h-full items-center gap-2 sm:gap-3">
             {/* Left Section: Logo & Location */}
             <div className="flex items-center gap-4">
               <Link
@@ -294,12 +295,12 @@ export function Navbar() {
             {/* Central Search Bar (Marketplace only) */}
             {isMarketplace && (
               <div ref={searchRef} className="hidden md:flex flex-1 max-w-3xl px-4 lg:px-8 relative" data-flow="search-suggestions" data-state={search.status}>
-                <form role="search" onSubmit={(event) => { event.preventDefault(); handleSearch(); }} className="relative w-full rounded-md flex bg-card border border-input h-11">
+                <form role="search" onSubmit={(event) => { event.preventDefault(); handleSearch(); }} className="search-pill relative w-full rounded-full flex bg-card border border-input h-11">
                   <select
                     aria-label="Search category"
                     value={searchCategory}
                     onChange={(e) => setSearchCategory(e.target.value)}
-                    className="hidden lg:block min-w-0 max-w-32 h-full px-3 bg-muted border-r border-border rounded-l-md cursor-pointer text-sm text-foreground"
+                    className="hidden lg:block min-w-0 max-w-32 h-full pl-4 pr-2 bg-muted border-r border-border rounded-l-full cursor-pointer text-sm text-foreground"
                   >
                     <option value="">All</option>
                     <option value="Tabletop">Tabletop</option>
@@ -354,7 +355,7 @@ export function Navbar() {
                   <button
                     type="submit"
                     aria-label="Search"
-                    className="w-12 shrink-0 h-full flex items-center justify-center rounded-r-md bg-primary-surface hover:bg-muted text-primary-ink transition-colors cursor-pointer"
+                    className="w-14 shrink-0 h-full flex items-center justify-center rounded-r-full bg-primary-surface hover:bg-muted text-primary-ink transition-colors cursor-pointer"
                   >
                     <Search size={20} aria-hidden="true" />
                   </button>
@@ -445,7 +446,7 @@ export function Navbar() {
             )}
 
             {/* Right side */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-1 min-[23rem]:gap-2 sm:gap-3 shrink-0">
               {/* Creator Orders (Creator only) */}
               {isCreator && isAuthenticated && (
                 <Link href="/creator/orders" className="hidden lg:flex flex-col leading-none hover:border-border border border-transparent px-2 py-1 rounded transition-colors cursor-pointer">
@@ -468,7 +469,7 @@ export function Navbar() {
               {isMarketplace && isAuthenticated && <div className="hidden sm:block"><NotificationBell /></div>}
 
               {/* Day/night switch (every portal, every breakpoint) */}
-              <ThemeToggle />
+              <ThemeToggle className="max-[22.99rem]:hidden" />
 
               {/* Cart (marketplace only) */}
               {isMarketplace && (
@@ -652,6 +653,7 @@ export function Navbar() {
                 );
               })}
               {!isAuthenticated && <Link href="/register" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center px-4 text-sm font-medium">Create an account</Link>}
+              <div className="flex items-center gap-2 px-2 min-[23rem]:hidden"><ThemeToggle /><span className="text-sm font-medium">Day or night</span></div>
               {isMarketplace && (
                 <div className="mt-2 border-t border-border pt-2 sm:hidden" data-flow="mobile-menu-tools">
                   <div className="flex items-center gap-2 px-2"><RegionPicker /><span className="text-sm font-medium">Country and currency</span></div>

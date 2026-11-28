@@ -122,7 +122,7 @@ export function CustomerAuth({ create = false }: { create?: boolean }) {
             </div>
             {create && <div><Label htmlFor="confirm-password" className="mb-2 block">Confirm password</Label><Input id="confirm-password" type="password" autoComplete="new-password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} /></div>}
             {create && <div><Label htmlFor="signup-country" className="mb-2 block">Country</Label>
-              <select id="signup-country" value={country} onChange={(e) => setCountry(e.target.value)} className="w-full min-h-11 rounded-md border border-input bg-background px-3 text-sm">
+              <select id="signup-country" value={country} onChange={(e) => setCountry(e.target.value)} className="w-full min-h-11 rounded-full border border-input bg-background px-4 text-sm">
                 {COUNTRIES.map((option) => <option key={option.code} value={option.code}>{option.name} ({option.currency})</option>)}
               </select>
               <p className="text-xs text-muted-foreground mt-1">Prices are shown in this currency as an estimate. Orders are charged in INR.</p>

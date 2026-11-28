@@ -24,16 +24,16 @@ test('no source file loads fonts from next/font/google', () => {
   assert.deepEqual(hits, []);
 });
 
-test('layout loads the three brand families with next/font/local', () => {
+test('layout loads the two brand families with next/font/local', () => {
   assert.match(layout, /from "next\/font\/local"/);
-  for (const v of ['--font-space-grotesk', '--font-ibm-plex-sans', '--font-ibm-plex-mono']) {
+  for (const v of ['--font-space-grotesk', '--font-inter']) {
     assert.match(layout, new RegExp(`variable: "${v}"`), v);
   }
 });
 
 test('every font file the layout references exists and is woff2', () => {
   const paths = [...layout.matchAll(/path: "(\.\/fonts\/[^"]+)"/g)].map((m) => m[1]);
-  assert.ok(paths.length >= 3, `expected font paths in layout, found ${paths.length}`);
+  assert.equal(paths.length, 2, `expected font paths in layout, found ${paths.length}`);
   for (const p of paths) {
     const file = new URL(p, appDir);
     assert.ok(existsSync(file), `missing ${p}`);
@@ -42,7 +42,7 @@ test('every font file the layout references exists and is woff2', () => {
 });
 
 test('the Open Font License ships with each family', () => {
-  for (const f of ['OFL-SpaceGrotesk.txt', 'OFL-IBMPlex.txt']) {
+  for (const f of ['OFL-SpaceGrotesk.txt', 'OFL-Inter.txt']) {
     assert.ok(existsSync(new URL(`fonts/${f}`, appDir)), f);
   }
 });

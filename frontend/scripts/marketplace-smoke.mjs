@@ -28,10 +28,10 @@ const full = {
 const empty = { featured: [], trending: [], new_arrivals: [], categories: [], popular_creators: [] };
 const checks = [];
 const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL || 'msedge', headless: true });
-async function visit({ state = 'full', authenticated = false, colorScheme = 'light', viewport = { width: 1440, height: 900 } } = {}) {
+async function visit({ state = 'full', authenticated = false, colorScheme = 'light', viewport = { width: 1440, height: 900 }, reducedMotion = 'reduce' } = {}) {
   // The production CSP deliberately blocks a cross-port HTTP API on localhost.
   // Bypass it only inside this isolated fixture browser; deployment uses HTTPS.
-  const context = await browser.newContext({ reducedMotion: 'reduce', colorScheme, viewport, bypassCSP: true });
+  const context = await browser.newContext({ reducedMotion, colorScheme, viewport, bypassCSP: true });
   const current = { state, posts: [], waitlist: [], audience: [], homepageRequests: 0, catalogueRequests: [] };
   if (authenticated) await context.addInitScript(() => {
     localStorage.setItem('token', 'qa-only-token');
@@ -97,13 +97,23 @@ try {
   await page.evaluate(() => document.fonts.ready);
   await settleImages(page);
   // Home: products lead the page and the copy stays short.
-  assert.match(await page.locator('h1').innerText(), /3D models and finished prints/);
+  assert.equal(await page.locator('h1').innerText(), 'Ideas you can hold.');
+  assert.match(await page.locator('.home-hero').innerText(), /Digital models ready for your own printer\. Finished prints are coming soon\./);
+  // Product cards follow the hero directly; no 3D canvas, and nothing hidden under reduced motion.
+  assert.equal(await page.evaluate(() => document.querySelector('.home-hero').nextElementSibling.id), 'featured');
+  assert.equal(await page.locator('.storefront canvas').count(), 0);
+  assert.equal(await page.locator('[data-reveal]').count(), 0);
   const tiles = page.locator('.home-tiles');
   assert.equal(await tiles.getByRole('link', { name: /Printed products/ }).getAttribute('href'), '/marketplace?format=physical');
   assert.equal(await tiles.getByRole('link', { name: /Digital models/ }).getAttribute('href'), '/marketplace?format=digital');
   assert.equal(await page.getByRole('heading', { name: 'How shopping works' }).count(), 0);
   assert.equal(await page.getByRole('heading', { name: 'Popular creators' }).count(), 0);
   assert.equal(await page.getByRole('navigation', { name: 'Shop by category' }).getByRole('link', { name: 'Home Decor' }).count(), 1);
+  // The name: a clear ampersand (Inter) everywhere; built in print layers only where it is large.
+  const marks = await page.evaluate(() => [...document.querySelectorAll('nav .wordmark-amp, footer .wordmark-amp')].map(amp => [
+    amp.closest('footer') ? 'footer' : 'header', amp.parentElement.textContent,
+    /inter/i.test(getComputedStyle(amp).fontFamily), getComputedStyle(amp).backgroundImage.startsWith('repeating-linear-gradient')]));
+  assert.deepEqual(marks, [['header', 'buy&sell3d', true, false], ['footer', 'buy&sell3d', true, true]]);
   // Vercel Web Analytics and Speed Insights: same-origin scripts, loaded once and deferred (they 404 off Vercel, harmlessly).
   const insightScripts = await page.locator('script[src^="/_vercel/"]').evaluateAll(els => els.map(e => e.getAttribute('src')).sort());
   assert.deepEqual(insightScripts, ['/_vercel/insights/script.js', '/_vercel/speed-insights/script.js'], `analytics scripts present: ${insightScripts}`);
@@ -251,6 +261,38 @@ try {
     await v.context.close();
   }
 
+  {
+    // A selected field highlights its own edge: no second ring or box floating behind it.
+    const f = await visit();
+    await visible(f.page.getByRole('link', { name: 'View Sample bench', exact: true }));
+    const pill = f.page.locator('.search-pill');
+    const resting = await pill.evaluate(el => getComputedStyle(el).borderTopColor);
+    for (const field of [f.page.getByRole('searchbox', { name: 'Search buy&sell3d' }), f.page.getByRole('combobox', { name: 'Search category' })]) {
+      await field.click();
+      const style = await field.evaluate(el => ({ outline: getComputedStyle(el).outlineStyle, shadow: getComputedStyle(el).boxShadow }));
+      assert.deepEqual(style, { outline: 'none', shadow: 'none' }, 'no inner ring on a field inside the search pill');
+      // The pill itself shows the focus. Even a near-instant transition lands a frame later, so wait for it.
+      await f.page.waitForFunction(before => getComputedStyle(document.querySelector('.search-pill')).borderTopColor !== before, resting, { timeout: 5000 });
+      await f.page.keyboard.press('Escape');
+    }
+    await f.context.close();
+    checks.push('Search and category fields show focus on the pill edge only, with no second ring.');
+  }
+
+  // Phones: every header control stays on screen, signed in or out.
+  for (const authenticated of [false, true]) {
+    const h = await visit({ authenticated, viewport: { width: 320, height: 700 } });
+    await visible(h.page.getByRole('button', { name: 'Open menu', exact: true }));
+    for (const width of [320, 360, 390]) {
+      await h.page.setViewportSize({ width, height: 700 });
+      const right = await h.page.evaluate(() => Math.max(...[...document.querySelectorAll('nav.site-header a, nav.site-header button')]
+        .map(el => el.getBoundingClientRect()).filter(box => box.width > 0).map(box => box.right)));
+      assert.ok(right <= width, `Header runs off screen at ${width}px (authenticated: ${authenticated}): ${right}px`);
+    }
+    await h.context.close();
+  }
+  checks.push('Phone header: name, cart, account and menu stay on screen at 320, 360 and 390px, signed in or out.');
+
   const loading = await visit({ state: 'loading' });
   await visible(loading.page.getByRole('status').filter({ hasText: 'Loading the catalogue' }));
   await loading.page.screenshot({path:`${out}/loading.png`});
@@ -325,6 +367,19 @@ try {
   assert.match(await open.page.locator('.home-tile--printed').innerText(), /Delivered in India/);
   await open.context.close();
   checks.push('Audience popup: no card on the home page; opens on request; saves each step with the visitor id; contact step needs email and consent; no overflow at 375px; the request button is hidden once printing is open.');
+
+  // Motion welcome: nothing waits to appear, and pointing at a card lifts its printed block.
+  const motion = await visit({ reducedMotion: 'no-preference', viewport: { width: 1280, height: 640 } });
+  await visible(motion.page.getByRole('link', { name: 'View Sample bench', exact: true }));
+  assert.equal(await motion.page.locator('[data-reveal]').count(), 0);
+  const block = motion.page.locator('.market-product-image').first();
+  const rest = await block.evaluate(el => getComputedStyle(el).boxShadow);
+  assert.notEqual(rest, 'none', 'cards stand on printed layers');
+  await block.hover();
+  await motion.page.waitForFunction(before => getComputedStyle(document.querySelector('.market-product-image')).boxShadow !== before, rest);
+  await motion.context.close();
+  assert.deepEqual(motion.errors, []);
+  checks.push('Cards stand on printed layers that lift on hover; nothing is hidden waiting to appear.');
 
   writeFileSync(`${out}/results.json`, JSON.stringify({ base, checks, passed: checks.length, fixtureBrowserBypassesCSP: true }, null, 2));
   console.log(JSON.stringify({ passed: checks.length, checks }, null, 2));

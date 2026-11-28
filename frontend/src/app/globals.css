@@ -13,6 +13,8 @@
 @import "../styles/marketplace/tokens.css";
 @import "../styles/marketplace/base.css";
 @import "../styles/marketplace/storefront.css";
+@import "../styles/marketplace/motion.css";
+@import "../styles/marketplace/pages.css";
 
 /* Raw surface values that don't map cleanly onto a 12-step scale step
    (pure white card/popover in light, white-on-solid text). Declared
@@ -150,9 +152,10 @@
   --radius-full: 9999px;
 
   /* Fonts */
-  --font-display: var(--font-space-grotesk), "Inter", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-ibm-plex-sans), "Inter", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Prices and IDs: Inter too, with figures that line up (tabular-nums where used). */
+  --font-mono: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   /* Motion */
   --animate-in: enter 0.2s ease-out;
@@ -322,8 +325,11 @@
 /* ================================================================
    Base styles
    ================================================================ */
-* {
-  border-color: var(--color-border);
+/* A default only: inside a layer, so border colour utilities can override it. */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
 }
 
 body {
@@ -411,6 +417,20 @@ body {
    and the name stays fully readable in ink without the accent. */
 .wordmark-amp {
   color: var(--color-ember);
+  font-family: var(--font-sans);
+  font-size: 0.96em;
+  margin-inline: 0.02em;
+}
+/* Large only: the "&" printed in layers, matching the product cards. Below about
+   36px the gaps would blur, so smaller sizes stay solid. */
+.wordmark--layered .wordmark-amp {
+  background: repeating-linear-gradient(180deg, var(--color-ember) 0 0.062em, transparent 0.062em 0.082em);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@media (forced-colors: active), print {
+  .wordmark--layered .wordmark-amp { background: none; color: var(--color-ember); }
 }
 
 .text-gradient-primary {

@@ -16,33 +16,20 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://3dverse.com";
 // build never depends on Google Fonts. Files and OFL licences live in
 // ./fonts; regenerate with scripts/fonts/build_fonts.py.
 
-// Display — headlines, hero numbers, section titles (variable 500–700)
+// Space Grotesk: the brand voice (wordmark, headings, product names).
 const spaceGrotesk = localFont({
-  src: [{ path: "./fonts/SpaceGrotesk-500-700.woff2", weight: "500 700", style: "normal" }],
+  src: [{ path: "./fonts/SpaceGrotesk-400-700.woff2", weight: "400 700", style: "normal" }],
   variable: "--font-space-grotesk",
   display: "swap",
   fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
 });
 
-// Body — paragraphs, UI labels, buttons, nav (variable 400–700)
-const ibmPlexSans = localFont({
-  src: [{ path: "./fonts/IBMPlexSans-400-700.woff2", weight: "400 700", style: "normal" }],
-  variable: "--font-ibm-plex-sans",
+// Inter: everything read or pressed (navigation, descriptions, prices, buttons).
+const inter = localFont({
+  src: [{ path: "./fonts/Inter-400-700.woff2", weight: "400 700", style: "normal" }],
+  variable: "--font-inter",
   display: "swap",
   fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
-});
-
-// Utility / data — prices, dimensions, order IDs, job IDs
-const ibmPlexMono = localFont({
-  src: [
-    { path: "./fonts/IBMPlexMono-400.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/IBMPlexMono-500.woff2", weight: "500", style: "normal" },
-  ],
-  variable: "--font-ibm-plex-mono",
-  display: "swap",
-  fallback: ["ui-monospace", "monospace"],
-  // Only prices/IDs use it; don't spend first-paint bandwidth preloading it.
-  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -85,7 +72,7 @@ export default function RootLayout({
     preconnect(new URL(API_URL).origin);
   } catch {}
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable}`} suppressHydrationWarning>
       <body
         className="font-sans min-h-screen bg-background text-foreground flex flex-col antialiased"
       >
