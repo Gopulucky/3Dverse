@@ -1,30 +1,21 @@
 import { ImageResponse } from "next/og";
+import { LOGO } from "@/lib/logo-paths";
 
-// The logo is the name alone, so the browser-tab icon is the one character of the
-// name that is ours: a Tangerine "&" on the Deep teal (violet-9) tile. This is the
-// icon.tsx fallback for browsers/contexts that don't read favicon.ico.
-export const size = { width: 32, height: 32 };
+// The browser-tab icon is the short mark, "&3d", on a white tile as on the
+// owner's specification sheet.
+export const size = { width: 64, height: 64 };
 export const contentType = "image/png";
 
 export default function Icon() {
+  const mark = LOGO.short;
+  const width = 60;
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          borderRadius: 7,
-          background: "#0B4F56",
-          color: "#E86A17",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 25,
-          fontWeight: 700,
-          lineHeight: 1,
-        }}
-      >
-        &amp;
+      <div style={{ width: "100%", height: "100%", borderRadius: 12, background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width={width} height={(width * mark.height) / mark.width} viewBox={`0 0 ${mark.width} ${mark.height}`}>
+          <path d={mark.ink} fill="#121619" fillRule="evenodd" />
+          <path d={mark.accent} fill="#E86A17" fillRule="evenodd" />
+        </svg>
       </div>
     ),
     { ...size }

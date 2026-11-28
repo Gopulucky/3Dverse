@@ -53,8 +53,10 @@ unchanged (`slate-*`, `violet-*`, `ember-*`), only their values;
 - Day/night: `ThemeToggle` in every header (sun in day, moon at night, 44px target,
   `role="switch"` named "Night mode"). Below 23rem it moves into the phone menu. Starts from the OS scheme; a click is stored
   by next-themes. `dark:` utilities follow the `.dark` class, not the media query.
-- Logo (`components/shared/wordmark.tsx`): Space Grotesk bold with an Inter `&` in
-  tangerine; layered `&` only at large size (the footer). Never smaller than 20px type.
+- Logo (`components/shared/wordmark.tsx`, paths in `src/lib/logo-paths.ts`): the owner's
+  drawn wordmark, ink "buy" and "sell", amber "&" and "3d". Short mark "&3d" for the
+  browser tab and home-screen icon. Traced from their specification sheets; if a
+  designer supplies vector files, replace the paths. Never smaller than 20px high.
 - Space Grotesk: logo, headings, product names (class `.display` for titles, sentence
   case). Inter: navigation, descriptions, prices, buttons. Weights 400, 500, 600, 700.
   Buttons and chips are pill shaped; text fields and pickers have 12px corners (`rounded-lg`).

@@ -416,22 +416,12 @@ body {
    A Tangerine-to-teal gradient passes through a muddy brown midpoint
    (complementary hues), so it stays flat. Logotypes are exempt from WCAG 1.4.3,
    and the name stays fully readable in ink without the accent. */
-.wordmark-amp {
-  color: var(--color-ember);
-  font-family: var(--font-sans);
-  font-size: 0.96em;
-  margin-inline: 0.02em;
-}
-/* Large only: the "&" printed in layers, matching the product cards. Below about
-   36px the gaps would blur, so smaller sizes stay solid. */
-.wordmark--layered .wordmark-amp {
-  background: repeating-linear-gradient(180deg, var(--color-ember) 0 0.062em, transparent 0.062em 0.082em);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-@media (forced-colors: active), print {
-  .wordmark--layered .wordmark-amp { background: none; color: var(--color-ember); }
+/* The drawn logo: its height follows the font size set on the wrapper. */
+.wordmark-art { display: block; height: 1em; width: auto; }
+.wordmark-accent { fill: var(--color-ember); }
+.wordmark--mono .wordmark-accent { fill: currentColor; }
+@media (forced-colors: active) {
+  .wordmark-accent { fill: CanvasText; }
 }
 
 .text-gradient-primary {

@@ -13,12 +13,28 @@ test('the brand name is buy&sell3d', () => {
   assert.equal(BRAND.name, 'buy&sell3d');
 });
 
-// The logo is the name alone: no symbol. Only the & is coloured (Tangerine); the rest is
-// ink, so the name stays fully legible without relying on the accent colour.
-test('the wordmark parts join back into the brand name and only the & is accented', () => {
+// The logo is the owner's drawn wordmark: the name alone, with "&" and "3d" in amber. The
+// short form "&3d" is for places too small for the name, such as the browser tab.
+test('the wordmark parts join back into the brand name', () => {
   const { before, accent, after } = BRAND.wordmark;
   assert.equal(before + accent + after, BRAND.name);
-  assert.equal(accent, '&');
+});
+
+test('both marks are drawn with an ink part and an accent part', async () => {
+  const { LOGO } = await loadTs('src/lib/logo-paths.ts');
+  for (const [name, mark] of Object.entries(LOGO)) {
+    assert.ok(mark.width > 0 && mark.height > 0, name);
+    for (const part of [mark.ink, mark.accent]) assert.match(part, /^M[\d .LMZ-]+Z$/, name);
+  }
+  // The full name is several times wider than the short mark.
+  assert.ok(LOGO.name.width / LOGO.name.height > 4.5);
+  assert.ok(LOGO.short.width / LOGO.short.height < 3);
+});
+
+test('the wordmark still reads as the name to screen readers and search', () => {
+  const src = readFileSync(new URL('../../src/components/shared/wordmark.tsx', import.meta.url), 'utf8');
+  assert.match(src, /sr-only">\{BRAND\.name\}</);
+  assert.match(src, /aria-hidden="true"/);
 });
 
 test('the logo rules state the new spelling', () => {

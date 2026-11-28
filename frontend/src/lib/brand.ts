@@ -11,8 +11,8 @@
 
 export const BRAND = {
   name: "buy&sell3d",
-  /** The logo is the name alone. Only the "&" takes the Tangerine accent; everything
-   *  else is ink. before + accent + after must equal `name`. */
+  /** The name in parts. The drawn logo (components/shared/wordmark.tsx) colours
+   *  the "&" and "3d"; before + accent + after must equal `name`. */
   wordmark: { before: "buy", accent: "&", after: "sell3d" },
   /** Storefront line, for buyers. */
   tagline: "Finished prints, delivered. Digital models, ready to print.",
@@ -52,16 +52,15 @@ export const AUDIENCE_ACCENT_HUE = {
 } as const;
 
 export const BRAND_TYPE = {
-  display: { name: "Space Grotesk", cssVar: "--font-display", use: "Wordmark, headings, product names" },
+  display: { name: "Space Grotesk", cssVar: "--font-display", use: "Headings, product names" },
   sans: { name: "Inter", cssVar: "--font-sans", use: "Navigation, descriptions, buttons" },
   mono: { name: "Inter", cssVar: "--font-mono", use: "Currency, dimensions, IDs — always tabular figures" },
 } as const;
 
 export const LOGO_RULES = [
   "The name is always buy&sell3d — all lowercase, with an ampersand and no spaces. Never Buy&Sell3D, BuyAndSell3D or 'buy and sell 3D'. Where & is not allowed (domains, file names, handles) write buyandsell3d.",
-  "Do not rewrite the wordmark in a different typeface if Space Grotesk isn't loaded yet on some surface — fix the font loading instead.",
-  "The logo is the name alone — never add a symbol or icon beside it. Only the & is coloured (Tangerine); buy, sell and 3d stay one ink colour.",
-  "The name is set in Space Grotesk bold with an Inter ampersand. At 36px and larger the ampersand may be drawn in print layers; below that it is solid.",
+  "The logo is the drawn wordmark, the name alone: never add a symbol beside it. The & and 3d are amber; buy and sell are ink. On dark or teal panels the whole mark may be one light colour.",
+  "Where the name is too small to read, use the short mark &3d (browser tab, home-screen icon). Draw both from src/lib/logo-paths.ts; never retype them in a font.",
   "Minimum size: wordmark not smaller than 16px cap-height in UI contexts.",
   "Clear space: padding equal to the cap-height of the '3', on all sides, before any other element.",
 ] as const;
