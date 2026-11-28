@@ -20,6 +20,12 @@
   .home-hero .home-tile svg { display: none; }
   .home-hero .home-tile strong { font-size: 0.9375rem; }
 }
+/* At 320-368px each button has little room: trim it so a format name never wraps. */
+@media (max-width: 23rem) {
+  .home-hero .home-tiles { gap: var(--space-sm); }
+  .home-hero .home-tile { padding-inline: var(--space-xs); }
+  .home-hero .home-tile strong { font-size: 0.8125rem; }
+}
 .home-hero-photo { margin-top: var(--space-sm); }
 .home-hero-photo img { display: block; width: 100%; height: auto; border-radius: var(--store-radius); }
 @media (min-width: 64rem) {

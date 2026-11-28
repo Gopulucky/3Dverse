@@ -269,6 +269,12 @@ try {
     assert.ok(type.gap >= 12, `sentence sits against the headline at ${width}px`);
     assert.deepEqual(type.tiles.map(t => t[0]), ['Digital models', 'Printed products']);
     assert.ok(type.tiles.every(t => t[1] <= 96), `format buttons are too tall at ${width}px: ${JSON.stringify(type.tiles)}`);
+    // Linux renders the same fonts a few percent wider than Windows. Each name must still sit on
+    // one line with that to spare, or the buttons grow a line on some machines only.
+    const widened = await page.addStyleTag({ content: '.home-hero .home-tile { letter-spacing: 0.03em; }' });
+    const lines = await page.locator('.home-hero .home-tile strong').evaluateAll(els => els.map(el => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight))));
+    assert.deepEqual(lines, [1, 1], `a format name wraps at ${width}px with slightly wider text`);
+    await widened.evaluate(el => el.remove());
     assert.match(metrics.font, /space_?grotesk|space grotesk/i);
     assert.ok(metrics.brandLoaded, `brand display font not loaded: ${metrics.font}`);
     await page.screenshot({path:`${out}/fixture-home-${width}.png`, fullPage: width === 375 || width === 1440});
