@@ -19,8 +19,12 @@ import {
   Tag,
   Wand2,
   Bell,
+  Globe,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { RegionDialog } from "@/components/layout/region-picker";
+import { countryLabel, currencyForCountry } from "@/lib/region";
+import { useCountry } from "@/stores/region-store";
 import { NotificationsDialog, useUnreadNotifications } from "@/components/layout/notification-bell";
 
 import { cn } from "@/lib/utils";
@@ -54,6 +58,9 @@ export function Navbar() {
   const { itemCount, setItemCount } = useCartStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [noticesOpen, setNoticesOpen] = useState(false);
+  const [regionOpen, setRegionOpen] = useState(false);
+  const country = useCountry();
+  const currency = currencyForCountry(country);
   const [search, dispatchSearch] = useReducer(searchReducer, initialSearchState);
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -138,7 +145,8 @@ export function Navbar() {
     desktop.addEventListener("change", closeOnDesktop);
     const panel = document.getElementById("mobile-navigation");
     const toggle = document.getElementById("mobile-menu-toggle");
-    const focusable = () => [toggle, ...Array.from(panel?.querySelectorAll<HTMLElement>("input, button, a[href]") ?? [])].filter((element): element is HTMLElement => Boolean(element));
+    // Controls hidden at this width cannot take focus, so they are left out of the loop.
+    const focusable = () => [toggle, ...Array.from(panel?.querySelectorAll<HTMLElement>("input, button, a[href]") ?? [])].filter((element): element is HTMLElement => Boolean(element?.getClientRects().length));
     focusable()[1]?.focus();
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -437,8 +445,8 @@ export function Navbar() {
                 </Link>
               )}
 
-              {/* Day/night: portals keep it here; shoppers find it in the footer. */}
-              {!isMarketplace && <ThemeToggle className="max-[22.99rem]:hidden" />}
+              {/* Day/night. The narrowest phones have no room, so the menu holds it there. */}
+              <ThemeToggle className="max-[22.99rem]:hidden" />
 
               {/* Cart (marketplace only) */}
               {isMarketplace && (
@@ -527,6 +535,15 @@ export function Navbar() {
                         <Bell size={16} className="mr-3" />
                         Notifications
                         {unread > 0 && <span className="ml-auto text-sm text-muted-foreground">{unread}</span>}
+                      </DropdownMenuItem>
+                    )}
+
+                    {isMarketplace && (
+                      // Opened a tick later too, for the same reason as Notifications.
+                      <DropdownMenuItem aria-label={`Country and currency: ${countryLabel(country)}, ${currency}`} onSelect={() => setTimeout(() => setRegionOpen(true), 0)} className="rounded-lg cursor-pointer py-2">
+                        <Globe size={16} className="mr-3" />
+                        Country and currency
+                        <span className="ml-auto text-sm text-muted-foreground">{currency}</span>
                       </DropdownMenuItem>
                     )}
 
@@ -632,12 +649,13 @@ export function Navbar() {
                 );
               })}
               {!isAuthenticated && <Link href="/register" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center px-4 text-sm font-medium">Create an account</Link>}
-              {!isMarketplace && <div className="flex items-center gap-2 px-2 min-[23rem]:hidden"><ThemeToggle /><span className="text-sm font-medium">Day or night</span></div>}
+              <div className="flex items-center gap-2 px-2 min-[23rem]:hidden"><ThemeToggle /><span className="text-sm font-medium">Day or night</span></div>
             </nav>
           </div>
         </div>
       )}
       {noticesOpen && <NotificationsDialog open={noticesOpen} onOpenChange={setNoticesOpen} unread={unread} />}
+      {regionOpen && <RegionDialog open={regionOpen} onOpenChange={setRegionOpen} />}
     </>
   );
 }

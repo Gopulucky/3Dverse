@@ -134,14 +134,26 @@ try {
   // Home cards are compact: no review line or cart controls (those live on the catalogue page).
   assert.equal(await page.locator('.storefront .market-product .market-product-reviews').count(), 0);
   assert.equal(await page.locator('.storefront .market-product .market-cart-button').count(), 0);
-  // The header carries the logo, search, cart and account only; preferences sit in the footer.
+  // Day/night sits in the header; a signed-in shopper's country sits in the account menu.
   const header = page.locator('nav.site-header');
   assert.equal(await header.getByRole('combobox').count(), 0, 'no category picker in the header');
   assert.equal(await header.getByRole('link', { name: 'Orders', exact: true }).count(), 0);
-  assert.equal(await header.locator('[data-flow="theme"]').count(), 0);
+  assert.equal(await header.locator('[data-flow="theme"]').count(), 1);
   assert.equal(await header.getByRole('button', { name: /Country and currency/ }).count(), 0);
-  assert.equal(await page.locator('footer [data-flow="theme"]').count(), 1);
-  assert.equal(await page.locator('footer').getByRole('button', { name: /Country and currency/ }).count(), 1);
+  assert.equal(await page.locator('footer [data-flow="theme"]').count(), 0);
+  assert.equal(await page.locator('footer').getByRole('button', { name: /Country and currency/ }).count(), 0, 'signed in: not repeated in the footer');
+  await page.getByRole('button', { name: 'Account and portals', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Country and currency: India, INR' }).click();
+  const region = page.getByRole('dialog', { name: 'Where are you shopping from?' });
+  await visible(region);
+  await region.getByLabel('Country', { exact: true }).selectOption('AU');
+  await page.keyboard.press('Escape');
+  await region.waitFor({ state: 'hidden' });
+  await page.getByRole('button', { name: 'Account and portals', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Country and currency: Australia, AUD' }).click();
+  await region.getByLabel('Country', { exact: true }).selectOption('IN');
+  await page.keyboard.press('Escape');
+  await region.waitFor({ state: 'hidden' });
   // Catalogue cards: badge, category, name, creator, one price and one action.
   await page.goto(`${base}/marketplace`, { waitUntil: 'domcontentloaded' });
   await visible(page.getByRole('link', { name: 'View Sample bench', exact: true }));
@@ -248,6 +260,9 @@ try {
     await visible(toggle);
     assert.equal(await toggle.getAttribute('data-state'), 'day');
     assert.equal(await t.page.getByRole('switch', { name: 'Night mode' }).getAttribute('aria-checked'), 'false');
+    // Signed out there is no account menu, so country stays in the footer.
+    assert.equal(await t.page.locator('nav.site-header [data-flow="theme"]').count(), 1);
+    assert.equal(await t.page.locator('footer').getByRole('button', { name: /Country and currency/ }).count(), 1);
     const box = await toggle.boundingBox();
     assert.ok(box.width >= 44 && box.height >= 44, `theme switch target ${box.width}x${box.height}`);
     await toggle.click();
@@ -312,6 +327,25 @@ try {
       assert.ok(right <= width, `Header runs off screen at ${width}px (authenticated: ${authenticated}): ${right}px`);
     }
     await h.context.close();
+  }
+  {
+    // The narrowest phones have no room for the switch in the header, so the menu holds it.
+    const n = await visit({ viewport: { width: 320, height: 700 } });
+    await visible(n.page.getByRole('button', { name: 'Open menu', exact: true }));
+    assert.equal(await n.page.locator('nav.site-header [data-flow="theme"]').isVisible(), false);
+    await n.page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    await visible(n.page.locator('#mobile-navigation [data-flow="theme"]'));
+    await n.page.keyboard.press('Escape');
+    await n.page.setViewportSize({ width: 390, height: 700 });
+    await visible(n.page.locator('nav.site-header [data-flow="theme"]'));
+    await n.page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    await visible(n.page.getByRole('navigation', { name: 'Mobile navigation' }));
+    assert.equal(await n.page.locator('#mobile-navigation [data-flow="theme"]').isVisible(), false, 'one switch at a time');
+    // Tab from the last thing on show wraps round inside the menu.
+    await n.page.locator('#mobile-navigation a').last().focus();
+    await n.page.keyboard.press('Tab');
+    assert.equal(await n.page.evaluate(() => document.activeElement?.id), 'mobile-menu-toggle');
+    await n.context.close();
   }
   checks.push('Phone header: name, cart, account and menu stay on screen at 320, 360 and 390px, signed in or out.');
 

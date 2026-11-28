@@ -3,7 +3,6 @@ import { Separator } from "@/components/ui/separator";
 import { Wordmark } from "@/components/shared/wordmark";
 import { BRAND } from "@/lib/brand";
 import { RegionPicker } from "@/components/layout/region-picker";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export function Footer() {
   return (
@@ -77,10 +76,9 @@ export function Footer() {
 
         <Separator className="my-8" />
 
-        {/* Shopping preferences: the one place to change country, currency and day or night. */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        {/* Country and currency for signed-out visitors; the row disappears once signed in. */}
+        <div className="mb-6 empty:hidden">
           <RegionPicker />
-          <ThemeToggle />
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
