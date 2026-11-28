@@ -9,6 +9,8 @@ for prices, kerning, ligatures).
 Run (needs fonttools + brotli, e.g. in a throwaway venv):
     python -m venv .venv-fonts && .venv-fonts/Scripts/pip install fonttools brotli
     .venv-fonts/Scripts/python scripts/fonts/build_fonts.py
+
+Pass --only=<text> to fetch and build just the files whose name contains it.
 """
 
 from __future__ import annotations
@@ -23,7 +25,9 @@ from fontTools import subset
 from fontTools.ttLib import TTFont
 from fontTools.varLib import instancer
 
-COMMIT = sys.argv[1] if len(sys.argv) > 1 else "29b4ec6df2522a8aee279414b78a07910b065874"
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--only=")]
+ONLY = next((a.removeprefix("--only=") for a in sys.argv[1:] if a.startswith("--only=")), "")
+COMMIT = ARGS[0] if ARGS else "29b4ec6df2522a8aee279414b78a07910b065874"
 RAW = f"https://raw.githubusercontent.com/google/fonts/{COMMIT}/ofl"
 OUT = Path(__file__).resolve().parents[2] / "src" / "app" / "fonts"
 
@@ -33,14 +37,13 @@ LATIN_EXT = "U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,
 
 # (output name, source path, variable-axis limits or None for static)
 FONTS = [
-    ("SpaceGrotesk-500-700.woff2", "spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf", {"wght": (500, 700)}),
-    ("IBMPlexSans-400-700.woff2", "ibmplexsans/IBMPlexSans%5Bwdth,wght%5D.ttf", {"wdth": 100, "wght": (400, 700)}),
-    ("IBMPlexMono-400.woff2", "ibmplexmono/IBMPlexMono-Regular.ttf", None),
-    ("IBMPlexMono-500.woff2", "ibmplexmono/IBMPlexMono-Medium.ttf", None),
+    ("SpaceGrotesk-400-700.woff2", "spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf", {"wght": (400, 700)}),
+    # opsz stays variable: the browser picks the cut that suits each size.
+    ("Inter-400-700.woff2", "inter/Inter%5Bopsz,wght%5D.ttf", {"wght": (400, 700)}),
 ]
 LICENSES = [
     ("OFL-SpaceGrotesk.txt", "spacegrotesk/OFL.txt"),
-    ("OFL-IBMPlex.txt", "ibmplexsans/OFL.txt"),
+    ("OFL-Inter.txt", "inter/OFL.txt"),
 ]
 
 
@@ -66,7 +69,7 @@ def build() -> None:
     opts.name_IDs = ["*"]
     opts.notdef_outline = True
 
-    for name, src, limits in FONTS:
+    for name, src, limits in [f for f in FONTS if ONLY in f[0]]:
         font = TTFont(io.BytesIO(fetch(src)))
         if limits:
             font = instancer.instantiateVariableFont(font, limits)
@@ -82,7 +85,7 @@ def build() -> None:
         size = (OUT / name).stat().st_size
         print(f"{name}: {size / 1024:.1f} KiB, rupee sign: {'yes' if has_rupee else 'no'}")
 
-    for name, src in LICENSES:
+    for name, src in [f for f in LICENSES if ONLY in f[0]]:
         (OUT / name).write_bytes(fetch(src))
         print(f"{name}: copied")
 

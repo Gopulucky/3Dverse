@@ -2,8 +2,18 @@
 html, body { overflow-x: clip; }
 html { scroll-padding-top: 5rem; scrollbar-color: var(--color-muted-foreground) var(--color-background); }
 :focus-visible { outline: 2px solid var(--store-focus); outline-offset: 4px; }
+/* Fields show focus on their own edge, never as a second ring floating behind them.
+   :where keeps this no stronger than the rule above, so the search pill can refine it. */
+:where(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"]), select, textarea):focus-visible { outline: none; border-color: var(--store-focus); box-shadow: 0 0 0 1px var(--store-focus); }
+/* The header search is one control: the whole pill lights up, not the parts inside. */
+.search-pill:focus-within { border-color: var(--store-focus); box-shadow: 0 0 0 1px var(--store-focus); }
+.search-pill :is(input, select):focus-visible { border-color: var(--color-border); box-shadow: none; }
+.search-pill select:focus-visible { background-color: var(--color-primary-surface); }
+.search-pill button:focus-visible { outline-offset: -4px; }
 input, textarea { caret-color: var(--store-focus); }
 .store-container { width: 100%; max-width: var(--store-container); margin-inline: auto; padding-inline: var(--store-gutter); }
+/* Page and section titles. Product names, labels and buttons do not use it. */
+.display { font-family: var(--font-display); font-weight: 600; line-height: 1.08; letter-spacing: -0.025em; min-width: 0; overflow-wrap: break-word; text-wrap: balance; }
 .storefront h1, .storefront h2, .storefront h3 { min-width: 0; overflow-wrap: break-word; text-wrap: balance; }
 .storefront p { text-wrap: pretty; }
 .storefront button:disabled { cursor: not-allowed; }

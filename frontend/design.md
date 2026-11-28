@@ -1,16 +1,21 @@
 # Design: buy&sell3d storefront
 
-Shared by `/` and `/marketplace/home`. Both routes render the same homepage (products first, see below).
+Shared by `/` and `/marketplace/home`. Both routes render the same homepage (short hero, then product cards, see below).
 Uses the existing buy&sell3d colour and type values captured from the project
 and recorded below. `src/lib/brand.ts` holds the shared identity and copy.
 
 ## System
 
 - Genre: modern-minimal.
-- Shape: Catalogue, with a Stage hero when catalogue imagery is available.
-- Theme: existing buy&sell3d brand; restrained colour and still composition.
-- Signature: a real catalogue object with its actual title, creator and price.
-- No catalogue data: a typographic hero and an honest loading, empty or error state.
+- Shape: Catalogue under a short text hero. Minimal: white space, thin rules, no
+  decoration, no scroll storytelling.
+- Theme: existing buy&sell3d brand; restrained colour, motion with a job.
+- Signature: printed layers. Product cards and the two hero buttons stand on a stack
+  of thin lines, like a solid 3D print, and lift when pointed at (`motion.css`).
+  It is the one bold detail; keep everything around it quiet.
+- The space right of the hero text is left blank for the owner's own 3D design,
+  to be added later. Do not fill it with stand-in art.
+- No catalogue data: the hero stays; the rows show an honest loading, empty or error state.
 - Keep actual content, links and API wiring. Never invent products or social proof.
 
 ## Tokens
@@ -48,8 +53,12 @@ pins the anchors and WCAG AA pairs.
 - Day/night: `ThemeToggle` in the navbar (sun in day, moon at night, 44px target,
   `role="switch"` named "Night mode"). Starts from the OS scheme; a click is stored
   by next-themes. `dark:` utilities follow the `.dark` class, not the media query.
-- Display: Space Grotesk, 600. Body and controls: IBM Plex Sans.
-- Currency and measurements: IBM Plex Mono with tabular numerals.
+- Logo (`components/shared/wordmark.tsx`): Space Grotesk bold with an Inter `&` in
+  tangerine; layered `&` only at large size (the footer). Never smaller than 20px type.
+- Space Grotesk: logo, headings, product names (class `.display` for titles, sentence
+  case). Inter: navigation, descriptions, prices, buttons. Weights 400, 500, 600, 700.
+  Buttons and text fields are pill shaped; pictures have crisp 4px corners.
+- Currency and measurements: Inter with tabular numerals.
 - Font variables belong on `html` so root theme aliases resolve correctly.
 - Fonts are self-hosted in `src/app/fonts` via `next/font/local` (latin + latin-ext, OFL
   licences alongside); never `next/font/google`, so builds need no network.
@@ -59,14 +68,16 @@ pins the anchors and WCAG AA pairs.
 - Image radius: `--store-radius` (0.75rem).
 - Surface/text pairs use semantic tokens and switch together in dark mode.
 
-## Home layout (products first)
+## Home layout
 
-Order, top to bottom: header with search, category chips, one-line heading,
-two format tiles (Printed products, Digital models), a "New arrivals" row, a
-"Trending" row, a three-item trust strip. Targets, checked by
-`scripts/marketplace-smoke.mjs`: the first product starts on the first screen
-at 320-1920 px, fewer than 80 words come before it, and no product appears
-twice. Row and fallback rules live in `src/lib/home-sections.ts`.
+Order, top to bottom: header with search, category chips, a short hero, a "New
+arrivals" row of product cards, a "Trending" row, a three-item trust strip. The
+hero holds the headline "Ideas you can hold.", one sentence that promises delivery
+only when printed orders work (`heroSentence` in `src/lib/store-availability.ts`)
+and the Printed products and Digital models buttons. Targets, checked by
+`scripts/marketplace-smoke.mjs`: the first product starts on the first screen at
+320-1920 px, fewer than 80 words come before it, and no product appears twice. Row
+and fallback rules live in `src/lib/home-sections.ts`.
 
 - Home cards use `ProductCard compact` (image, title, price caption). Catalogue
   pages keep the full card.
@@ -102,11 +113,21 @@ twice. Row and fallback rules live in `src/lib/home-sections.ts`.
 - Secondary links: underlined, 44px minimum hit height, no appended arrow text.
 - Cart buttons: independent of product links, with loading and inline outcome states.
 - Instant focus outlines use `--store-focus`; reduced motion removes animations.
+- Text fields and pickers show focus on their own edge (the header search lights its
+  whole pill), never as a second ring behind them. Buttons and links keep the outline
+  for keyboard users.
 - Use sentence case for labels, with normal letter spacing.
 
 ## Motion and imagery
 
-- No ambient motion or load reveals. Rail scrolling respects reduced motion.
+Styles are in `src/styles/marketplace/motion.css` (cards, hero, header) and `pages.css`.
+
+- Nothing animates on scroll or load. The only motion answers a person: a card or
+  hero button lifts on hover and focus, buttons press, menus open.
+- All pages: the header turns frosted once scrolled.
+- Animate `transform` and `box-shadow` only here; rail scrolling respects reduced motion.
+- Category links are plain words with a tangerine underline, not pills.
+- A card names each format once, in its price rows.
 - Uploaded product media is the source for hero and card images.
 - Failed images show a labelled fallback. Category links are typographic.
 - The existing gradient wordmark remains a brand asset, not heading decoration.

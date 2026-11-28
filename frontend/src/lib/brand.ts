@@ -52,15 +52,16 @@ export const AUDIENCE_ACCENT_HUE = {
 } as const;
 
 export const BRAND_TYPE = {
-  display: { name: "Space Grotesk", cssVar: "--font-display", use: "Headlines, the wordmark" },
-  sans: { name: "IBM Plex Sans", cssVar: "--font-sans", use: "Body copy, UI labels" },
-  mono: { name: "IBM Plex Mono", cssVar: "--font-mono", use: "Currency, dimensions, IDs — always tabular figures" },
+  display: { name: "Space Grotesk", cssVar: "--font-display", use: "Wordmark, headings, product names" },
+  sans: { name: "Inter", cssVar: "--font-sans", use: "Navigation, descriptions, buttons" },
+  mono: { name: "Inter", cssVar: "--font-mono", use: "Currency, dimensions, IDs — always tabular figures" },
 } as const;
 
 export const LOGO_RULES = [
   "The name is always buy&sell3d — all lowercase, with an ampersand and no spaces. Never Buy&Sell3D, BuyAndSell3D or 'buy and sell 3D'. Where & is not allowed (domains, file names, handles) write buyandsell3d.",
   "Do not rewrite the wordmark in a different typeface if Space Grotesk isn't loaded yet on some surface — fix the font loading instead.",
   "The logo is the name alone — never add a symbol or icon beside it. Only the & is coloured (Tangerine); buy, sell and 3d stay one ink colour.",
+  "The name is set in Space Grotesk bold with an Inter ampersand. At 36px and larger the ampersand may be drawn in print layers; below that it is solid.",
   "Minimum size: wordmark not smaller than 16px cap-height in UI contexts.",
   "Clear space: padding equal to the cap-height of the '3', on all sides, before any other element.",
 ] as const;

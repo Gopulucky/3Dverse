@@ -45,7 +45,7 @@ export default function CreatorPage() {
 
   return (
     <MarketplaceShell>
-      <div className="max-w-7xl mx-auto px-6 pt-24 pb-20" data-flow="creator-page" data-state={profile.isLoading ? "loading" : creator ? "ready" : "missing"}>
+      <div className="store-container pt-8 pb-24" data-flow="creator-page" data-state={profile.isLoading ? "loading" : creator ? "ready" : "missing"}>
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8 pt-4">
           <Link href="/marketplace" className="hover:text-foreground transition-colors">Marketplace</Link>
           <ChevronRight size={14} aria-hidden="true" />
@@ -65,7 +65,7 @@ export default function CreatorPage() {
           </div>
         ) : (
           <>
-            <header className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between mb-10">
+            <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between mb-12 pb-10 border-b border-border">
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20 border border-border">
                   <AvatarFallback className="bg-primary-surface text-primary-ink text-2xl font-semibold">
@@ -73,7 +73,7 @@ export default function CreatorPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold font-display leading-tight">{creator.name}</h1>
+                  <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight font-display leading-tight">{creator.name}</h1>
                   <p className="mt-1 text-sm text-muted-foreground font-data">
                     {creator.product_count} {creator.product_count === 1 ? "design" : "designs"} ·{" "}
                     <span data-testid="follower-count">{creator.follower_count}</span>{" "}
@@ -86,7 +86,7 @@ export default function CreatorPage() {
               <FollowButton creatorId={creator.id} creatorName={creator.name} next={`/creators/${creator.id}`} />
             </header>
 
-            <h2 className="text-lg font-bold font-display mb-4">All designs by {creator.name}</h2>
+            <h2 className="text-xl font-semibold font-display mb-6">All designs by {creator.name}</h2>
             {products.isLoading ? (
               <div className="grid grid-cols-2 xl:grid-cols-4 gap-6">
                 {[0, 1, 2, 3].map((n) => <Skeleton key={n} className="aspect-square rounded-xl" />)}

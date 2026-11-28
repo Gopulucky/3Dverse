@@ -21,7 +21,7 @@ function Section({ title, defaultOpen, children }: { title: string; defaultOpen:
   return (
     <section className="border-t border-border py-3">
       <button type="button" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}
-        className="flex min-h-9 w-full items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        className="flex min-h-9 w-full items-center justify-between text-sm font-semibold text-foreground">
         <span>{title}</span>
         <ChevronDown size={16} aria-hidden="true" className={cn("transition-transform", open && "rotate-180")} />
       </button>
@@ -62,7 +62,7 @@ export function CatalogueFilters({ values, categories, anyApplied, onChange, onC
       <div className="mb-2 flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold">Filters</h2>
         <div className="flex items-center gap-1">
-          {anyApplied && <button type="button" onClick={onClear} className="min-h-9 px-2 text-xs font-semibold uppercase tracking-wide text-primary-ink hover:underline">Clear all</button>}
+          {anyApplied && <button type="button" onClick={onClear} className="min-h-9 px-2 text-sm font-medium text-primary-ink hover:underline">Clear all</button>}
           {onClose && <Button type="button" variant="ghost" size="icon" aria-label="Close filters" className="md:hidden" onClick={onClose}><X size={20} aria-hidden="true" /></Button>}
         </div>
       </div>

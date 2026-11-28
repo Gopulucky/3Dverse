@@ -1,0 +1,25 @@
+/* Hallmark · component: page headings and ruled sections · design-system: design.md · genre: modern-minimal · signature: space and thin rules · v2.0.0 */
+
+/* ---- Page opening: a title, then a rule ----------------------------------- */
+.page-head { padding-block: var(--space-2xl) var(--space-lg); border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-xl); }
+.page-title { font-size: clamp(1.75rem, 1.2rem + 2vw, 3rem); }
+.page-lead { margin-top: var(--space-md); max-width: 38rem; color: var(--color-muted-foreground); text-wrap: pretty; }
+
+/* ---- Ruled sections (About) ----------------------------------------------- */
+.band { padding-block: var(--space-3xl); border-bottom: 1px solid var(--color-border); }
+.band-title { font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.25rem); margin-bottom: var(--space-lg); max-width: 28ch; }
+.band-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-xl); margin-top: var(--space-xl); }
+.band-column { border-top: 1px solid var(--color-border); padding-top: var(--space-md); }
+.band-column h3, .band-row h3 { font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; line-height: 1.3; margin-bottom: var(--space-xs); text-wrap: balance; }
+.band-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: var(--space-xl); padding-block: var(--space-xl); border-top: 1px solid var(--color-border); }
+.band-name { font-family: var(--font-display); font-size: 1.375rem; font-weight: 600; line-height: 1.2; margin-bottom: var(--space-xs); }
+
+@media (max-width: 64rem) {
+  .band-columns, .band-row { grid-template-columns: minmax(0, 1fr); }
+  .band { padding-block: var(--space-2xl); }
+}
+/* The catalogue keeps a small title on phones so products start high up. */
+@media (max-width: 48rem) {
+  .page-head--compact { padding-block: 0 var(--space-xs); margin-bottom: var(--space-sm); border-bottom: 0; }
+  .page-head--compact .page-title { font-size: 1.25rem; }
+}

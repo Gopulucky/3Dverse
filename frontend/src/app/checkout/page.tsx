@@ -246,12 +246,12 @@ export default function CheckoutPage() {
             ? <p className="text-sm text-muted-foreground">You are buying this item on its own. Your cart is not part of this order.</p>
             : <p role="alert" className="text-sm">We could not find the item you chose. Go back to the product and press Buy Now again.</p>)}
           {(!resuming && !checkout ? items : []).map((item) => <div key={item.id} className="border-b pb-3">
-            <p className="font-medium">{item.product.title}</p>
+            <p className="font-display font-medium">{item.product.title}</p>
             <p className="text-sm text-muted-foreground">{item.selected_config?.purchase_type === "physical" ? "Printed product" : item.selected_config?.purchase_type === "digital" ? "Digital download" : "Selected option"} · Quantity {item.quantity}</p>
             <p className="font-data">{formatMoney((purchasePrice(item.product, item.selected_config?.purchase_type) ?? item.product.price ?? 0) * item.quantity, item.product.currency)}</p>
           </div>)}
           {checkout?.items.map((item, index) => <div key={index} className="border-b pb-3">
-            <p className="font-medium">{item.title}</p><p className="text-sm text-muted-foreground">{item.purchase_type === "physical" ? "Printed product" : "Digital download"} · Quantity {item.quantity}</p>
+            <p className="font-display font-medium">{item.title}</p><p className="text-sm text-muted-foreground">{item.purchase_type === "physical" ? "Printed product" : "Digital download"} · Quantity {item.quantity}</p>
             <p className="font-data">{formatMoney(item.unit_price * item.quantity, checkout.currency)}</p>
           </div>)}
           {checkout?.shipping_address && <p className="text-sm">Deliver to {checkout.shipping_address.name}, {checkout.shipping_address.street}, {checkout.shipping_address.city}, {checkout.shipping_address.state} {checkout.shipping_address.zip}, India.</p>}

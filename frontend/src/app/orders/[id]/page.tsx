@@ -222,7 +222,7 @@ export default function OrderDetailsPage() {
                 <div key={item.id} className="py-2 border-b border-border/50 last:border-0">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-medium">{item.product?.title || `Product #${item.product_id}`}</p>
+                      <p className="font-display font-medium">{item.product?.title || `Product #${item.product_id}`}</p>
                       <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                     </div>
                     <p className="text-muted-foreground font-data">{formatMoney(item.price_at_purchase * item.quantity, order.currency)}</p>

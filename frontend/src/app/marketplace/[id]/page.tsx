@@ -288,7 +288,7 @@ export default function ProductDetailPage() {
 
   return (
     <MarketplaceShell>
-      <div className="max-w-7xl mx-auto px-6 pt-24 pb-20">
+      <div className="store-container pt-8 pb-24">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8 pt-4">
           <Link href="/marketplace" className="hover:text-foreground transition-colors">
@@ -306,7 +306,7 @@ export default function ProductDetailPage() {
         </nav>
 
         {/* The name leads the page, above the pictures, the way a catalogue entry does. */}
-        <h1 className="text-2xl sm:text-3xl font-bold mb-5 font-display leading-tight">
+        <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight mb-6 font-display leading-tight">
           {product.title}
         </h1>
 
@@ -624,13 +624,13 @@ export default function ProductDetailPage() {
           <TabsList className="border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 space-x-6">
             <TabsTrigger
               value="reviews"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0 py-3 text-base font-semibold font-display"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 text-base font-semibold font-display"
             >
               Reviews ({reviews.length})
             </TabsTrigger>
             <TabsTrigger
               value="similar"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0 py-3 text-base font-semibold font-display"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 text-base font-semibold font-display"
             >
               Similar Products
             </TabsTrigger>

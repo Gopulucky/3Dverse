@@ -11,6 +11,10 @@ export function ProductPrices({ product, format }: { product: ProductCardData; f
   return <span className="market-price">{formats.map(value => {
     const price = purchasePrice(product, value);
     const view = price == null ? null : displayPrice(price, product.currency, country);
-    return <span key={value} className="block">{view ? view.main : "Price unavailable"}<small>{value === "digital" ? "Digital file · download" : "Physical print · before shipping"}{view?.charged ? ` · charged ${view.charged}` : ""}</small></span>;
+    return <span key={value} className="price-row">
+      <span className="price-format">{value === "digital" ? "Digital file" : "Print, plus shipping"}</span>
+      <span>{view ? view.main : "Price unavailable"}</span>
+      {view?.charged ? <span className="price-charged">Charged {view.charged}</span> : null}
+    </span>;
   })}</span>;
 }

@@ -94,9 +94,9 @@ function MarketplaceContent() {
   if (search.get("min_price") || search.get("max_price")) chips.push({ key: "price", label: `Price ${search.get("min_price") || "0"} to ${search.get("max_price") || "any"}`, clear: next => { next.delete("min_price"); next.delete("max_price"); } });
   return (
     <div className="store-container py-4 md:py-8 pb-20">
-      <header className="mb-3 md:mb-8 max-w-3xl">
-        <h1 className="text-xl sm:text-4xl font-display font-semibold mb-1 md:mb-3">{format === "physical" ? "Printed products" : format === "digital" ? "Digital models" : "Shop 3D models and prints"}</h1>
-        <p className="hidden md:block text-muted-foreground">{format === "physical" ? "Finished 3D prints made and shipped to you. No printer needed. Check each listing for available options." : format === "digital" ? "Downloadable model files for your own 3D printer. These purchases do not include a physical product." : "Choose a delivered physical product or a digital model file for your own printer. Each listing offers its own formats."}</p>
+      <header className="page-head page-head--compact">
+        <h1 className="display page-title">{format === "physical" ? "Printed products" : format === "digital" ? "Digital models" : "Shop 3D models and prints"}</h1>
+        <p className="page-lead hidden md:block">{format === "physical" ? "Finished 3D prints made and shipped to you. No printer needed. Check each listing for available options." : format === "digital" ? "Downloadable model files for your own 3D printer. These purchases do not include a physical product." : "Choose a delivered physical product or a digital model file for your own printer. Each listing offers its own formats."}</p>
       </header>
       <div className="md:hidden sticky top-16 z-20 -mx-4 mb-3 border-b border-border bg-background/95 px-4 py-2 backdrop-blur">
         <form role="search" aria-label="Quick catalogue search" className="mb-2" onSubmit={event => {
@@ -147,7 +147,7 @@ function MarketplaceContent() {
           </div>
           {isLoading ? <><p role="status" className="mb-5">Loading products…</p><ProductGridSkeleton count={6} /></> : isError ? <div role="alert" className="store-state"><h2>The catalogue couldn’t load.</h2><p>Please try again. Your filters have been kept.</p><Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>{isFetching ? "Trying again…" : "Try again"}</Button></div> : <>
             <p role="status" className="text-sm text-muted-foreground mb-3 md:mb-6">{products.length ? `Showing ${(page - 1) * PAGE_SIZE + 1}–${(page - 1) * PAGE_SIZE + products.length}` : "No matching products"}{search.get("q") ? ` for “${search.get("q")}”` : ""}</p>
-            <div className="catalogue-grid grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6">{products.map(p => <ProductCard key={p.id} p={p} format={format} onWishlist={handleAddToWishlist} />)}</div>
+            <div className="catalogue-grid grid grid-cols-2 xl:grid-cols-3 gap-x-3 gap-y-8 sm:gap-x-8 sm:gap-y-14">{products.map(p => <ProductCard key={p.id} p={p} format={format} onWishlist={handleAddToWishlist} />)}</div>
             {!products.length && (printedComingSoon
               ? <div className="store-state" data-state="printed-coming-soon"><h2>Printed products are coming soon.</h2><p>We are still setting up printing and delivery, so finished prints can’t be ordered yet. Digital model files are available now.</p><div className="flex flex-wrap gap-x-6"><Link href="/#waitlist" className="market-text-link">Get notified at launch</Link><Link href="/marketplace?format=digital" className="market-text-link">Browse digital models</Link></div></div>
               : <div className="store-state"><h2>No products match these filters.</h2><p>Try another format, currency or category. New designs appear as creators publish them.</p></div>)}

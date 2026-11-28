@@ -5,13 +5,13 @@ import { BRAND } from "@/lib/brand";
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-card/50 mt-auto">
-      <div className="store-container py-12">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+    <footer className="border-t border-border mt-auto">
+      <div className="store-container py-12 md:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-[2fr_1fr_1fr] gap-x-8 gap-y-12">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="inline-block">
-              <Wordmark size="sm" />
+              <Wordmark size="lg" />
             </Link>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
               {BRAND.oneLiner}
