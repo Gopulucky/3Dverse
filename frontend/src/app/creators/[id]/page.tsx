@@ -94,7 +94,7 @@ export default function CreatorPage() {
             ) : products.isError ? (
               <p role="alert" className="text-sm text-destructive">The designs couldn&apos;t load. Refresh to try again.</p>
             ) : (
-              <div className="catalogue-grid grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-6">
+              <div className="catalogue-grid">
                 {(products.data ?? []).map((p) => <ProductCard key={p.id} p={p} />)}
               </div>
             )}

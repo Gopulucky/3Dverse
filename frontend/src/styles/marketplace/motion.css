@@ -2,7 +2,7 @@
 
 /* ---- Home hero: type first, product cards on the first screen -------------
    The right side is left blank on purpose, for the owner's own 3D design. */
-.home-hero { padding-block: clamp(var(--space-xl), 5vw, var(--space-3xl)) var(--space-xl); }
+.home-hero { padding-block: clamp(var(--space-lg), 4vw, var(--space-2xl)) var(--space-xl); }
 .home-hero-copy { max-width: 40rem; }
 .home-hero h1 { font-size: clamp(2.25rem, 1.1rem + 4.4vw, 4.75rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1; }
 .home-hero-lead { margin-top: var(--space-md); max-width: 32rem; font-size: 1.125rem; color: var(--color-muted-foreground); text-wrap: pretty; }
@@ -22,17 +22,20 @@
    Alternating hard lines under a face read as stacked print layers, so a card
    or button looks like a solid object. Pointing at it lifts it by one layer
    pair; pressing sets it down. */
-.market-product-image,
+.market-product--compact .market-product-image,
+.market-product--card,
 .home-hero .home-tile {
   --layers: 0 2px 0 var(--layer-gap), 0 3px 0 var(--layer-line), 0 5px 0 var(--layer-gap), 0 6px 0 var(--layer-line), 0 8px 0 var(--layer-gap), 0 9px 0 var(--layer-line);
   box-shadow: var(--layers);
   transition: transform var(--motion-hover) var(--store-ease), box-shadow var(--motion-hover) var(--store-ease);
 }
-.market-product-image { border: 1px solid var(--layer-line); margin-bottom: 12px; }
+.market-product--compact .market-product-image { border: 1px solid var(--layer-line); margin-bottom: 12px; }
 .home-hero .home-tile--printed { --layer-line: var(--color-violet-12); border: 0; }
 .dark .home-hero .home-tile--printed { --layer-line: var(--color-violet-6); }
-.market-product:hover .market-product-image,
-.market-product:focus-within .market-product-image,
+.market-product--compact:hover .market-product-image,
+.market-product--compact:focus-within .market-product-image,
+.market-product--card:hover,
+.market-product--card:focus-within,
 .home-hero .home-tile:hover,
 .home-hero .home-tile:focus-visible {
   --layer-line: var(--color-primary);
@@ -49,5 +52,5 @@
 .site-header[data-scrolled="true"]::before { content: ""; position: absolute; inset: 0; z-index: -1; background: color-mix(in srgb, var(--color-background) 84%, transparent); backdrop-filter: blur(14px) saturate(1.4); }
 
 @media (prefers-reduced-motion: reduce) {
-  .market-product-image, .home-hero .home-tile { transition: none !important; }
+  .market-product-image, .market-product--card, .home-hero .home-tile { transition: none !important; }
 }

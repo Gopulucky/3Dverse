@@ -57,15 +57,16 @@ pins the anchors and WCAG AA pairs.
   tangerine; layered `&` only at large size (the footer). Never smaller than 20px type.
 - Space Grotesk: logo, headings, product names (class `.display` for titles, sentence
   case). Inter: navigation, descriptions, prices, buttons. Weights 400, 500, 600, 700.
-  Buttons and text fields are pill shaped; pictures have crisp 4px corners.
+  Buttons and chips are pill shaped; text fields and pickers have 12px corners (`rounded-lg`).
 - Currency and measurements: Inter with tabular numerals.
 - Font variables belong on `html` so root theme aliases resolve correctly.
 - Fonts are self-hosted in `src/app/fonts` via `next/font/local` (latin + latin-ext, OFL
   licences alongside); never `next/font/google`, so builds need no network.
   Regenerate with `scripts/fonts/build_fonts.py`.
-- Container: `--store-container` (90rem), centred, with `--store-gutter`.
-- Column gap below the hero: `--store-gap` (1.5rem).
-- Image radius: `--store-radius` (0.75rem).
+- One container for header, pages and footer (`.store-container`): at most 1600px of
+  content, 32-48px outer margins on desktop, 16px on phones.
+- Grid gap: `--store-gap` (1.5rem). Space between page sections: `--store-stack` (2.5rem).
+- Card and picture radius: `--store-radius` (0.75rem). Buttons are 44-48px high.
 - Surface/text pairs use semantic tokens and switch together in dark mode.
 
 ## Header, search and preferences
@@ -81,23 +82,38 @@ pins the anchors and WCAG AA pairs.
 
 ## Product cards and catalogue
 
-- Picture (wishlist heart on it), name, creator (links to their page), rating only
-  when reviews exist, price rows, then exactly one button: "Add to cart" when the
-  chosen format allows it, otherwise "View product".
-- No badge that every listing carries. "Digital model" is the name of the file format.
+- Catalogue order: title and one line, category chips, product type tabs (All, Digital
+  models, Printed products), count left and one Sort picker right, grid, pager. No side
+  panel and no price or currency boxes; `min_price`, `max_price` and `currency` in a
+  saved link still apply and show as removable chips.
+- The lead line promises prints only when they can be ordered.
+- Category chips (`components/marketplace/chip-row.tsx`) are the same on the home page
+  and the catalogue; the chosen one is solid teal. The row scrolls sideways.
+- Grid: 4 columns from 64rem, 3 from 40rem, 2 below (`.catalogue-grid`), also used for
+  creator pages and Similar designs.
+- Card: 4:3 picture shown whole (`object-fit: contain`), format badge, wishlist heart,
+  uppercase category, name, creator, one price ("From" when two formats), one "View
+  product" button. No rating, Featured label or Add to cart on the card.
+- The printed-layer edge sits under the whole card.
 - Prices drop empty paise (`₹249`, `₹249.50`).
 - The pager shows only when there is more than one page.
 
 ## Product page
 
-- Two columns: pictures (3D model first) beside the buy column; one column on phones.
-- Viewer toolbar: zoom, fullscreen, settings. Wireframe, grid, lighting, auto-spin,
-  reset and mesh counts live in the settings panel. Grid starts off.
-- Buy column order: creator, price and licence, format, "Buy now" (tangerine), "Add to
-  cart" (outline), delivery note, quiet links. Shipping links only for printed items.
-- Below, once each: What's included, Printing it, About this design, Creator, Reviews,
-  Similar designs. Rows come from `src/lib/product-details.ts`; a fact the listing
-  does not have gets no row. Never show a default print setting as the creator's advice.
+- Same container as the catalogue. Two columns, about 60/40: viewer (3D model first)
+  and thumbnails; beside it the name, creator, price and buttons. On phones: name,
+  viewer, then the rest.
+- Viewer toolbar: zoom, fullscreen, settings, each 44px. Wireframe, grid, lighting,
+  auto-spin, reset and mesh counts live in the settings panel. Grid starts off. The view
+  pulls back in narrow frames so wide models are not cut off.
+- Buy column order: name, creator, price and licence, format, "Buy now" (tangerine),
+  "Add to cart" (outline), delivery note, quiet links. Shipping links only for printed
+  items.
+- Below, full width, once each: About this design, What’s included, Printing
+  specifications, Creator, Reviews, Similar designs. Section name at the side, content
+  beside it, separated by thin rules (no boxes). Rows come from
+  `src/lib/product-details.ts`; a fact the listing does not have gets no row. Never show
+  a default print setting as the creator’s advice.
 - Reviews name the buyer by first name or "Verified buyer", never an email.
 
 ## Home layout
@@ -111,8 +127,8 @@ and the Printed products and Digital models buttons. Targets, checked by
 320-1920 px, fewer than 80 words come before it, and no product appears twice. Row
 and fallback rules live in `src/lib/home-sections.ts`.
 
-- Home cards use `ProductCard compact` (image, title, price caption). Catalogue
-  pages keep the full card.
+- Home cards use `ProductCard compact` (image, title, price caption) with the printed
+  layers under the picture. Catalogue pages use the full card.
 - Product grid: 6 columns, then 5, 4, 3 and 2 on narrow screens.
 - No creator or print-partner promotion on the home page (see
   `docs/superpowers/specs/2026-11-11-customer-clarity-design.md`).
@@ -158,10 +174,10 @@ Styles are in `src/styles/marketplace/motion.css` (cards, hero, header) and `pag
   hero button lifts on hover and focus, buttons press, menus open.
 - All pages: the header turns frosted once scrolled.
 - Animate `transform` and `box-shadow` only here; rail scrolling respects reduced motion.
-- Category links are plain words with a tangerine underline, not pills.
+- Category links are chips; hovering one outlines it in tangerine.
 - A card names each format once, in its price rows.
 - Uploaded product media is the source for hero and card images.
-- Failed images show a labelled fallback. Category links are typographic.
+- Failed images show a labelled fallback.
 - The existing gradient wordmark remains a brand asset, not heading decoration.
 
 ## Exports

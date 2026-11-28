@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useReducer, type Dispatch, type ElementRef } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stage, Grid } from "@react-three/drei";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
@@ -18,6 +18,22 @@ import {
 /** How close and how far the camera may go from the model, so a shopper cannot zoom inside it or lose it. */
 const MIN_DISTANCE = 30;
 const MAX_DISTANCE = 320;
+
+/**
+ * Models are framed for a roughly square picture. In a narrower one (a phone) the
+ * view pulls back so a wide object is not cut off at the sides. Applied every frame
+ * because refitting and "Reset view" both put the lens zoom back to 1.
+ */
+function FitToFrame() {
+  useFrame(({ camera, size }) => {
+    const zoom = Math.min(1, size.width / size.height / 1.15);
+    if (camera.zoom !== zoom) {
+      camera.zoom = zoom;
+      camera.updateProjectionMatrix();
+    }
+  });
+  return null;
+}
 
 function Model({
   url,
@@ -238,7 +254,8 @@ export function Advanced3DViewer({ url }: { url: string }) {
       {/* Tells a first-time visitor what their hands can do, then gets out of the way. */}
       {viewer.status === "ready" && !hintSeen && (
         <p className="absolute top-4 right-4 z-10 max-w-[60%] text-right text-xs px-2 py-1 rounded-md bg-background/80 backdrop-blur border border-border/50 text-muted-foreground pointer-events-none">
-          Drag to rotate · click, then scroll to zoom
+          <span className="pointer-coarse:hidden">Drag to rotate · click, then scroll to zoom</span>
+          <span className="hidden pointer-coarse:inline">Drag to rotate · pinch to zoom</span>
         </p>
       )}
 
@@ -273,17 +290,17 @@ export function Advanced3DViewer({ url }: { url: string }) {
           </div>
         )}
         <div className="flex items-center gap-0.5 rounded-full border border-border bg-background p-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => zoomBy(0.8)} aria-label="Zoom in" title="Zoom in">
+          <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => zoomBy(0.8)} aria-label="Zoom in" title="Zoom in">
             <ZoomIn size={16} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => zoomBy(1.25)} aria-label="Zoom out" title="Zoom out">
+          <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => zoomBy(1.25)} aria-label="Zoom out" title="Zoom out">
             <ZoomOut size={16} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleFullscreen}
+          <Button variant="ghost" size="icon" className="h-11 w-11" onClick={toggleFullscreen}
             aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"} title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>
             {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSettingsOpen(open => !open)}
+          <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => setSettingsOpen(open => !open)}
             aria-label="Viewer settings" title="Viewer settings" aria-expanded={settingsOpen} aria-controls="viewer-settings">
             <Settings2 size={16} />
           </Button>
@@ -294,6 +311,7 @@ export function Advanced3DViewer({ url }: { url: string }) {
         <Stage environment={lighting} intensity={0.5}>
           <Model url={url} wireframe={wireframe} dispatch={dispatch} />
         </Stage>
+        <FitToFrame />
         {showGrid && <Grid infiniteGrid fadeDistance={200} cellColor="#64748b" sectionColor="#94a3b8" position={[0, -0.01, 0]} />}
         <OrbitControls
           ref={controlsRef}

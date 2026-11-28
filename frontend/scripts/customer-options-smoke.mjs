@@ -80,16 +80,20 @@ try {
   assert.equal(await page.locator('.market-product').count(), 5);
   assert.equal(catalogueRequests.at(-1).skip, '20');
   assert.equal(await page.getByRole('button', { name: 'Next page', exact: true }).isDisabled(), true);
-  // Desktop: a "Sort by" tab row above the results, like most shops.
-  const tabs = page.getByRole('group', { name: 'Sort by' });
-  assert.deepEqual(await tabs.getByRole('button').allInnerTexts(), ['Featured', 'Newest arrivals', 'Price: low to high', 'Price: high to low']);
-  assert.equal(await tabs.getByRole('button', { name: 'Featured', exact: true }).getAttribute('aria-pressed'), 'true');
-  await tabs.getByRole('button', { name: 'Price: low to high', exact: true }).click();
+  // Desktop: the count sits left and one sort picker sits right.
+  const sort = page.getByRole('combobox', { name: 'Sort products', exact: true });
+  assert.deepEqual(await sort.locator('option').allInnerTexts(), ['Featured', 'Newest arrivals', 'Price: low to high', 'Price: high to low']);
+  assert.equal(await sort.inputValue(), 'featured');
+  await sort.selectOption('price_asc');
   await page.waitForURL('**sort=price_asc**');
-  assert.equal(await tabs.getByRole('button', { name: 'Price: low to high', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(await sort.inputValue(), 'price_asc');
   await page.getByRole('link', { name: 'QA model 1', exact: true }).waitFor();
   assert.equal(catalogueRequests.at(-1).currency, 'INR');
   assert.equal(catalogueRequests.at(-1).skip, '0');
+  // Leaving price order also drops the currency it added, so nothing stays filtered out of sight.
+  await sort.selectOption('newest');
+  await page.waitForURL('**sort=newest**');
+  assert.ok(!page.url().includes('currency='), `currency left behind: ${page.url()}`);
   await page.getByRole('searchbox', { name: 'Search buy&sell3d', exact: true }).fill('outage');
   await page.getByRole('searchbox', { name: 'Search buy&sell3d', exact: true }).press('Enter');
   await page.getByRole('heading', { name: 'The catalogue couldn’t load.' }).waitFor();
@@ -97,82 +101,60 @@ try {
   await page.getByRole('searchbox', { name: 'Search buy&sell3d', exact: true }).fill('empty');
   await page.getByRole('searchbox', { name: 'Search buy&sell3d', exact: true }).press('Enter');
   await page.getByRole('heading', { name: 'No products match these filters.' }).waitFor();
-  // Left filter panel: collapsible sections, choices apply at once, Clear all resets.
+  // Categories and product type are rows at the top; there is no side panel.
   await page.goto(`${base}/marketplace`);
   await page.locator('.market-product').first().waitFor();
-  const panel = page.getByRole('form', { name: 'Catalogue filters' });
-  for (const name of ['Category', 'Format', 'Price', 'Listing currency']) await panel.getByRole('button', { name, exact: true }).waitFor();
-  assert.equal(await panel.getByRole('button', { name: 'Category', exact: true }).getAttribute('aria-expanded'), 'true');
-  assert.equal(await panel.getByRole('button', { name: 'Listing currency', exact: true }).getAttribute('aria-expanded'), 'false');
-  assert.equal(await page.getByRole('button', { name: 'Clear all', exact: true }).count(), 0, 'Clear all appears only when a filter is applied');
-  await panel.getByRole('checkbox', { name: 'Gadgets', exact: true }).click();
+  assert.equal(await page.getByRole('form', { name: 'Catalogue filters' }).count(), 0);
+  assert.equal(await page.locator('main aside').count(), 0);
+  const categories = page.getByRole('navigation', { name: 'Shop by category' });
+  const types = page.getByRole('navigation', { name: 'Product type' });
+  assert.deepEqual(await types.getByRole('link').allInnerTexts(), ['All', 'Digital models', 'Printed products']);
+  assert.equal(await categories.getByRole('link', { name: 'All', exact: true }).getAttribute('aria-current'), 'page');
+  await categories.getByRole('link', { name: 'Gadgets', exact: true }).click();
   await page.waitForURL('**category=Gadgets**');
-  assert.equal(await panel.getByRole('checkbox', { name: 'Gadgets', exact: true }).isChecked(), true);
-  await panel.getByRole('checkbox', { name: 'Digital models', exact: true }).click();
+  assert.equal(await categories.getByRole('link', { name: 'Gadgets', exact: true }).getAttribute('aria-current'), 'page');
+  await types.getByRole('link', { name: 'Digital models', exact: true }).click();
   await page.waitForURL('**format=digital**');
-  await panel.getByRole('spinbutton', { name: 'Minimum price', exact: true }).fill('100');
-  await panel.getByRole('spinbutton', { name: 'Maximum price', exact: true }).fill('300');
-  await panel.getByRole('button', { name: 'Apply price', exact: true }).click();
-  await page.waitForURL('**max_price=300**');
-  await settled(() => catalogueRequests.at(-1)?.max_price === '300');
+  assert.ok(page.url().includes('category=Gadgets'), 'choosing a type keeps the category');
+  await settled(() => catalogueRequests.at(-1)?.format === 'digital');
+  assert.equal(catalogueRequests.at(-1).category, 'Gadgets');
+  await categories.getByRole('link', { name: 'All', exact: true }).click();
+  await page.waitForFunction(() => !location.search.includes('category='));
+  assert.ok(page.url().includes('format=digital'), 'clearing the category keeps the type');
+  // A saved link with a price range still works and can be cleared, though the price boxes are gone.
+  await page.goto(`${base}/marketplace?min_price=100&max_price=300&currency=INR`);
+  await page.locator('.market-product').first().waitFor();
   assert.equal(catalogueRequests.at(-1).min_price, '100');
-  assert.equal(catalogueRequests.at(-1).currency, 'INR', 'a price range needs an explicit currency');
-  await page.getByRole('button', { name: 'Remove filter: Price 100 to 300' }).waitFor();
-  await page.getByRole('button', { name: 'Clear all', exact: true }).click();
-  await page.waitForFunction(() => !/category=|format=|min_price=|max_price=/.test(location.search));
-  assert.equal(await panel.getByRole('checkbox', { name: 'Gadgets', exact: true }).isChecked(), false);
-  // Phone layout: products first; search, filters and sort become a compact toolbar.
+  assert.equal(catalogueRequests.at(-1).max_price, '300');
+  await page.getByRole('button', { name: 'Remove filter: Price 100 to 300' }).click();
+  await page.waitForFunction(() => !/min_price=|max_price=|currency=/.test(location.search));
+  // Phone layout: products first, two across; the category row scrolls sideways.
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto(`${base}/marketplace`);
   await page.locator('.market-product').first().waitFor();
-  const filtersButton = page.getByRole('button', { name: /^Filters/ });
-  await filtersButton.waitFor();
-  assert.equal(await page.getByRole('form', { name: 'Catalogue filters' }).isVisible(), false, 'filter form must start closed on a phone');
   const phone = await page.evaluate(() => {
     const cards = [...document.querySelectorAll('.market-product')];
+    const list = document.querySelector('[aria-label="Shop by category"] .category-list');
     return { firstTop: Math.round(cards[0].getBoundingClientRect().top), sameRow: Math.round(cards[0].getBoundingClientRect().top) === Math.round(cards[1].getBoundingClientRect().top),
-      h1: parseFloat(getComputedStyle(document.querySelector('h1')).fontSize), overflow: document.documentElement.scrollWidth > innerWidth };
+      h1: parseFloat(getComputedStyle(document.querySelector('h1')).fontSize), overflow: document.documentElement.scrollWidth > innerWidth,
+      rowScrolls: list.scrollWidth > list.clientWidth, rowLines: new Set([...list.children].map(chip => chip.offsetTop)).size };
   });
   assert.ok(phone.firstTop < 480, `first product starts too low on a phone (${phone.firstTop}px)`);
   assert.ok(phone.sameRow, 'products must sit two across on a phone');
   assert.ok(phone.h1 <= 24, `page title too large on a phone (${phone.h1}px)`);
   assert.equal(phone.overflow, false);
-  // Sort is a button that opens a bottom sheet of choices, as on most shops, and closes on pick.
-  await page.getByRole('button', { name: /^Sort/ }).click();
-  await page.getByRole('radiogroup', { name: 'Sort products' }).waitFor();
-  await page.keyboard.press('Escape');
-  assert.equal(await page.getByRole('radiogroup', { name: 'Sort products' }).isVisible(), false, 'Escape closes the sort sheet');
-  await page.getByRole('button', { name: /^Sort/ }).click();
-  const sortSheet = page.getByRole('radiogroup', { name: 'Sort products' });
-  await sortSheet.waitFor();
-  assert.deepEqual(await sortSheet.getByRole('radio').evaluateAll(r => r.map(x => x.getAttribute('aria-label') || x.labels?.[0]?.innerText)), ['Featured', 'Newest arrivals', 'Price: low to high', 'Price: high to low']);
-  await sortSheet.getByRole('radio', { name: 'Price: low to high' }).click();
+  assert.deepEqual([phone.rowScrolls, phone.rowLines], [true, 1], 'categories stay on one scrolling line');
+  await page.getByRole('combobox', { name: 'Sort products', exact: true }).selectOption('price_asc');
   await page.waitForURL('**sort=price_asc**');
   await settled(() => catalogueRequests.at(-1)?.sort === 'price_asc');
   assert.equal(catalogueRequests.at(-1).currency, 'INR');
-  assert.equal(await sortSheet.isVisible(), false, 'the sort sheet closes once a choice is made');
   await page.getByRole('searchbox', { name: 'Search catalogue', exact: true }).fill('lamp');
   await page.getByRole('searchbox', { name: 'Search catalogue', exact: true }).press('Enter');
   await page.waitForURL('**q=lamp**');
   await settled(() => catalogueRequests.at(-1)?.q === 'lamp');
   assert.equal(catalogueRequests.at(-1).q, 'lamp');
-  await page.getByRole('button', { name: /^Filters/ }).click();
-  await page.getByRole('form', { name: 'Catalogue filters' }).waitFor();
-  await page.keyboard.press('Escape');
-  assert.equal(await page.getByRole('form', { name: 'Catalogue filters' }).isVisible(), false, 'Escape closes the filter sheet');
-  await page.getByRole('button', { name: /^Filters/ }).click();
-  await page.getByRole('form', { name: 'Catalogue filters' }).waitFor();
-  await page.getByRole('checkbox', { name: 'Gadgets', exact: true }).click();
-  await page.waitForURL('**category=Gadgets**');
-  await page.getByRole('button', { name: /^Show results/ }).click();
-  assert.equal(await page.getByRole('form', { name: 'Catalogue filters' }).isVisible(), false, 'the sheet closes on Show results');
-  assert.match(await page.getByRole('button', { name: /^Filters/ }).innerText(), /\(?\d\)?|[1-9]/, 'the Filters button shows how many are active');
-  // Applied filters appear as removable chips under the toolbar.
-  const chip = page.getByRole('button', { name: 'Remove filter: Gadgets' });
-  await chip.waitFor();
-  await chip.click();
-  await page.waitForFunction(() => !location.search.includes('category='));
-  assert.equal(await page.getByRole('button', { name: 'Remove filter: Gadgets' }).count(), 0);
+  await page.getByRole('button', { name: 'Remove filter: Search: “lamp”' }).click();
+  await page.waitForFunction(() => !location.search.includes('q='));
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto(`${base}/marketplace/9001`);
   await page.getByRole('group', { name: 'What are you buying?' }).waitFor();

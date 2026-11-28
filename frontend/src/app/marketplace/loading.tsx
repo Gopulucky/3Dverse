@@ -4,8 +4,8 @@ import { ProductGridSkeleton } from "@/components/ui/skeleton";
 export default function MarketplaceLoading() {
   return (
     <MarketplaceShell>
-      <div className="max-w-7xl mx-auto px-6 pt-24 pb-20">
-        <div className="flex flex-col gap-12">
+      <div className="store-container catalogue">
+        <div className="flex flex-col gap-8">
           {/* Header Skeleton */}
           <div className="flex items-center justify-between">
             <div className="h-10 w-48 skeleton rounded-lg" />
