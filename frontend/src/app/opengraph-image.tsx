@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { BRAND } from "@/lib/brand";
+import { LOGO } from "@/lib/logo-paths";
 
 export const alt = `${BRAND.name} — ${BRAND.positioning}`;
 export const size = { width: 1200, height: 630 };
@@ -19,10 +20,11 @@ export default function Image() {
           background: "#0E1214",
         }}
       >
-        <div style={{ display: "flex", fontSize: 76, fontWeight: 700, color: "white", letterSpacing: -2, marginBottom: 40 }}>
-          <span>{BRAND.wordmark.before}</span>
-          <span style={{ color: "#FB923C" }}>{BRAND.wordmark.accent}</span>
-          <span>{BRAND.wordmark.after}</span>
+        <div style={{ display: "flex", marginBottom: 48 }}>
+          <svg width={640} height={(640 * LOGO.name.height) / LOGO.name.width} viewBox={`0 0 ${LOGO.name.width} ${LOGO.name.height}`}>
+            <path d={LOGO.name.ink} fill="#E6EAEC" fillRule="evenodd" />
+            <path d={LOGO.name.accent} fill="#FB923C" fillRule="evenodd" />
+          </svg>
         </div>
         <div style={{ display: "flex", fontSize: 54, fontWeight: 700, color: "white", maxWidth: 900, lineHeight: 1.1 }}>
           {BRAND.tagline}

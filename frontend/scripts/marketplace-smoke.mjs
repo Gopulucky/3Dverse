@@ -109,11 +109,19 @@ try {
   assert.equal(await page.getByRole('heading', { name: 'How shopping works' }).count(), 0);
   assert.equal(await page.getByRole('heading', { name: 'Popular creators' }).count(), 0);
   assert.equal(await page.getByRole('navigation', { name: 'Shop by category' }).getByRole('link', { name: 'Home Decor' }).count(), 1);
-  // The name: a clear ampersand (Inter) everywhere; built in print layers only where it is large.
-  const marks = await page.evaluate(() => [...document.querySelectorAll('nav .wordmark-amp, footer .wordmark-amp')].map(amp => [
-    amp.closest('footer') ? 'footer' : 'header', amp.parentElement.textContent,
-    /inter/i.test(getComputedStyle(amp).fontFamily), getComputedStyle(amp).backgroundImage.startsWith('repeating-linear-gradient')]));
-  assert.deepEqual(marks, [['header', 'buy&sell3d', true, false], ['footer', 'buy&sell3d', true, true]]);
+  // The drawn wordmark in header and footer: ink letters, amber "&" and "3d", read as the name.
+  const marks = await page.evaluate(() => [...document.querySelectorAll('nav.site-header .wordmark, footer .wordmark')].map(mark => {
+    const art = mark.querySelector('svg');
+    return [mark.closest('footer') ? 'footer' : 'header', mark.textContent, ...[...art.querySelectorAll('path')].map(path => getComputedStyle(path).fill), art.getBoundingClientRect().height >= 20];
+  }));
+  assert.deepEqual(marks, ['header', 'footer'].map(place => [place, 'buy&sell3d', 'rgb(18, 22, 25)', 'rgb(232, 106, 23)', true]));
+  assert.equal(await page.locator('nav.site-header').getByRole('link', { name: 'buy&sell3d', exact: true }).count(), 1);
+  // The short mark is the browser-tab and home-screen icon.
+  for (const rel of ['icon', 'apple-touch-icon']) {
+    const href = await page.locator(`head link[rel="${rel}"][href*="icon"]`).last().getAttribute('href');
+    const icon = await page.request.get(new URL(href, base).href);
+    assert.equal(icon.headers()['content-type'], 'image/png', `${rel} is served`);
+  }
   // Vercel Web Analytics and Speed Insights: same-origin scripts, loaded once and deferred (they 404 off Vercel, harmlessly).
   const insightScripts = await page.locator('script[src^="/_vercel/"]').evaluateAll(els => els.map(e => e.getAttribute('src')).sort());
   assert.deepEqual(insightScripts, ['/_vercel/insights/script.js', '/_vercel/speed-insights/script.js'], `analytics scripts present: ${insightScripts}`);
