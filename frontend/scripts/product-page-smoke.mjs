@@ -50,9 +50,10 @@ endfacet
 endsolid cube`;
 const description = 'A square dice tower with three internal baffles, an open top and a front exit window onto a tray with a rim. Size 80 x 120 x 160 mm. Suggested material PLA or PETG at 0.2 mm layer height. Prints with no supports. Lay the baffles flat for the cleanest finish and sand the tray rim lightly.';
 const product = {
-  id: 9100, title: 'QA dice tower', description, category: 'Tabletop', creator_name: 'gopuhardik',
+  id: 9100, title: 'QA dice tower', description, category: 'Tabletop', creator_id: 7, creator_name: 'gopuhardik',
+  print_settings: { recommended_materials: ['PLA', 'PETG'], layer_height: '0.2mm', supports: 'none' },
   price: 199, currency: 'INR', is_mode_2_active: true, digital_download_enabled: true, license_type: 'Personal Use',
-  versions: [{ preview_url: 'http://fixture.test/m.stl', file_name: 'tower.stl', file_size: 2048,
+  versions: [{ preview_url: 'http://fixture.test/m.stl', is_latest: true, file_format: 'STL', file_size: 2048,
     printability_report: { status: 'pass', volume_mm3: 357300, dimensions: { x: 80, y: 120, z: 160 } } }],
   media,
 };
@@ -70,6 +71,7 @@ async function open(reducedMotion) {
     const send = (json) => route.fulfill({ json, headers: { 'access-control-allow-origin': '*' } });
     if (request.method() === 'OPTIONS') return route.fulfill({ status: 204 });
     if (url.pathname.endsWith('/marketplace/products/9100')) return send(product);
+    if (url.pathname.endsWith('/api/creators/7')) return send({ id: 7, name: 'gopuhardik', product_count: 13, follower_count: 0 });
     return send([]);
   });
   const page = await context.newPage();
@@ -106,8 +108,31 @@ try {
 
   const price = page.locator('[data-flow="product-price"]');
   assert.equal(await price.getAttribute('data-state'), 'chosen', 'a single-format listing has its format chosen already');
-  assert.match(await price.innerText(), /₹199\.00/);
-  assert.match(await price.innerText(), /80 × 120 × 160 mm/, 'dimensions are shown beside the price');
+  assert.match(await price.innerText(), /₹199(?![d.])/);
+  assert.match(await price.innerText(), /Licence: Personal Use/);
+  // What the buyer gets, once each, before paying.
+  const included = await page.getByRole('region', { name: "What's included" }).innerText();
+  for (const fact of ['STL, 2 KB', '80 × 120 × 160 mm', '357.3 cm³', 'Passed', 'Personal Use', 'Download after payment']) assert.ok(included.includes(fact), fact);
+  const printing = await page.getByRole('region', { name: 'Printing it' }).innerText();
+  for (const fact of ['PLA, PETG', '0.2 mm', 'Not required']) assert.ok(printing.includes(fact), fact);
+  assert.equal((await page.locator('main').innerText()).split('80 × 120 × 160 mm').length - 1, 1, 'the size is stated once');
+  // One clear purchase order, no repeated seller line, nothing about shipping a file.
+  const buttons = await page.locator('[data-flow="buy-box"] button').allInnerTexts();
+  assert.deepEqual(buttons.map((t) => t.trim()).filter((t) => /^(Buy now|Add to cart)$/.test(t)), ['Buy now', 'Add to cart']);
+  assert.equal(await page.getByText('Sold by', { exact: false }).count(), 0);
+  assert.equal(await page.getByRole('link', { name: 'Shipping', exact: true }).locator('visible=true').count(), 1, 'only the footer links shipping');
+  await page.getByRole('button', { name: 'Save to wishlist', exact: true }).waitFor();
+  assert.equal(await page.getByText('0 ratings').count(), 0);
+  const maker = page.getByRole('region', { name: 'Creator' });
+  await maker.getByText('13 designs').waitFor();
+  assert.equal(await maker.getByRole('link', { name: 'View profile' }).getAttribute('href'), '/creators/7');
+  assert.equal(await page.getByRole('button', { name: /^Follow/ }).count(), 1);
+  // No reviews yet: say so, and keep the form out of the way.
+  const reviews = page.getByRole('region', { name: 'Reviews' });
+  await reviews.getByText('No reviews yet.').waitFor();
+  assert.equal(await reviews.getByRole('textbox').count(), 0);
+  assert.equal(await reviews.getByRole('link', { name: 'Sign in to write a review' }).count(), 1);
+  assert.equal(await page.getByRole('region', { name: 'Similar designs' }).count(), 0, 'no filler recommendations');
   assert.equal(await page.getByRole('radio', { name: /Digital model file/ }).isChecked(), true);
   assert.equal(await page.getByRole('button', { name: 'Add to cart', exact: true }).isEnabled(), true);
 
@@ -158,7 +183,19 @@ try {
   assert.equal(await viewer.getAttribute('data-spin'), 'off', 'and it does not start spinning again');
 
   await page.mouse.move(centre.x, centre.y);
+  // Only zoom, fullscreen and settings are always on show.
+  assert.equal(await viewer.getByRole('button', { name: 'Wireframe' }).count(), 0);
+  assert.equal(await viewer.getByText('Polys', { exact: false }).count(), 0);
+  await viewer.getByRole('button', { name: 'Fullscreen' }).waitFor();
+  // The toolbar is inside the picture frame, not cut off below it.
+  const clipped = await viewer.getByRole('button', { name: 'Viewer settings' }).evaluate(button => {
+    const frame = button.closest('[data-flow="model-viewer"]').parentElement.closest('.overflow-hidden').getBoundingClientRect();
+    return button.getBoundingClientRect().bottom - frame.bottom;
+  });
+  assert.ok(clipped <= 0, `viewer toolbar is cut off by ${clipped}px`);
   await viewer.getByRole('button', { name: 'Zoom in' }).click();
+  await viewer.getByRole('button', { name: 'Viewer settings' }).click();
+  await viewer.getByRole('button', { name: 'Wireframe' }).waitFor();
   await viewer.getByRole('button', { name: 'Reset view' }).click();
   await viewer.getByRole('button', { name: 'Spin automatically' }).click();
   assert.equal(await viewer.getAttribute('data-spin'), 'on', 'the spin toggle brings it back');

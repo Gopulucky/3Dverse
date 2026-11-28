@@ -94,6 +94,13 @@ class Product(Base):
     media = relationship("ProductMedia", back_populates="product", cascade="all, delete-orphan")
 
 class ProductVersion(Base):
+    @property
+    def file_format(self):
+        """The file type, such as STL or OBJ: safe to show buyers, unlike the file name."""
+        name = self.file_name or ""
+        extension = name.rsplit(".", 1)[-1] if "." in name else ""
+        return extension.upper() if extension.isalnum() and len(extension) <= 5 else None
+
     __tablename__ = "product_versions"
 
     id = Column(Integer, primary_key=True, index=True)

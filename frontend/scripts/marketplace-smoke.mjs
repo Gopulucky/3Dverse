@@ -14,7 +14,7 @@ const image = existsSync(imagePath) ? readFileSync(imagePath) : Buffer.from('iVB
 const contentType = existsSync(imagePath) ? 'image/jpeg' : 'image/png';
 const product = {
   id: 9001, title: 'Sample bench', category: 'Home Decor', price: 120, base_print_price: 450, currency: 'INR', digital_download_enabled: true, is_mode_3_active: true,
-  creator_name: 'QA catalogue', avg_rating: 4.5, review_count: 2,
+  creator_id: 7, creator_name: 'QA catalogue', avg_rating: 4.5, review_count: 2,
   is_mode_2_active: true, is_featured: true,
   media: [{ media_url: '/qa-bench.jpg', thumb_url: '/qa-bench-small.webp', is_primary: true }],
   versions: [{ is_latest: true, printability_report: { status: 'pass' } }],
@@ -60,7 +60,7 @@ async function visit({ state = 'full', authenticated = false, colorScheme = 'lig
     if (path.endsWith('/suggestions')) return send({ products: [product], categories: ['Home Decor'] });
     if (path.endsWith('/products')) {
       current.catalogueRequests.push(Object.fromEntries(new URL(request.url()).searchParams));
-      return send(products);
+      return send(current.productCount ? products.slice(0, current.productCount) : products);
     }
     if (/\/products\/\d+$/.test(path)) return send(product);
     if (path.endsWith('/users/me')) return send({ id: 99, email: 'qa@example.test', role: 'customer' });
@@ -134,14 +134,24 @@ try {
   // Home cards are compact: no review line or cart controls (those live on the catalogue page).
   assert.equal(await page.locator('.storefront .market-product .market-product-reviews').count(), 0);
   assert.equal(await page.locator('.storefront .market-product .market-cart-button').count(), 0);
+  // The header carries the logo, search, cart and account only; preferences sit in the footer.
+  const header = page.locator('nav.site-header');
+  assert.equal(await header.getByRole('combobox').count(), 0, 'no category picker in the header');
+  assert.equal(await header.getByRole('link', { name: 'Orders', exact: true }).count(), 0);
+  assert.equal(await header.locator('[data-flow="theme"]').count(), 0);
+  assert.equal(await header.getByRole('button', { name: /Country and currency/ }).count(), 0);
+  assert.equal(await page.locator('footer [data-flow="theme"]').count(), 1);
+  assert.equal(await page.locator('footer').getByRole('button', { name: /Country and currency/ }).count(), 1);
   // Full catalogue cards keep their detail.
   await page.goto(`${base}/marketplace`, { waitUntil: 'domcontentloaded' });
   await visible(page.getByRole('link', { name: 'View Sample bench', exact: true }));
-  assert.equal(await page.locator('.market-product-reviews').first().innerText(), '4.5\n2 reviews\nPrintability passed');
+  assert.equal(await page.locator('.market-product-reviews').first().innerText(), '4.5\n2 reviews');
+  assert.equal(await page.getByText('Printability passed').count(), 0, 'cards carry no repeated badge');
+  assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'QA catalogue', exact: true }).getAttribute('href'), '/creators/7');
   assert.equal(await page.getByRole('button', { name: 'Follow', exact: true }).count(), 0);
   assert.equal(await page.locator('.market-product a button').count(), 0);
   assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'View product', exact: true }).getAttribute('href'), '/marketplace/9001');
-  assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'Choose options', exact: true }).getAttribute('href'), '/marketplace/9001');
+  assert.equal(await page.getByRole('link', { name: 'Choose options' }).count(), 0, 'one action per card');
   assert.equal(await page.locator('.market-product').first().getByRole('button', { name: 'Add Sample bench to cart', exact: true }).count(), 0);
   await page.goto(base, { waitUntil: 'domcontentloaded' });
   await visible(page.getByRole('link', { name: 'View Sample bench', exact: true }));
@@ -161,6 +171,8 @@ try {
   await page.waitForURL('**/marketplace?format=digital');
   await visible(page.getByRole('heading', { name: 'Digital models', exact: true }));
   const add = page.getByRole('button', { name: 'Add Sample bench to cart', exact: true });
+  // With a format chosen the card's one action adds to the cart.
+  assert.equal(await page.locator('.market-product').first().getByRole('link', { name: 'View product' }).count(), 0);
   await add.click();
   await visible(page.locator('.market-cart-message').filter({ hasText: 'Added to cart.' }).first());
   assert.deepEqual(current.posts, [{ product_id: 9001, quantity: 1, selected_config: { purchase_type: 'digital' } }]);
@@ -267,7 +279,7 @@ try {
     await visible(f.page.getByRole('link', { name: 'View Sample bench', exact: true }));
     const pill = f.page.locator('.search-pill');
     const resting = await pill.evaluate(el => getComputedStyle(el).borderTopColor);
-    for (const field of [f.page.getByRole('searchbox', { name: 'Search buy&sell3d' }), f.page.getByRole('combobox', { name: 'Search category' })]) {
+    for (const field of [f.page.getByRole('searchbox', { name: 'Search buy&sell3d' })]) {
       await field.click();
       const style = await field.evaluate(el => ({ outline: getComputedStyle(el).outlineStyle, shadow: getComputedStyle(el).boxShadow }));
       assert.deepEqual(style, { outline: 'none', shadow: 'none' }, 'no inner ring on a field inside the search pill');
@@ -276,7 +288,7 @@ try {
       await f.page.keyboard.press('Escape');
     }
     await f.context.close();
-    checks.push('Search and category fields show focus on the pill edge only, with no second ring.');
+    checks.push('The search field shows focus on the pill edge only, with no second ring.');
   }
 
   // Phones: every header control stays on screen, signed in or out.
@@ -292,6 +304,21 @@ try {
     await h.context.close();
   }
   checks.push('Phone header: name, cart, account and menu stay on screen at 320, 360 and 390px, signed in or out.');
+
+  {
+    // One page of results: a count, no pager. Phones: one search box on the catalogue.
+    const one = await visit({ viewport: { width: 375, height: 812 } });
+    one.current.productCount = 3;
+    await one.page.goto(`${base}/marketplace`, { waitUntil: 'domcontentloaded' });
+    await visible(one.page.getByRole('status').filter({ hasText: '3 products' }));
+    assert.equal(await one.page.getByRole('navigation', { name: 'Catalogue pages' }).count(), 0);
+    await visible(one.page.getByRole('searchbox', { name: 'Search catalogue' }));
+    await one.page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    await visible(one.page.getByRole('navigation', { name: 'Mobile navigation' }));
+    assert.equal(await one.page.getByRole('searchbox', { name: 'Search models' }).count(), 0, 'the menu does not repeat the page search');
+    await one.context.close();
+    checks.push('A single page of results shows a count and no pager; the phone catalogue has one search box.');
+  }
 
   const loading = await visit({ state: 'loading' });
   await visible(loading.page.getByRole('status').filter({ hasText: 'Loading the catalogue' }));

@@ -33,8 +33,6 @@ export function ProductCard({
   const { setItemCount } = useCartStore();
   const [isAdding, setIsAdding] = useState(false);
   const [cartMessage, setCartMessage] = useState("");
-  const latestVersion = p.versions?.find((version) => version.is_latest);
-  const printable = latestVersion?.printability_report?.status.toLowerCase() === "pass";
 
   const handleAddToCart = async () => {
     if (isAdding || purchasePrice(p, format) == null) return;
@@ -79,42 +77,46 @@ export function ProductCard({
     );
   }
 
+  // One action per card: add to cart when the chosen format allows it, otherwise open the product.
+  const canAdd = Boolean(format) && purchasePrice(p, format) != null;
+  const rated = reviews > 0 && p.avg_rating != null && p.avg_rating > 0;
+
   return (
     <article className={cn("market-product", className)}>
-      <Link href={`/marketplace/${p.id}`} className="market-product-image" aria-label={`View ${p.title}`}>
-        <ProductImage src={productThumb(p)} fallbackSrc={productImage(p)} title={p.title} />
-        {p.is_featured && <span className="market-product-featured">Featured</span>}
-      </Link>
+      <div className="market-product-media">
+        <Link href={`/marketplace/${p.id}`} className="market-product-image" aria-label={`View ${p.title}`}>
+          <ProductImage src={productThumb(p)} fallbackSrc={productImage(p)} title={p.title} />
+          {p.is_featured && <span className="market-product-featured">Featured</span>}
+        </Link>
+        {onWishlist && <Button type="button" variant="outline" size="icon" className="market-product-save"
+          aria-label={`Save ${p.title} to wishlist`} onClick={() => onWishlist(p.id)}>
+          <Heart size={18} aria-hidden="true" />
+        </Button>}
+      </div>
       <div className="market-product-info">
-        <div className="market-product-heading">
-          <h3><Link href={`/marketplace/${p.id}`}>{p.title}</Link></h3>
-          {onWishlist && <Button type="button" variant="ghost" size="icon"
-            aria-label={`Save ${p.title} to wishlist`} onClick={() => onWishlist(p.id)}>
-            <Heart size={18} aria-hidden="true" />
-          </Button>}
-        </div>
-        {p.creator_name && <p className="market-product-creator">By {p.creator_name}</p>}
-        <div className="market-product-reviews">
-          {p.avg_rating != null && p.avg_rating > 0 && <span className="market-product-rating">
-            <Star size={14} aria-hidden="true" /> {p.avg_rating.toFixed(1)}
-          </span>}
+        <h3><Link href={`/marketplace/${p.id}`}>{p.title}</Link></h3>
+        {p.creator_name && <p className="market-product-creator">
+          By {p.creator_id ? <Link href={`/creators/${p.creator_id}`}>{p.creator_name}</Link> : p.creator_name}
+        </p>}
+        {reviews > 0 && <p className="market-product-reviews">
+          {rated && <span className="market-product-rating"><Star size={14} aria-hidden="true" /> {p.avg_rating!.toFixed(1)}</span>}
           <span>{reviews} {reviews === 1 ? "review" : "reviews"}</span>
-          {printable && <span className="market-product-verified">Printability passed</span>}
-        </div>
-        <div className="market-product-modes">
-          {p.is_mode_4_active && <span><Wand2 size={14} aria-hidden="true" /> Customizable</span>}
-        </div>
+        </p>}
+        {p.is_mode_4_active && <p className="market-product-modes"><Wand2 size={14} aria-hidden="true" /> Customizable</p>}
         <div className="market-product-footer">
           <ProductPrices product={p} format={format} />
-          <Link className="market-text-link" href={`/marketplace/${p.id}`}>View product</Link>
         </div>
-        {format && purchasePrice(p, format) != null ? <Button type="button" variant="outline" className="market-cart-button"
-          onClick={handleAddToCart} disabled={isAdding} aria-busy={isAdding}
-          aria-label={`Add ${p.title} to cart`}>
-          {isAdding && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
-          {isAdding ? "Adding…" : "Add to cart"}
-        </Button> : <Link href={`/marketplace/${p.id}`} className="market-text-link market-cart-button">Choose options</Link>}
-        <p className="market-cart-message" role="status">{cartMessage}</p>
+        {canAdd ? <>
+          <Button type="button" variant="outline" className="market-cart-button"
+            onClick={handleAddToCart} disabled={isAdding} aria-busy={isAdding}
+            aria-label={`Add ${p.title} to cart`}>
+            {isAdding && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+            {isAdding ? "Adding…" : "Add to cart"}
+          </Button>
+          <p className="market-cart-message" role="status">{cartMessage}</p>
+        </> : <Button asChild variant="outline" className="market-cart-button">
+          <Link href={`/marketplace/${p.id}`}>View product</Link>
+        </Button>}
       </div>
     </article>
   );

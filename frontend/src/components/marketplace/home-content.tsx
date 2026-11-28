@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Download, Loader2, ShieldCheck, Truck } from "lucide-react";
 import { api } from "@/lib/api";
 import { homeSections } from "@/lib/home-sections";
+import { orderCategories } from "@/lib/categories";
 import { storeAvailability, trustItems } from "@/lib/store-availability";
 import type { HomepageData, ProductCardData } from "@/lib/marketplace";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,7 @@ export function MarketplaceHomeContent({ initialData, supportOpen = false }: { i
     <div className="storefront">
       {categories.length > 0 && <nav className="home-chips" aria-label="Shop by category">
         <div className="store-container home-chips-list">
-          {categories.map(category => <Link key={category.name} href={`/marketplace?category=${encodeURIComponent(category.name)}`} className="home-chip">{category.name}</Link>)}
+          {orderCategories(categories.map(category => category.name)).map(name => <Link key={name} href={`/marketplace?category=${encodeURIComponent(name)}`} className="home-chip">{name}</Link>)}
         </div>
       </nav>}
 

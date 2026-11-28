@@ -8,6 +8,9 @@ const source = existsSync(path) ? readFileSync(path, 'utf8') : 'export const for
 const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }).outputText;
 const { formatMoney } = await import(`data:text/javascript;base64,${Buffer.from(output).toString('base64')}`);
 assert.equal(formatMoney(123456.5), '₹1,23,456.50');
-assert.equal(formatMoney(12, 'USD'), 'USD\u00a012.00');
-assert.equal(formatMoney(0, 'INR'), '₹0.00');
-console.log('Currency checks passed: Indian grouping, INR default, explicit USD, zero.');
+// Whole amounts drop the empty paise; any paise are shown in full.
+assert.equal(formatMoney(249), '₹249');
+assert.equal(formatMoney(249.5), '₹249.50');
+assert.equal(formatMoney(12, 'USD'), 'USD\u00a012');
+assert.equal(formatMoney(0, 'INR'), '₹0');
+console.log('Currency checks passed: Indian grouping, INR default, explicit USD, zero, no empty paise.');

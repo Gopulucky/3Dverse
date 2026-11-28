@@ -72,13 +72,13 @@ try {
   assert.ok(!imageRequests.includes('/uploads/media/big-1.png'), 'the full-size original is not downloaded for a cart row');
   assert.ok(imageRequests.includes('/uploads/media/missing-thumb.webp') && imageRequests.includes('/uploads/media/big-2.png'), 'a missing thumbnail falls back to the original');
   const total = page.locator('[data-total]');
-  assert.match(await total.innerText(), /500\.00/, '2 x 100 + 300 = 500');
+  assert.match(await total.innerText(), /500(?![d.])/, '2 x 100 + 300 = 500');
 
   await page.getByRole('button', { name: 'Increase quantity' }).first().click();
-  await page.waitForFunction(() => document.querySelector('[data-total]')?.textContent?.includes('600.00'), null, { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelector('[data-total]')?.textContent?.includes('₹600'), null, { timeout: 5000 });
   assert.deepEqual(calls.find(c => c[0] === 'PUT'), ['PUT', 11, 3]);
   await page.getByRole('button', { name: 'Decrease quantity' }).first().click();
-  await page.waitForFunction(() => document.querySelector('[data-total]')?.textContent?.includes('500.00'), null, { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelector('[data-total]')?.textContent?.includes('₹500'), null, { timeout: 5000 });
 
   await page.getByRole('button', { name: 'Have a coupon?' }).click();
   await page.getByLabel('Coupon code').fill('nope');
@@ -86,13 +86,13 @@ try {
   await page.getByText('Coupon not found').waitFor();
   await page.getByLabel('Coupon code').fill('TEN');
   await page.getByRole('button', { name: 'Apply', exact: true }).click();
-  await page.waitForFunction(() => document.querySelector('[data-total]')?.textContent?.includes('450.00'), null, { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelector('[data-total]')?.textContent?.includes('₹450'), null, { timeout: 5000 });
   assert.ok((await page.locator('aside').innerText()).includes('Coupon TEN'));
 
   await page.getByRole('button', { name: 'Remove Desk stand' }).click();
   await page.waitForFunction(() => !document.querySelector('[data-line="12"]'), null, { timeout: 5000 });
   assert.deepEqual(calls.find(c => c[0] === 'DELETE'), ['DELETE', 12]);
-  assert.match(await total.innerText(), /180\.00/, '2 x 100 less 10%');
+  assert.match(await total.innerText(), /180(?![d.])/, '2 x 100 less 10%');
   await page.getByRole('button', { name: 'Checkout' }).first().click();
   await page.waitForURL('**/checkout');
   assert.equal(await page.evaluate(() => sessionStorage.getItem('coupon')), 'TEN');

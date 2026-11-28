@@ -33,22 +33,22 @@ test('only real two-letter codes from the list are accepted when reading a store
 });
 
 test('an Indian shopper sees the plain rupee price', () => {
-  assert.deepEqual(r.displayPrice(599, 'INR', 'IN'), { main: '₹599.00' });
+  assert.deepEqual(r.displayPrice(599, 'INR', 'IN'), { main: '₹599' });
 });
 
 test('a shopper abroad sees an approximate price in their currency and the rupee amount that is charged', () => {
   const view = r.displayPrice(570, 'INR', 'AU');
   assert.equal(view.main, `≈ A$${(570 / r.INR_PER_UNIT.AUD).toFixed(2)}`);
-  assert.equal(view.charged, '₹570.00');
+  assert.equal(view.charged, '₹570');
 });
 
 test('prices already in another currency are never converted', () => {
-  assert.deepEqual(r.displayPrice(12, 'USD', 'AU'), { main: 'USD 12.00' });
-  assert.deepEqual(r.displayPrice(12, 'USD', 'IN'), { main: 'USD 12.00' });
+  assert.deepEqual(r.displayPrice(12, 'USD', 'AU'), { main: 'USD\u00a012' });
+  assert.deepEqual(r.displayPrice(12, 'USD', 'IN'), { main: 'USD\u00a012' });
 });
 
 test('a missing product currency counts as rupees', () => {
-  assert.equal(r.displayPrice(100, undefined, 'IN').main, '₹100.00');
+  assert.equal(r.displayPrice(100, undefined, 'IN').main, '₹100');
   assert.ok(r.displayPrice(100, undefined, 'US').main.startsWith('≈ $'));
 });
 

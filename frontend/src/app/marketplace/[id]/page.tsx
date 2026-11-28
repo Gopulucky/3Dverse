@@ -1,45 +1,27 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Star,
-  Heart,
-  ShoppingCart,
-  Loader2,
-  ChevronRight,
-  Download,
-  Printer,
-  Wand2,
-  Ruler,
-  Box,
-  FileBox,
-  ShieldCheck,
-  BadgeCheck,
-  Zap,
-} from "lucide-react";
+import { Star, Heart, Loader2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
+import { includedRows, printRows, type DetailRow } from "@/lib/product-details";
 import { BUY_NOW_PARAM, BUY_NOW_VALUE, saveBuyNow } from "@/lib/buy-now";
 import { track } from "@/lib/track-client";
 import { displayPrice } from "@/lib/region";
 import { useCountry } from "@/stores/region-store";
 import { FollowButton } from "@/components/creator/follow-button";
-import { availableFormats, defaultFormat, purchasePrice, startingPrice, thumbOf, type PurchaseType } from "@/lib/marketplace";
+import { availableFormats, defaultFormat, purchasePrice, startingPrice, type PurchaseType, type ProductCardData } from "@/lib/marketplace";
 import { buildGallery } from "@/lib/product-gallery";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { FormatPicker } from "@/components/product/format-picker";
-import { ProductPrices } from "@/components/shared/product-prices";
+import { ProductCard } from "@/components/shared/product-card";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -67,30 +49,11 @@ const reviewSchema = z.object({
 
 type ReviewForm = z.infer<typeof reviewSchema>;
 
-function formatBytes(bytes?: number) {
-  if (!bytes) return null;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function SpecRow({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: any;
-  label: string;
-  value: ReactNode;
-}) {
+function DetailTable({ rows }: { rows: DetailRow[] }) {
   return (
-    <div className="flex items-start gap-4 py-2.5 border-b border-border/40 last:border-0">
-      <span className="flex items-center gap-2 text-sm text-muted-foreground font-medium w-36 shrink-0">
-        {label}
-      </span>
-      <span className="text-sm text-foreground flex-1">
-        {value}
-      </span>
-    </div>
+    <dl className="spec-table">
+      {rows.map((row) => <div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>)}
+    </dl>
   );
 }
 
@@ -106,6 +69,7 @@ export default function ProductDetailPage() {
   const [adding, setAdding] = useState(false);
   const [cartMessage, setCartMessage] = useState("");
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ["product", id],
@@ -129,6 +93,14 @@ export default function ProductDetailPage() {
     queryKey: ["similar", id],
     queryFn: () => api.get<any[]>(`/api/marketplace/products/${id}/similar`),
     enabled: !!id,
+  });
+
+  const creatorId: number | undefined = product?.creator_id;
+  const { data: creator } = useQuery({
+    queryKey: ["creator", creatorId],
+    queryFn: () => api.get<{ name: string; product_count: number }>(`/api/creators/${creatorId}`),
+    enabled: !!creatorId,
+    retry: false,
   });
 
   const {
@@ -155,9 +127,10 @@ export default function ProductDetailPage() {
       await api.post(`/api/reviews/${id}`, data);
       toast.success("Review submitted!");
       reset();
+      setReviewOpen(false);
       refetchReviews();
-    } catch {
-      toast.error("Failed to submit review");
+    } catch (reason) {
+      toast.error(reason instanceof ApiError ? reason.message : "Your review was not saved. Try again.");
     }
   };
 
@@ -273,36 +246,24 @@ export default function ProductDetailPage() {
   const fromPrice = startingPrice(product);
   const shownAmount = selectedPrice ?? fromPrice;
   const shownPrice = shownAmount == null ? null : displayPrice(shownAmount, product.currency, country);
-  const dimensions = latestVersion?.printability_report?.dimensions;
-  const dimensionsText = dimensions
-    ? [dimensions.x, dimensions.y, dimensions.z].map((n: number | undefined) => n?.toFixed(0)).join(" × ") + " mm"
-    : null;
 
-  const avgRating =
-    reviews.length > 0
-      ? (
-          reviews.reduce((acc: number, r: any) => acc + r.rating, 0) /
-          reviews.length
-        ).toFixed(1)
-      : "New";
+  const avgRating = reviews.length > 0
+    ? (reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviews.length).toFixed(1)
+    : null;
+  const reviewCount = `${reviews.length} ${reviews.length === 1 ? "review" : "reviews"}`;
+  const included = includedRows(product, offeredFormats);
+  const printing = printRows(product.print_settings);
+  // Delivery wording follows the format being bought.
+  const sellsDigital = offeredFormats.includes("digital") && purchaseType !== "physical";
+  const needsShipping = offeredFormats.includes("physical") && purchaseType !== "digital";
 
   return (
     <MarketplaceShell>
-      <div className="store-container pt-8 pb-24">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8 pt-4">
-          <Link href="/marketplace" className="hover:text-foreground transition-colors">
-            Marketplace
-          </Link>
-          <ChevronRight size={14} />
-          <Link
-            href={`/marketplace?category=${product.category}`}
-            className="hover:text-foreground transition-colors"
-          >
-            {product.category}
-          </Link>
-          <ChevronRight size={14} />
-          <span className="text-foreground font-semibold">{product.title}</span>
+      <div className="store-container pt-6 pb-24">
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-4">
+          <Link href="/marketplace" className="inline-flex min-h-11 items-center hover:text-foreground">Marketplace</Link>
+          <ChevronRight size={14} aria-hidden="true" />
+          <Link href={`/marketplace?category=${encodeURIComponent(product.category || "")}`} className="inline-flex min-h-11 items-center hover:text-foreground">{product.category}</Link>
         </nav>
 
         {/* The name leads the page, above the pictures, the way a catalogue entry does. */}
@@ -310,10 +271,9 @@ export default function ProductDetailPage() {
           {product.title}
         </h1>
 
-        {/* Row 1 is as tall as the facts and price; row 2 takes whatever height the pictures and buy box add. */}
-        <div className="grid lg:grid-cols-12 lg:grid-rows-[auto_1fr] gap-8 lg:gap-x-10 lg:gap-y-6 mb-16 items-start">
-          {/* Left: every view of the product (3D model, photos, videos) */}
-          <div className="lg:col-span-5 lg:col-start-1 lg:row-start-1 lg:row-span-2" onPointerDownCapture={trackViewerOpened}>
+        <div className="product-layout">
+          {/* Every view of the product: 3D model, photos, videos */}
+          <div className="min-w-0" onPointerDownCapture={trackViewerOpened}>
             <ProductGallery
               key={product.id}
               items={gallery}
@@ -322,58 +282,23 @@ export default function ProductDetailPage() {
             />
           </div>
 
-          {/* Middle: who made it and what it costs */}
-          <div className="lg:col-span-4 lg:col-start-6 lg:row-start-1 space-y-5">
-            <div className="space-y-3">
+          <div className="product-buy" data-flow="buy-box">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               {product.creator_name && (
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <p className="text-sm text-muted-foreground">
-                    by{" "}
-                    {product.creator_id ? (
-                      <Link href={`/creators/${product.creator_id}`} data-flow="creator-link" className="font-semibold text-primary-ink underline-offset-2 hover:underline">
-                        {product.creator_name}
-                      </Link>
-                    ) : (
-                      <span className="font-semibold text-primary-ink">{product.creator_name}</span>
-                    )}
-                  </p>
-                  {product.creator_id && (
-                    <FollowButton creatorId={product.creator_id} creatorName={product.creator_name} size="sm" next={`/marketplace/${product.id}`} />
-                  )}
-                </div>
+                <p>By{" "}{product.creator_id
+                  ? <Link href={`/creators/${product.creator_id}`} data-flow="creator-link" className="font-semibold text-primary-ink underline-offset-2 hover:underline">{product.creator_name}</Link>
+                  : <span className="font-semibold text-foreground">{product.creator_name}</span>}
+                </p>
               )}
-
-              <div className="flex items-center gap-1 text-sm text-ember-ink font-semibold">
-                <Star size={16} fill="currentColor" />
-                {avgRating}
-                <span className="text-muted-foreground ml-1 font-normal font-data">
-                  ({reviews.length} {reviews.length === 1 ? "rating" : "ratings"})
-                </span>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">{product.category}</Badge>
-                {offeredFormats.includes("digital") && (
-                  <Badge variant="outline" className="gap-1 bg-background">
-                    <Download size={12} className="text-primary" /> Digital
-                  </Badge>
-                )}
-                {offeredFormats.includes("physical") && (
-                  <Badge variant="outline" className="gap-1 bg-background">
-                    <Printer size={12} className="text-primary" /> Physical
-                  </Badge>
-                )}
-                {product.is_mode_4_active && (
-                  <Badge variant="outline" className="gap-1 bg-background">
-                    <Wand2 size={12} className="text-ember-ink" /> Custom
-                  </Badge>
-                )}
-              </div>
+              {avgRating && (
+                <a href="#reviews" className="inline-flex min-h-11 items-center gap-1 text-foreground">
+                  <Star size={14} aria-hidden="true" /> {avgRating} <span className="text-muted-foreground">({reviewCount})</span>
+                </a>
+              )}
             </div>
 
-            {/* Price comes straight after the facts, before the long text. */}
             <div data-flow="product-price" data-state={selectedPrice != null ? "chosen" : fromPrice != null ? "from" : "none"}>
-              <p className="font-data text-3xl font-bold text-foreground">
+              <p className="text-3xl font-semibold tabular-nums text-foreground">
                 {selectedPrice != null ? (
                   shownPrice?.main
                 ) : fromPrice != null ? (
@@ -388,390 +313,206 @@ export default function ProductDetailPage() {
               {/* Shoppers abroad see an estimate in their currency; the rupee amount is what is charged. */}
               {shownPrice?.charged && (
                 <p data-flow="charged-note" className="mt-1 text-sm text-muted-foreground">
-                  You are charged <span className="font-data font-medium text-foreground">{shownPrice.charged}</span> (INR). Shown in your currency as an estimate.
+                  You are charged <span className="font-medium text-foreground tabular-nums">{shownPrice.charged}</span> (INR). Shown in your currency as an estimate.
                 </p>
               )}
               <p className="mt-1 text-sm text-muted-foreground">
-                {purchaseType === "digital"
-                  ? "Digital model file · download"
-                  : purchaseType === "physical"
-                  ? "Finished print · before shipping"
-                  : offeredFormats.length > 1
-                  ? "Choose a format in the box to see its exact price."
-                  : ""}
+                {purchaseType === "digital" ? "Digital model, one-time purchase"
+                  : purchaseType === "physical" ? "Finished print, shipping added at checkout"
+                  : offeredFormats.length > 1 ? "Choose a format to see its exact price." : ""}
               </p>
-              {dimensionsText && (
-                <p className="mt-2 flex items-center gap-2 text-sm">
-                  <Ruler size={14} aria-hidden="true" className="text-muted-foreground" />
-                  <span className="text-muted-foreground">Size</span>
-                  <span className="font-data font-medium">{dimensionsText}</span>
-                </p>
-              )}
+              {product.license_type && <p className="text-sm text-muted-foreground">Licence: {product.license_type}</p>}
             </div>
-
-          </div>
-
-          {/* Right: a short, sticky buy box */}
-          <div className="lg:col-span-3 lg:col-start-10 lg:row-start-1 lg:row-span-2">
-            <div className="lg:sticky lg:top-24">
-              <Card className="p-4 border-border bg-card shadow-lg flex flex-col relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
-
-                <div className="mt-1 mb-4">
-                  {offeredFormats.length > 0 ? (
-                    <FormatPicker
-                      product={product}
-                      formats={offeredFormats}
-                      value={purchaseType}
-                      country={country}
-                      onChange={format => { setChosenFormat(format); setCartMessage(""); }}
-                    />
-                  ) : (
-                    <p role="status" className="text-sm text-muted-foreground">
-                      This listing can&apos;t be bought yet. The creator hasn&apos;t switched on a format.
-                    </p>
-                  )}
-                  {purchaseType && !canPurchase && <p role="status" className="text-sm mt-2">This format does not have a purchasable price yet.</p>}
-                  {product.currency === "USD" && <p className="text-sm mt-2">Legacy USD listing. INR checkout requires the creator to reprice it.</p>}
-                </div>
-
-                {/* Print options only appear once a physical print is chosen */}
-                {purchaseType === "physical" && (
-                  <div className="space-y-4 mb-4">
-                    {product.available_materials?.length > 0 && (
-                      <div>
-                        <Label className="mb-1.5 block text-xs font-bold text-muted-foreground uppercase tracking-wider">Material</Label>
-                        <select aria-label="Material" value={selectedConfig.material || product.available_materials?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, material: event.target.value })} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
-                          {product.available_materials.map((m: string) => (
-                            <option key={m}>{m}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    {product.available_colors?.length > 0 && (
-                      <div>
-                        <Label className="mb-1.5 block text-xs font-bold text-muted-foreground uppercase tracking-wider">Color</Label>
-                        <select aria-label="Color" value={selectedConfig.color || product.available_colors?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, color: event.target.value })} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
-                          {product.available_colors.map((c: string) => (
-                            <option key={c}>{c}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    {product.available_sizes?.length > 0 && (
-                      <div>
-                        <Label className="mb-1.5 block text-xs font-bold text-muted-foreground uppercase tracking-wider">Size</Label>
-                        <select aria-label="Size" value={selectedConfig.size || product.available_sizes?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, size: event.target.value })} className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
-                          {product.available_sizes.map((s: string) => (
-                            <option key={s}>{s}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    {product.is_mode_4_active &&
-                      product.mode_4_config &&
-                      Object.entries(product.mode_4_config).map(
-                        ([key, config]: [string, any]) => (
-                          <div key={key}>
-                            <Label className="mb-1.5 block capitalize text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                              {key.replace("_", " ")}
-                            </Label>
-                            <Input
-                              placeholder={config.description || ""}
-                              maxLength={config.maxLength}
-                              aria-label={key.replaceAll("_", " ")}
-                              value={selectedConfig[key] || ""}
-                              onChange={event => setSelectedConfig({ ...selectedConfig, [key]: event.target.value })}
-                              className="h-9"
-                            />
-                          </div>
-                        )
-                      )}
-                  </div>
-                )}
-
-                <div className="space-y-2.5 mb-3">
-                  <Button
-                    onClick={handleAddToCart}
-                    disabled={!canPurchase || adding}
-                    aria-busy={adding}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-sm"
-                    size="lg"
-                  >
-                    {adding ? "Adding…" : "Add to cart"}
-                  </Button>
-                  <Button
-                    onClick={handleBuyNow}
-                    disabled={!canPurchase || adding}
-                    className="w-full bg-ember hover:bg-ember-10 text-ember-foreground rounded-full shadow-sm transition-all duration-300"
-                    size="lg"
-                  >
-                    Buy Now
-                  </Button>
-                </div>
-
-                <p role="status" className="text-sm text-muted-foreground empty:hidden">{cartMessage}</p>
-
-                <div className="flex flex-col pt-3 mt-1 border-t border-border/50 text-sm text-muted-foreground">
-                  <p>Sold by {product.creator_name || "the listing creator"}</p>
-                  <div className="flex flex-wrap gap-x-4">
-                    <Link href="/shipping" className="underline min-h-11 inline-flex items-center">Shipping</Link>
-                    <Link href="/refund-policy" className="underline min-h-11 inline-flex items-center">Returns and refunds</Link>
-                  </div>
-                  <Link href="/grievances#report" className="underline min-h-11 inline-flex items-center">Report this listing</Link>
-                  <Button
-                    onClick={handleAddToWishlist}
-                    variant="ghost"
-                    size="sm"
-                    className="mt-1 w-full flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-                  >
-                    <Heart size={16} /> Add to List
-                  </Button>
-                </div>
-              </Card>
-            </div>
-          </div>
-
-          {/* Below the buy box on a phone, beside the pictures on a desktop: the long reading */}
-          <div className="lg:col-span-4 lg:col-start-6 lg:row-start-2 space-y-6">
 
             <div>
-              <h2 className="font-bold text-lg font-display mb-2">About this item</h2>
-              <p
-                id="product-description"
-                className={cn(
-                  "text-muted-foreground whitespace-pre-line leading-relaxed text-sm",
-                  !descriptionOpen && "line-clamp-5"
+              {offeredFormats.length > 0 ? (
+                <FormatPicker
+                  product={product}
+                  formats={offeredFormats}
+                  value={purchaseType}
+                  country={country}
+                  onChange={format => { setChosenFormat(format); setCartMessage(""); }}
+                />
+              ) : (
+                <p role="status" className="text-sm text-muted-foreground">
+                  This listing can&apos;t be bought yet. The creator hasn&apos;t switched on a format.
+                </p>
+              )}
+              {purchaseType && !canPurchase && <p role="status" className="text-sm mt-2">This format does not have a purchasable price yet.</p>}
+              {product.currency === "USD" && <p className="text-sm mt-2">Legacy USD listing. INR checkout requires the creator to reprice it.</p>}
+            </div>
+
+            {/* Print options only appear once a physical print is chosen */}
+            {purchaseType === "physical" && (
+              <div className="space-y-4">
+                {product.available_materials?.length > 0 && (
+                  <div>
+                    <Label className="mb-1.5 block text-sm">Material</Label>
+                    <select aria-label="Material" value={selectedConfig.material || product.available_materials?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, material: event.target.value })} className="w-full h-11 rounded-full border border-input bg-background px-4 text-sm">
+                      {product.available_materials.map((option: string) => <option key={option}>{option}</option>)}
+                    </select>
+                  </div>
                 )}
-              >
+                {product.available_colors?.length > 0 && (
+                  <div>
+                    <Label className="mb-1.5 block text-sm">Color</Label>
+                    <select aria-label="Color" value={selectedConfig.color || product.available_colors?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, color: event.target.value })} className="w-full h-11 rounded-full border border-input bg-background px-4 text-sm">
+                      {product.available_colors.map((option: string) => <option key={option}>{option}</option>)}
+                    </select>
+                  </div>
+                )}
+                {product.available_sizes?.length > 0 && (
+                  <div>
+                    <Label className="mb-1.5 block text-sm">Size</Label>
+                    <select aria-label="Size" value={selectedConfig.size || product.available_sizes?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, size: event.target.value })} className="w-full h-11 rounded-full border border-input bg-background px-4 text-sm">
+                      {product.available_sizes.map((option: string) => <option key={option}>{option}</option>)}
+                    </select>
+                  </div>
+                )}
+                {product.is_mode_4_active && product.mode_4_config && Object.entries(product.mode_4_config).map(([key, config]: [string, any]) => (
+                  <div key={key}>
+                    <Label className="mb-1.5 block capitalize text-sm">{key.replace("_", " ")}</Label>
+                    <Input
+                      placeholder={config.description || ""}
+                      maxLength={config.maxLength}
+                      aria-label={key.replaceAll("_", " ")}
+                      value={selectedConfig[key] || ""}
+                      onChange={event => setSelectedConfig({ ...selectedConfig, [key]: event.target.value })}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Buying this one thing comes first; collecting for later second. */}
+            <div className="flex flex-col gap-2">
+              <Button onClick={handleBuyNow} disabled={!canPurchase || adding} className="w-full bg-ember hover:bg-ember-10 text-ember-foreground" size="lg">
+                Buy now
+              </Button>
+              <Button variant="outline" onClick={handleAddToCart} disabled={!canPurchase || adding} aria-busy={adding} className="w-full" size="lg">
+                {adding ? "Adding…" : "Add to cart"}
+              </Button>
+              <p role="status" className="text-sm text-muted-foreground empty:hidden">{cartMessage}</p>
+              {sellsDigital && <p className="text-sm text-muted-foreground">Download the file from your orders once payment is confirmed.</p>}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-5 border-t border-border pt-2 text-sm text-muted-foreground">
+              <button type="button" onClick={handleAddToWishlist} className="inline-flex min-h-11 items-center gap-2 hover:text-foreground">
+                <Heart size={16} aria-hidden="true" /> Save to wishlist
+              </button>
+              <Link href="/refund-policy" className="inline-flex min-h-11 items-center underline">Returns and refunds</Link>
+              {needsShipping && <Link href="/shipping" className="inline-flex min-h-11 items-center underline">Shipping</Link>}
+              <Link href="/grievances#report" className="inline-flex min-h-11 items-center underline">Report this listing</Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="product-details">
+          {included.length > 0 && (
+            <section className="product-section" aria-labelledby="included-heading">
+              <h2 id="included-heading">What&apos;s included</h2>
+              <DetailTable rows={included} />
+            </section>
+          )}
+
+          {printing.length > 0 && (
+            <section className="product-section" aria-labelledby="printing-heading">
+              <h2 id="printing-heading">Printing it</h2>
+              <DetailTable rows={printing} />
+            </section>
+          )}
+
+          {product.description && (
+            <section className="product-section" aria-labelledby="about-heading">
+              <h2 id="about-heading">About this design</h2>
+              <p id="product-description" className={cn("whitespace-pre-line leading-relaxed text-muted-foreground", !descriptionOpen && "line-clamp-5")}>
                 {product.description}
               </p>
-              {(product.description?.length ?? 0) > 260 && (
-                <button
-                  type="button"
-                  onClick={() => setDescriptionOpen(open => !open)}
-                  aria-expanded={descriptionOpen}
-                  aria-controls="product-description"
-                  className="mt-1 min-h-11 text-sm font-semibold text-primary-ink underline"
-                >
+              {product.description.length > 260 && (
+                <button type="button" onClick={() => setDescriptionOpen(open => !open)} aria-expanded={descriptionOpen} aria-controls="product-description" className="mt-1 min-h-11 text-sm font-semibold text-primary-ink underline">
                   {descriptionOpen ? "Show less" : "Read more"}
                 </button>
               )}
-            </div>
+            </section>
+          )}
 
-            <Separator />
-
-            {/* Specifications inline */}
-            {(latestVersion || product.license_type) && (
-              <div>
-                <h2 className="font-bold text-lg font-display mb-3">
-                  Product information
-                </h2>
-                <div className="space-y-1">
-                  {dimensionsText && (
-                    <SpecRow icon={Ruler} label="Dimensions" value={dimensionsText} />
-                  )}
-                  {latestVersion?.printability_report?.volume_mm3 != null && (
-                    <SpecRow
-                      icon={Box}
-                      label="Volume"
-                      value={`${(latestVersion.printability_report.volume_mm3 / 1000).toFixed(1)} cm³`}
-                    />
-                  )}
-                  {latestVersion?.file_name && (
-                    <SpecRow
-                      icon={FileBox}
-                      label="File Format"
-                      value={`${latestVersion.file_name.split(".").pop()?.toUpperCase()}${formatBytes(latestVersion.file_size) ? ` (${formatBytes(latestVersion.file_size)})` : ""}`}
-                    />
-                  )}
-                  {latestVersion?.printability_report?.status && (
-                    <SpecRow
-                      icon={ShieldCheck}
-                      label="Printability"
-                      value={
-                        <span
-                          className={cn(
-                            "capitalize font-medium",
-                            latestVersion.printability_report.status === "pass"
-                              ? "text-success"
-                              : latestVersion.printability_report.status === "warning"
-                              ? "text-warning-ink"
-                              : "text-muted-foreground"
-                          )}
-                        >
-                          {latestVersion.printability_report.status}
-                        </span>
-                      }
-                    />
-                  )}
-                  {product.license_type && (
-                    <SpecRow
-                      icon={BadgeCheck}
-                      label="License"
-                      value={product.license_type}
-                    />
-                  )}
+          {product.creator_id && product.creator_name && (
+            <section className="product-section" aria-labelledby="creator-heading">
+              <h2 id="creator-heading">Creator</h2>
+              <div className="flex flex-wrap items-center gap-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarFallback className="bg-primary-surface text-primary-ink font-semibold">{product.creator_name.slice(0, 1).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="mr-auto min-w-0">
+                  <p className="font-display font-semibold">{product.creator_name}</p>
+                  {creator && <p className="text-sm text-muted-foreground">{creator.product_count} {creator.product_count === 1 ? "design" : "designs"}</p>}
                 </div>
+                <FollowButton creatorId={product.creator_id} creatorName={product.creator_name} size="sm" next={`/marketplace/${product.id}`} />
+                <Link href={`/creators/${product.creator_id}`} className="inline-flex min-h-11 items-center text-sm font-medium underline">View profile</Link>
               </div>
-            )}
-          </div>
+            </section>
+          )}
 
+          <section id="reviews" className="product-section" aria-labelledby="reviews-heading">
+            <h2 id="reviews-heading">Reviews</h2>
+            {reviews.length === 0
+              ? <p className="text-muted-foreground">No reviews yet.</p>
+              : <p className="mb-2 text-muted-foreground">{avgRating} out of 5 from {reviewCount}</p>}
+            {reviews.length > 0 && (
+              <ul className="divide-y divide-border">
+                {reviews.map((r: any) => (
+                  <li key={r.id} className="py-4">
+                    <p className="flex flex-wrap items-center gap-x-3 text-sm">
+                      <span className="font-semibold">{r.reviewer_name || "Verified buyer"}</span>
+                      <span className="text-ember-ink" aria-label={`${r.rating} out of 5`}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+                      <span className="text-muted-foreground">{formatDate(r.created_at)}</span>
+                    </p>
+                    <p className="mt-1 leading-relaxed text-muted-foreground">{r.text}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="mt-3 text-sm text-muted-foreground">Only people who bought this design can review it.</p>
+            {!isAuthenticated ? (
+              <Link href={`/login?next=${encodeURIComponent(`/marketplace/${product.id}`)}`} className="inline-flex min-h-11 items-center text-sm font-medium underline">Sign in to write a review</Link>
+            ) : !reviewOpen ? (
+              <Button type="button" variant="outline" className="mt-2" onClick={() => setReviewOpen(true)}>Write a review</Button>
+            ) : (
+              <form onSubmit={handleSubmit(submitReview)} className="mt-4 max-w-lg space-y-4">
+                <fieldset>
+                  <legend className="mb-1 text-sm font-medium">Rating</legend>
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button key={star} type="button" onClick={() => setValue("rating", star)} aria-label={`${star} out of 5`} aria-pressed={star === watchRating}
+                        className={cn("min-h-11 min-w-11 text-2xl", star <= watchRating ? "text-ember-ink" : "text-muted-foreground")}>
+                        {star <= watchRating ? "★" : "☆"}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <div>
+                  <Label htmlFor="review-text" className="mb-2 block">Your review</Label>
+                  <Textarea id="review-text" rows={4} {...register("text")} />
+                  {errors.text && <p className="text-destructive text-sm mt-1">{errors.text.message}</p>}
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" size={16} aria-label="Sending" /> : "Submit review"}</Button>
+                  <Button type="button" variant="ghost" onClick={() => setReviewOpen(false)}>Cancel</Button>
+                </div>
+              </form>
+            )}
+          </section>
         </div>
 
-        {/* Tabs: Reviews & Similar */}
-        <Tabs defaultValue="reviews" className="mb-16">
-          <TabsList className="border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 space-x-6">
-            <TabsTrigger
-              value="reviews"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 text-base font-semibold font-display"
-            >
-              Reviews ({reviews.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="similar"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 text-base font-semibold font-display"
-            >
-              Similar Products
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="reviews">
-            <div className="grid md:grid-cols-[1fr_2fr] gap-8 mt-8">
-              {/* Submit Review Form */}
-              <Card className="p-6 h-fit border-border bg-card shadow-sm">
-                <h3 className="text-lg font-bold mb-4 font-display">Write a Review</h3>
-                <form
-                  onSubmit={handleSubmit(submitReview)}
-                  className="space-y-4"
-                >
-                  <div>
-                    <Label className="mb-2 block">Rating</Label>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setValue("rating", star)}
-                          className={cn(
-                            "text-2xl transition-colors",
-                            star <= watchRating
-                              ? "text-ember-ink"
-                              : "text-muted-foreground/30"
-                          )}
-                        >
-                          ★
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="mb-2 block">Your Review</Label>
-                    <Textarea
-                      rows={4}
-                      placeholder="Share your thoughts..."
-                      {...register("text")}
-                    />
-                    {errors.text && (
-                      <p className="text-destructive text-xs mt-1">
-                        {errors.text.message}
-                      </p>
-                    )}
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="animate-spin" size={16} />
-                    ) : (
-                      "Submit Review"
-                    )}
-                  </Button>
-                </form>
-              </Card>
-
-              {/* Reviews List */}
-              <div className="space-y-4">
-                {reviews.length === 0 ? (
-                  <p className="text-muted-foreground italic py-8 text-center bg-card border border-border rounded-xl">
-                    No reviews yet. Be the first!
-                  </p>
-                ) : (
-                  reviews.map((r: any) => (
-                    <Card key={r.id} className="p-5 flex gap-4 border-border bg-card shadow-sm">
-                      <Avatar className="h-10 w-10 shrink-0">
-                        <AvatarFallback className="bg-primary-surface text-primary-ink text-sm font-semibold">
-                          {r.user?.email?.[0]?.toUpperCase() || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <span className="font-bold text-sm">
-                            {r.user?.email || "User"}
-                          </span>
-                          <span className="text-ember-ink text-sm font-semibold">
-                            {"★".repeat(r.rating)}
-                            {"☆".repeat(5 - r.rating)}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-2 font-data">
-                          {formatDate(r.created_at)}
-                        </p>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                          {r.text}
-                        </p>
-                      </div>
-                    </Card>
-                  ))
-                )}
-              </div>
+        {similarProducts.length > 0 && (
+          <section className="product-section" aria-labelledby="similar-heading">
+            <h2 id="similar-heading">Similar designs</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
+              {(similarProducts as ProductCardData[]).map((p) => <ProductCard key={p.id} p={p} compact />)}
             </div>
-          </TabsContent>
-
-          <TabsContent value="similar">
-            {similarProducts.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
-                {similarProducts.map((p: any) => (
-                  <Link
-                    key={p.id}
-                    href={`/marketplace/${p.id}`}
-                    className="group block rounded-xl border border-border bg-card overflow-hidden hover:border-primary/30 hover:shadow-lg transition-all duration-300 shadow-sm"
-                  >
-                    <div className="aspect-square bg-muted relative overflow-hidden">
-                      {p.media && p.media.length > 0 ? (
-                        <img
-                          src={api.mediaUrl(thumbOf(p.media[0]) || p.media[0].media_url)}
-                          alt={p.title}
-                          loading="lazy"
-                          decoding="async"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                          No Image
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-foreground truncate font-display group-hover:text-primary transition-colors">
-                        {p.title}
-                      </h3>
-                      <p className="text-primary font-bold mt-1 font-data">
-                        <ProductPrices product={p} />
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-8 bg-card border border-border rounded-xl">
-                No similar products found
-              </p>
-            )}
-          </TabsContent>
-        </Tabs>
+          </section>
+        )}
       </div>
     </MarketplaceShell>
   );

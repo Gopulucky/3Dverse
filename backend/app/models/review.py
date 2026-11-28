@@ -17,3 +17,10 @@ class Review(Base):
 
     user = relationship("User")
     product = relationship("Product")
+
+    @property
+    def reviewer_name(self):
+        """What the public may see of the buyer: a first name, never the email."""
+        full_name = (self.user.full_name or "").split() if self.user else []
+        first = full_name[0] if full_name else ""
+        return first if first and "@" not in first else "Verified buyer"

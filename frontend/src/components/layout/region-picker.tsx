@@ -6,7 +6,7 @@ import { useCountry, useRegionStore } from "@/stores/region-store";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
-/** "Where are you shopping from?": the button in the header and the dialog it opens. */
+/** "Where are you shopping from?": the country setting in the footer and the dialog it opens. */
 export function RegionPicker() {
   const country = useCountry();
   const setCountry = useRegionStore((state) => state.setCountry);
@@ -21,7 +21,7 @@ export function RegionPicker() {
           className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium hover:bg-muted transition-colors"
         >
           <Globe size={20} aria-hidden="true" />
-          <span className="hidden lg:inline">{country} · {currency}</span>
+          <span>Prices shown for {countryLabel(country)} ({currency})</span>
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">

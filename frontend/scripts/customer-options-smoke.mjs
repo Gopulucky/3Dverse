@@ -73,7 +73,7 @@ try {
   assert.equal(await page.locator('.market-product').count(), 20);
   assert.equal(catalogueRequests.at(-1).format, 'physical');
   assert.equal(catalogueRequests.at(-1).limit, '21');
-  assert.ok((await page.locator('.market-product').first().innerText()).includes('\u20b9450.00'));
+  assert.ok((await page.locator('.market-product').first().innerText()).includes('\u20b9450'));
   await page.getByRole('button', { name: 'Next page', exact: true }).click();
   await page.waitForURL('**page=2');
   await page.getByRole('link', { name: 'QA model 21', exact: true }).waitFor();
@@ -101,9 +101,9 @@ try {
   await page.goto(`${base}/marketplace`);
   await page.locator('.market-product').first().waitFor();
   const panel = page.getByRole('form', { name: 'Catalogue filters' });
-  for (const name of ['Category', 'Format', 'Price', 'Currency']) await panel.getByRole('button', { name, exact: true }).waitFor();
+  for (const name of ['Category', 'Format', 'Price', 'Listing currency']) await panel.getByRole('button', { name, exact: true }).waitFor();
   assert.equal(await panel.getByRole('button', { name: 'Category', exact: true }).getAttribute('aria-expanded'), 'true');
-  assert.equal(await panel.getByRole('button', { name: 'Currency', exact: true }).getAttribute('aria-expanded'), 'false');
+  assert.equal(await panel.getByRole('button', { name: 'Listing currency', exact: true }).getAttribute('aria-expanded'), 'false');
   assert.equal(await page.getByRole('button', { name: 'Clear all', exact: true }).count(), 0, 'Clear all appears only when a filter is applied');
   await panel.getByRole('checkbox', { name: 'Gadgets', exact: true }).click();
   await page.waitForURL('**category=Gadgets**');
@@ -179,15 +179,15 @@ try {
   assert.equal(await page.getByRole('button', { name: 'Add to cart', exact: true }).isDisabled(), true);
   // The price shows before any format is picked, as "From" the cheapest one.
   assert.equal(await page.locator('[data-flow="product-price"]').getAttribute('data-state'), 'from');
-  assert.match(await page.locator('[data-flow="product-price"]').innerText(), /From\s*₹120\.00/);
+  assert.match(await page.locator('[data-flow="product-price"]').innerText(), /From\s*₹120(?![d.])/);
   await page.getByRole('radio', { name: /Finished print/ }).check();
   await page.getByRole('combobox', { name: 'Material', exact: true }).selectOption('PETG');
   await page.getByRole('button', { name: 'Add to cart', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Added to cart.' }).waitFor();
   assert.deepEqual(cartPosts.at(-1), { product_id: 9001, quantity: 1, selected_config: { material: 'PETG', color: 'blue', size: 'S', purchase_type: 'physical' } });
-  assert.match(await page.locator('[data-flow="product-price"]').innerText(), /₹450\.00/);
+  assert.match(await page.locator('[data-flow="product-price"]').innerText(), /₹450(?![d.])/);
   await page.getByRole('radio', { name: /Digital model file/ }).check();
-  assert.match(await page.locator('[data-flow="product-price"]').innerText(), /₹120\.00/);
+  assert.match(await page.locator('[data-flow="product-price"]').innerText(), /₹120(?![d.])/);
   await page.getByRole('button', { name: 'Add to cart', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'Added to cart.' }).waitFor();
   assert.deepEqual(cartPosts.at(-1).selected_config, { purchase_type: 'digital' });
