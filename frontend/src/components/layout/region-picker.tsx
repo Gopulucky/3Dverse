@@ -26,7 +26,7 @@ function RegionDialogContent() {
           id="region-country"
           value={country}
           onChange={(event) => setCountry(event.target.value)}
-          className="w-full min-h-11 rounded-lg border border-input bg-background px-3 text-sm"
+          className="w-full min-h-11 rounded-lg border border-input bg-card px-3 text-sm"
         >
           {COUNTRIES.map((option) => (
             <option key={option.code} value={option.code}>{option.name} ({option.currency})</option>

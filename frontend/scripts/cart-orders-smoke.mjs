@@ -62,6 +62,7 @@ try {
   // ---- Cart, desktop ----
   await page.goto(`${base}/cart`, { waitUntil: 'domcontentloaded' });
   await page.locator('[data-line="11"]').waitFor({ timeout: 20000 });
+  assert.equal(await page.getByRole('button', { name: 'Checkout' }).first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(232, 106, 23)', 'checkout is a purchase button');
   assert.equal(counts.cart, 1, `navbar and page share one /api/cart/ request, saw ${counts.cart}`);
   assert.equal(counts.me, 1, `one /api/users/me request, saw ${counts.me}`);
   let text = await page.locator('main').innerText();
@@ -160,5 +161,25 @@ try {
   orders.length = 0;
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.getByRole('heading', { name: 'No orders yet' }).waitFor({ timeout: 20000 });
+  // ---- Signed out: the redirect says why, and the form is easy to use ----
+  {
+    const visitor = await browser.newContext({ bypassCSP: true, viewport: { width: 1280, height: 900 } });
+    await visitor.route('**/api/**', route => route.fulfill({ json: [], headers: { 'access-control-allow-origin': '*' } }));
+    const guest = await visitor.newPage();
+    await guest.goto(`${base}/cart`, { waitUntil: 'domcontentloaded' });
+    await guest.waitForURL('**/login?next=%2Fcart', { timeout: 20000 });
+    await guest.getByRole('status').filter({ hasText: 'Sign in to view your cart and unlocked files.' }).waitFor();
+    assert.equal(await guest.getByRole('button', { name: 'Continue with Google', exact: true }).locator('svg').count(), 1);
+    const password = guest.getByLabel('Password', { exact: true });
+    await guest.locator('[data-flow="customer-auth"][data-ready="true"]').waitFor();
+    await password.fill('not-a-real-one');
+    assert.equal(await password.getAttribute('type'), 'password');
+    await guest.getByRole('button', { name: 'Show password' }).click();
+    assert.equal(await password.getAttribute('type'), 'text');
+    await guest.getByRole('button', { name: 'Hide password' }).click();
+    assert.equal(await password.getAttribute('type'), 'password');
+    await visitor.close();
+  }
+
   console.log('PASS cart and orders: layout, optimistic quantity, coupon, blocked states, filters, single requests and phone width');
 } finally { await context.close(); await browser.close(); }

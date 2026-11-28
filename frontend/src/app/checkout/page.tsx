@@ -141,7 +141,7 @@ function PaymentForm({ checkout, storageKey }: { checkout: Checkout; storageKey:
       ? <p className="text-sm text-muted-foreground" data-hold-countdown>Your items are held for <span className="font-data font-semibold">{formatCountdown(secondsLeft)}</span>. Pay with any UPI app, card or netbanking in Razorpay&apos;s secure window; your payment details are never entered on this site.</p>
       : <p role="status" className="text-sm rounded-lg bg-muted p-4">Your items are no longer held for this checkout. If you already paid, it will show in Orders; otherwise <Link href="/cart" className="underline">go back to your cart</Link> and start again.</p>)}
     {message && <p role="status" className="text-sm rounded-lg bg-muted p-4">{message}</p>}
-    {!finished && secondsLeft > 0 && <Button type="submit" disabled={busy} className="w-full" size="lg">
+    {!finished && secondsLeft > 0 && <Button variant="buy" type="submit" disabled={busy} className="w-full" size="lg">
       {busy ? <Loader2 className="animate-spin" size={18} /> : <Lock size={16} />}
       {busy ? "Waiting for payment..." : `Pay ${formatMoney(checkout.total, checkout.currency)}`}
     </Button>}
@@ -277,7 +277,7 @@ export default function CheckoutPage() {
                 </fieldset>}
               {invalidCart && !resuming && <p role="alert">Choose an available purchase option for each item. Legacy USD listings need to be repriced before INR checkout.</p>}
               {error && <p role="alert" className="text-destructive text-sm">{error}</p>}
-              <Button type="submit" className="w-full" size="lg" disabled={busy || (!resuming && (!items.length || invalidCart))}>
+              <Button variant="buy" type="submit" className="w-full" size="lg" disabled={busy || (!resuming && (!items.length || invalidCart))}>
                 {busy && <Loader2 className="animate-spin" size={18} />}{busy ? "Preparing your order..." : resuming ? "Resume secure checkout" : "Continue to payment"}
               </Button>
               <p className="text-xs text-muted-foreground">You will see the final total before confirming payment.</p>

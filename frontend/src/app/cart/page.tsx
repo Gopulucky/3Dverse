@@ -44,7 +44,8 @@ function CartSkeleton() {
 export default function CartPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { ready } = useRequireAuth();
+  // The sign-in page reads `next` to say why the visitor landed there, and to bring them back.
+  const { ready } = useRequireAuth("/login?next=%2Fcart");
   const { data: cart, isPending, isError, refetch } = useCart(ready);
   const [couponOpen, setCouponOpen] = useState(false);
   const [couponCode, setCouponCode] = useState("");
@@ -109,7 +110,7 @@ export default function CartPage() {
   }
 
   const checkoutButton = (
-    <Button onClick={checkout} disabled={!summary.canCheckout} size="lg" className="w-full min-h-12">
+    <Button variant="buy" onClick={checkout} disabled={!summary.canCheckout} size="lg" className="w-full min-h-12">
       Checkout <ArrowRight size={18} aria-hidden="true" />
     </Button>
   );

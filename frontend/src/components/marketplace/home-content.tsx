@@ -56,9 +56,9 @@ function ProductSection({ title, products, rail = false }: { title: string; prod
             </>}
           </div>
         </div>
-        <div ref={scrollRef} className={rail ? "store-rail store-rail--compact" : "store-grid store-grid--compact"} tabIndex={rail ? 0 : undefined}
+        <div ref={scrollRef} className={rail ? "home-rail" : "catalogue-grid home-grid"} tabIndex={rail ? 0 : undefined}
           role={rail ? "region" : undefined} aria-label={rail ? `${title}, scroll to explore` : undefined} onScroll={rail ? updateEdges : undefined}>
-          {products.map(product => <ProductCard key={product.id} p={product} compact />)}
+          {products.map(product => <ProductCard key={product.id} p={product} />)}
         </div>
       </div>
     </section>
@@ -131,12 +131,14 @@ export function MarketplaceHomeContent({ initialData, supportOpen = false }: { i
       {supportOpen && <HomeSupport />}
 
       <section className="home-trust" aria-label="Shopping with buy&sell3d">
-        <ul className="store-container">
-          {trustItems(availability).map(({ key, label }) => {
-            const Icon = trustIcons[key];
-            return <li key={key} data-trust={key}><Icon size={20} aria-hidden="true" />{label}</li>;
-          })}
-        </ul>
+        <div className="store-container">
+          <ul>
+            {trustItems(availability).map(({ key, label }) => {
+              const Icon = trustIcons[key];
+              return <li key={key} data-trust={key}><Icon size={20} aria-hidden="true" />{label}</li>;
+            })}
+          </ul>
+        </div>
       </section>
     </div>
   );

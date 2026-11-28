@@ -205,7 +205,7 @@ export default function ProductDetailPage() {
       <MarketplaceShell>
         <div className="store-container pt-6 pb-24">
           <div className="product-layout">
-            <Skeleton className="h-[420px] lg:h-[600px] rounded-[var(--store-radius)]" />
+            <Skeleton className="aspect-square sm:aspect-[4/3] rounded-[var(--store-radius)]" />
             <div className="space-y-4">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-10 w-3/4" />
@@ -347,7 +347,7 @@ export default function ProductDetailPage() {
                 {product.available_materials?.length > 0 && (
                   <div>
                     <Label className="mb-1.5 block text-sm">Material</Label>
-                    <select aria-label="Material" value={selectedConfig.material || product.available_materials?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, material: event.target.value })} className="w-full h-11 rounded-lg border border-input bg-background px-3 text-sm">
+                    <select aria-label="Material" value={selectedConfig.material || product.available_materials?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, material: event.target.value })} className="w-full h-11 rounded-lg border border-input bg-card px-3 text-sm">
                       {product.available_materials.map((option: string) => <option key={option}>{option}</option>)}
                     </select>
                   </div>
@@ -355,7 +355,7 @@ export default function ProductDetailPage() {
                 {product.available_colors?.length > 0 && (
                   <div>
                     <Label className="mb-1.5 block text-sm">Color</Label>
-                    <select aria-label="Color" value={selectedConfig.color || product.available_colors?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, color: event.target.value })} className="w-full h-11 rounded-lg border border-input bg-background px-3 text-sm">
+                    <select aria-label="Color" value={selectedConfig.color || product.available_colors?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, color: event.target.value })} className="w-full h-11 rounded-lg border border-input bg-card px-3 text-sm">
                       {product.available_colors.map((option: string) => <option key={option}>{option}</option>)}
                     </select>
                   </div>
@@ -363,7 +363,7 @@ export default function ProductDetailPage() {
                 {product.available_sizes?.length > 0 && (
                   <div>
                     <Label className="mb-1.5 block text-sm">Size</Label>
-                    <select aria-label="Size" value={selectedConfig.size || product.available_sizes?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, size: event.target.value })} className="w-full h-11 rounded-lg border border-input bg-background px-3 text-sm">
+                    <select aria-label="Size" value={selectedConfig.size || product.available_sizes?.[0] || ""} onChange={event => setSelectedConfig({ ...selectedConfig, size: event.target.value })} className="w-full h-11 rounded-lg border border-input bg-card px-3 text-sm">
                       {product.available_sizes.map((option: string) => <option key={option}>{option}</option>)}
                     </select>
                   </div>
@@ -385,7 +385,7 @@ export default function ProductDetailPage() {
 
             {/* Buying this one thing comes first; collecting for later second. */}
             <div className="flex flex-col gap-2">
-              <Button onClick={handleBuyNow} disabled={!canPurchase || adding} className="w-full bg-ember hover:bg-ember-10 text-ember-foreground" size="lg">
+              <Button variant="buy" onClick={handleBuyNow} disabled={!canPurchase || adding} className="w-full" size="lg">
                 Buy now
               </Button>
               <Button variant="outline" onClick={handleAddToCart} disabled={!canPurchase || adding} aria-busy={adding} className="w-full" size="lg">

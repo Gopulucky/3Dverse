@@ -18,15 +18,20 @@ export default function AboutPage() {
       <main className="flex-1 pt-16">
         <section className="band">
           <div className="store-container">
-            <h1 className="display page-title max-w-3xl">We&apos;re building the operating system for physical creation.</h1>
-            <p className="page-lead">{BRAND.oneLiner}</p>
+            {/* The opening reads as one centred column; the grids below use the full width. */}
+            <div className="mx-auto max-w-3xl">
+              <h1 className="display page-title">We&apos;re building the operating system for physical creation.</h1>
+              <p className="page-lead">{BRAND.oneLiner}</p>
+            </div>
           </div>
         </section>
 
         <section className="band">
           <div className="store-container">
-            <h2 className="display band-title">{MISSION.statement}</h2>
-            <p className="max-w-2xl text-muted-foreground leading-relaxed">{MISSION.body}</p>
+            <div className="mx-auto max-w-3xl">
+              <h2 className="display band-title">{MISSION.statement}</h2>
+              <p className="text-muted-foreground leading-relaxed">{MISSION.body}</p>
+            </div>
           </div>
         </section>
 
