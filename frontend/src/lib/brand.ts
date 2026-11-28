@@ -36,10 +36,10 @@ export const BRAND = {
    ================================================================ */
 
 export const BRAND_COLORS = {
-  violet: { hex: "#0E5E6F", name: "Deep Teal", role: "Primary (30%): trust, actions, links — customers" },
-  ember: { hex: "#FF7A1A", name: "Tangerine", role: "Accent (10%): Buy now, cart badge, wordmark — creators. Fill only; text uses ember-ink" },
+  violet: { hex: "#0B4F56", name: "Deep Petrol Teal", role: "Primary (30%): trust, actions, links — customers" },
+  ember: { hex: "#E86A17", name: "Filament Amber", role: "Accent (10%): Buy now, cart badge, wordmark — creators. Fill only; text uses ember-ink" },
   moss: { hex: "#059669", name: "Calibration Green", role: "Functional only: success states, print partners" },
-  slate: { hex: "#12181B", name: "Ink on white (#FFFFFF)", role: "Neutral (60%): surfaces and text" },
+  slate: { hex: "#121619", name: "Ink on Warm Alabaster (#F8F7F4)", role: "Neutral (60%): surfaces and text" },
 } as const;
 
 /** Audience → accent hue. A platform-wide rule, not a one-off constant —

@@ -97,6 +97,15 @@ try {
   assert.ok(columns.share > 0.55 && columns.share < 0.62, `viewer takes about 60% (${columns.share})`);
   assert.ok(columns.fullWidth, 'the sections below use the full page width');
 
+  // Amber means money; platform actions stay teal.
+  const fill = (name) => page.getByRole('button', { name }).first().evaluate((el) => getComputedStyle(el).backgroundColor);
+  await page.getByRole('button', { name: /^Follow/ }).waitFor();
+  assert.equal(await fill('Buy now'), 'rgb(232, 106, 23)');
+  assert.equal(await fill(/^Follow/), 'rgb(11, 79, 86)');
+  // The frame matches the renders, and nothing shows white around a picture.
+  const stage = await page.locator('[data-flow="product-gallery"] > div').first().evaluate((el) => el.clientWidth / el.clientHeight);
+  assert.ok(Math.abs(stage - 4 / 3) < 0.03, `gallery frame is not 4:3 (${stage})`);
+
   const order = await page.evaluate(() => {
     const top = (selector) => document.querySelector(selector)?.getBoundingClientRect().top;
     return { title: top('h1'), gallery: top('[data-flow="product-gallery"]'), price: top('[data-flow="product-price"]') };
@@ -111,6 +120,7 @@ try {
 
   await gallery.getByRole('button', { name: 'Show photo 1 of 2' }).click();
   assert.equal(await gallery.getAttribute('data-selected'), 'image');
+  assert.equal(await gallery.locator('img[alt$="photo"]').evaluate((el) => getComputedStyle(el).backgroundColor), 'rgba(0, 0, 0, 0)');
   assert.match(await gallery.locator('img[alt$="photo"]').getAttribute('src'), /front\.svg$/, 'the primary photo is the first photo');
   await gallery.getByRole('button', { name: 'Show photo 2 of 2' }).click();
   assert.match(await gallery.locator('img[alt$="photo"]').getAttribute('src'), /side\.svg$/);

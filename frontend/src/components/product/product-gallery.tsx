@@ -29,7 +29,7 @@ export function ProductGallery({
 
   if (!selected) {
     return (
-      <div className="h-[420px] lg:h-[600px] rounded-[var(--store-radius)] border border-border bg-muted flex items-center justify-center text-muted-foreground">
+      <div className="aspect-square sm:aspect-[4/3] max-h-[78vh] w-full rounded-[var(--store-radius)] border border-border bg-muted flex items-center justify-center text-muted-foreground">
         No preview available
       </div>
     );
@@ -39,7 +39,8 @@ export function ProductGallery({
 
   return (
     <div data-flow="product-gallery" data-selected={selected.kind} className="space-y-3">
-      <div className="relative h-[420px] lg:h-[600px] rounded-[var(--store-radius)] border border-border overflow-hidden bg-muted">
+      {/* 4:3, the shape of the renders; square on a phone so the 3D view has room. */}
+      <div className="relative aspect-square sm:aspect-[4/3] max-h-[78vh] w-full rounded-[var(--store-radius)] border border-border overflow-hidden bg-muted">
         {/* The viewer stays mounted while an image is shown, so coming back keeps the model and the camera. */}
         {model && (
           <div className={cn("absolute inset-0", selected.kind !== "model" && "hidden")}>
@@ -60,7 +61,7 @@ export function ProductGallery({
               alt={`${title}, photo`}
               decoding="async"
               onError={() => setFailed((list) => [...list, selected.url])}
-              className="absolute inset-0 h-full w-full object-contain bg-white"
+              className="absolute inset-0 h-full w-full object-contain"
             />
           )
         )}

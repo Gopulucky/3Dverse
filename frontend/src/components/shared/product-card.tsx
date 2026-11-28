@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Star, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -11,50 +11,30 @@ import { toast } from "sonner";
 import { availableFormats, productImage, productThumb, purchasePrice, type ProductCardData, type PurchaseType } from "@/lib/marketplace";
 import { displayPrice } from "@/lib/region";
 import { ProductImage } from "@/components/shared/product-image";
-import { ProductPrices } from "@/components/shared/product-prices";
 
 export type { ProductCardData } from "@/lib/marketplace";
 
 const BADGES: Record<PurchaseType, string> = { digital: "Digital model", physical: "Printed product" };
+/** Shorter words when a card carries both tags. */
+const SHORT_BADGES: Record<PurchaseType, string> = { digital: "Digital", physical: "Printed" };
 
 export function ProductCard({
   p,
   className,
   format,
-  compact = false,
 }: {
   p: ProductCardData;
   className?: string;
   /** The product type the shopper is filtering by, if any. */
   format?: string;
-  /** Image, title and price only: for dense rows such as the home page. */
-  compact?: boolean;
 }) {
   const { isAuthenticated } = useAuthStore();
   const country = useCountry();
   const href = `/marketplace/${p.id}`;
 
-  if (compact) {
-    return (
-      <article className={cn("market-product market-product--compact", className)}>
-        <Link href={href} className="market-product-image" aria-label={`View ${p.title}`}>
-          <ProductImage src={productThumb(p)} fallbackSrc={productImage(p)} title={p.title} />
-          {p.is_featured && <span className="market-product-featured">Featured</span>}
-        </Link>
-        <div className="market-product-info">
-          <h3><Link href={href}>{p.title}</Link></h3>
-          {p.avg_rating != null && p.avg_rating > 0 && <div className="market-product-modes">
-            <span className="market-product-rating"><Star size={14} aria-hidden="true" /> {p.avg_rating.toFixed(1)}</span>
-          </div>}
-          <div className="market-product-footer"><ProductPrices product={p} format={format} /></div>
-        </div>
-      </article>
-    );
-  }
-
-  // One badge and one price: the format being filtered, or else everything on offer.
+  // Tags and one price: the format being filtered, or else everything on offer.
   const offered = availableFormats(p).filter((value) => !format || value === format);
-  const badge = offered.length > 1 ? "Digital + print" : offered[0] ? BADGES[offered[0]] : null;
+  const words = offered.length > 1 ? SHORT_BADGES : BADGES;
   const lowest = offered
     .map((value) => ({ value, amount: purchasePrice(p, value) }))
     .filter((entry): entry is { value: PurchaseType; amount: number } => entry.amount !== undefined)
@@ -73,7 +53,10 @@ export function ProductCard({
         <Link href={href} className="market-product-image" aria-label={`View ${p.title}`}>
           <ProductImage src={productThumb(p)} fallbackSrc={productImage(p)} title={p.title} />
         </Link>
-        {badge && <span className="market-product-badge">{badge}</span>}
+        {p.is_featured && <span className="market-product-featured">Featured</span>}
+        {offered.length > 0 && <span className="market-product-badges">
+          {offered.map((value) => <span key={value} className={`market-product-badge market-product-badge--${value}`}>{words[value]}</span>)}
+        </span>}
         <Button type="button" variant="outline" size="icon" className="market-product-save"
           aria-label={`Save ${p.title} to wishlist`} onClick={() => void save()}>
           <Heart size={18} aria-hidden="true" />

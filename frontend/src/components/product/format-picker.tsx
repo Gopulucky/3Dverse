@@ -40,7 +40,7 @@ export function FormatPicker({
             className={cn(
               "flex min-h-14 cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
               "focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[color:var(--store-focus,currentColor)]",
-              checked ? "border-primary bg-primary-surface" : "border-input bg-background hover:border-primary/50"
+              checked ? "border-primary bg-primary-surface" : "border-input bg-card hover:border-primary/50"
             )}
           >
             <input

@@ -265,10 +265,8 @@ export function Navbar() {
       <nav
         data-scrolled={scrolled}
         className={cn(
-          "site-header fixed top-0 left-0 right-0 z-50 h-16 transition-colors duration-200",
-          scrolled
-            ? "border-b border-border"
-            : "bg-background border-b border-border/50"
+          "site-header fixed top-0 left-0 right-0 z-50 h-16 bg-card border-b transition-colors duration-200",
+          scrolled ? "border-border" : "border-border/50"
         )}
       >
         <div className="store-container h-full">
@@ -610,7 +608,7 @@ export function Navbar() {
           />
           <div id="mobile-navigation" data-flow="mobile-menu" data-state={mobileOpen ? "open" : "closed"} className="fixed right-0 top-16 bottom-0 w-full max-w-sm bg-card border-l border-border p-6 overflow-y-auto">
             {isMarketplace && pathname !== "/marketplace" && <form role="search" aria-label="Mobile catalogue search" className="flex gap-2 mb-6" onSubmit={(event) => { event.preventDefault(); handleSearch(); }}>
-              <input type="search" aria-label="Search models" placeholder="Search models" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="w-full min-w-0 h-11 rounded-md border border-input bg-background px-3 text-base" />
+              <input type="search" aria-label="Search models" placeholder="Search models" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="w-full min-w-0 h-11 rounded-md border border-input bg-card px-3 text-base" />
               <Button type="submit" variant="outline" className="min-h-11" aria-label="Search catalogue"><Search size={18} aria-hidden="true" /></Button>
             </form>}
             <nav aria-label="Mobile navigation" className="space-y-1">

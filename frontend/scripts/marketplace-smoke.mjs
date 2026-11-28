@@ -17,7 +17,7 @@ const product = {
   creator_id: 7, creator_name: 'QA catalogue', avg_rating: 4.5, review_count: 2,
   is_mode_2_active: true, is_featured: true,
   media: [{ media_url: '/qa-bench.jpg', thumb_url: '/qa-bench-small.webp', is_primary: true }],
-  versions: [{ is_latest: true, printability_report: { status: 'pass' } }],
+  versions: [{ is_latest: true, file_format: 'STL', printability_report: { status: 'pass', volume_mm3: 40700 } }],
 };
 const products = Array.from({ length: 12 }, (_, index) => ({ ...product, id: 9001 + index, title: index ? `Sample model ${index + 1}` : product.title }));
 const full = {
@@ -117,21 +117,40 @@ try {
   // Vercel Web Analytics and Speed Insights: same-origin scripts, loaded once and deferred (they 404 off Vercel, harmlessly).
   const insightScripts = await page.locator('script[src^="/_vercel/"]').evaluateAll(els => els.map(e => e.getAttribute('src')).sort());
   assert.deepEqual(insightScripts, ['/_vercel/insights/script.js', '/_vercel/speed-insights/script.js'], `analytics scripts present: ${insightScripts}`);
+  // The owner's brand photograph stands beside the headline; the cards start from the newest.
+  const photo = page.locator('.home-hero-photo img');
+  assert.match(await photo.getAttribute('alt'), /Ideas you can hold/);
+  assert.ok(await photo.evaluate(img => img.decode().then(() => img.naturalWidth > 0)), 'hero photograph loads');
+  assert.ok(Math.abs(await photo.evaluate(img => img.clientWidth / img.clientHeight) - 1600 / 990) < 0.02, 'the photograph is shown whole');
+  assert.equal(await page.locator('.home-showcase').count(), 0);
+  const shown = await page.evaluate(() => [...document.querySelectorAll('.home-grid h3')].filter(h => h.getClientRects().length).map(h => h.innerText));
+  assert.deepEqual(shown, ['Sample bench', 'Sample model 2', 'Sample model 3', 'Sample model 4']);
   const lead = await page.evaluate(() => {
     const card = document.querySelector('.storefront .market-product');
     const range = document.createRange();
     range.setStart(document.querySelector('.storefront'), 0);
     range.setEndBefore(card);
     return { top: Math.round(card.getBoundingClientRect().top), words: range.toString().split(/\s+/).filter(Boolean).length,
-      titles: [...document.querySelectorAll('.storefront .market-product h3')].map(h => h.innerText) };
+      titles: [...document.querySelectorAll('.storefront h3')].filter(h => h.getClientRects().length).map(h => h.innerText) };
   });
-  assert.ok(lead.top < 700, `First product starts too low (${lead.top}px)`);
+  // With the photograph in the hero, the cards still begin on the first screen (900px tall here).
+  assert.ok(lead.top < 820, `First product starts too low (${lead.top}px)`);
   assert.ok(lead.words < 80, `Too much text before the first product (${lead.words} words)`);
   assert.equal(new Set(lead.titles).size, lead.titles.length, `A product repeats on the home page: ${lead.titles}`);
   // Cards show the small copy, not the full-size upload.
   const cardSources = await page.locator('.storefront .market-product img').evaluateAll(els => els.map(e => e.getAttribute('src')));
   assert.ok(cardSources.length > 0 && cardSources.every(src => src.endsWith('/qa-bench-small.webp')), `cards use the thumbnail: ${cardSources}`);
-  // Home cards are compact: no review line or cart controls (those live on the catalogue page).
+  // One kind of card everywhere; the home page adds no review line or cart control.
+  assert.equal(await page.locator('.storefront .market-product--compact').count(), 0);
+  assert.ok(await page.locator('.storefront .market-product--card').count() > 0);
+  // The rail is driven by its arrows, and the trust strip's rule lines up with the grid.
+  assert.equal(await page.locator('.home-rail').evaluate(el => getComputedStyle(el).scrollbarWidth), 'none');
+  assert.deepEqual(await page.locator('.home-trust').evaluate(el => [getComputedStyle(el).borderTopWidth, getComputedStyle(el.querySelector('ul')).borderTopWidth]), ['0px', '1px']);
+  // The header stays solid once the page has moved, so nothing shows through under the name.
+  await page.evaluate(() => scrollTo(0, 420));
+  await page.locator('nav.site-header[data-scrolled="true"]').waitFor();
+  assert.equal(await page.locator('nav.site-header').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(255, 255, 255)');
+  await page.evaluate(() => scrollTo(0, 0));
   assert.equal(await page.locator('.storefront .market-product .market-product-reviews').count(), 0);
   assert.equal(await page.locator('.storefront .market-product .market-cart-button').count(), 0);
   // Day/night sits in the header; a signed-in shopper's country sits in the account menu.
@@ -158,20 +177,30 @@ try {
   await page.goto(`${base}/marketplace`, { waitUntil: 'domcontentloaded' });
   await visible(page.getByRole('link', { name: 'View Sample bench', exact: true }));
   const card = page.locator('.market-product').first();
-  assert.equal(await card.locator('.market-product-badge').innerText(), 'Digital + print');
+  assert.deepEqual(await card.locator('.market-product-badge').allInnerTexts(), ['Digital', 'Printed']);
+  // Warm paper behind white cards; each format keeps its own colours.
+  const paint = (selector) => page.locator(selector).first().evaluate(el => [getComputedStyle(el).backgroundColor, getComputedStyle(el).color]);
+  assert.equal((await paint('body'))[0], 'rgb(248, 247, 244)', 'warm alabaster page');
+  assert.equal((await paint('nav.site-header'))[0], 'rgb(255, 255, 255)', 'white header');
+  assert.equal((await paint('.market-product--card'))[0], 'rgb(255, 255, 255)', 'white card');
+  assert.equal((await paint('.market-product-image'))[0], 'rgb(236, 238, 242)', 'soft slate stage');
+  assert.deepEqual(await paint('.market-product-badge--digital'), ['rgb(230, 240, 241)', 'rgb(11, 79, 86)']);
+  assert.deepEqual(await paint('.market-product-badge--physical'), ['rgb(11, 79, 86)', 'rgb(255, 255, 255)']);
   assert.equal(await card.locator('.market-product-category').textContent(), 'Home Decor');
   assert.match(await card.locator('.market-product-price').innerText(), /From\s*₹120(?![\d.])/);
   assert.equal(await card.getByRole('link', { name: 'QA catalogue', exact: true }).getAttribute('href'), '/creators/7');
   assert.equal(await card.getByRole('link', { name: 'View product', exact: true }).getAttribute('href'), '/marketplace/9001');
   assert.equal(await card.getByRole('button', { name: 'Save Sample bench to wishlist', exact: true }).count(), 1);
   assert.equal(await card.getByRole('button', { name: /to cart/ }).count(), 0, 'one action per card');
-  assert.equal(await card.locator('.market-product-reviews, .market-product-featured, .market-product-modes').count(), 0, 'no extra metadata');
+  assert.equal(await card.locator('.market-product-reviews, .market-product-modes').count(), 0, 'no extra metadata');
+  assert.equal(await card.locator('.market-product-featured').count(), 1, 'a featured listing carries its one tag');
   assert.equal(await page.getByText('Printability passed').count(), 0, 'cards carry no repeated badge');
   assert.equal(await page.getByRole('button', { name: 'Follow', exact: true }).count(), 0);
   assert.equal(await page.locator('.market-product a button').count(), 0);
   const media = await card.locator('.market-product-image').evaluate(el => ({ ratio: el.clientWidth / el.clientHeight, fit: getComputedStyle(el.querySelector('img')).objectFit }));
   assert.ok(Math.abs(media.ratio - 4 / 3) < 0.03, `card picture is not 4:3 (${media.ratio})`);
   assert.equal(media.fit, 'contain', 'renders are never cropped');
+  assert.equal(await card.locator('.market-product-image img').evaluate(el => getComputedStyle(el).padding), '0px', 'the picture runs to the card edges');
   await page.goto(base, { waitUntil: 'domcontentloaded' });
   await visible(page.getByRole('link', { name: 'View Sample bench', exact: true }));
   // The storefront speaks to buyers: no creator/partner promotion outside one quiet footer link.
@@ -213,7 +242,7 @@ try {
     await page.evaluate(() => { window.scrollTo(0, 0); return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); });
     const metrics = await page.evaluate(() => ({ width: innerWidth, page: document.documentElement.scrollWidth,
       tileTop: document.querySelector('.home-tiles').getBoundingClientRect().top,
-      card: document.querySelector('.storefront .market-product').getBoundingClientRect().top,
+      card: [...document.querySelectorAll('.storefront .market-product')].find(el => el.getClientRects().length).getBoundingClientRect().top,
       h1: document.querySelector('h1').getBoundingClientRect().bottom,
       font: getComputedStyle(document.querySelector('h1')).fontFamily,
       // Self-hosted brand faces: the heading's first family is a loaded local font file.
@@ -223,13 +252,29 @@ try {
     assert.ok(metrics.card < height, `First product is not on the first screen at ${width}x${height}: ${metrics.card}px`);
     // Rows fill the width: the first row is one full line (no orphan card), and Trending reaches the right edge.
     const rows = await page.evaluate(() => {
-      const tops = [...document.querySelectorAll('.store-grid--compact .market-product')].filter(c => getComputedStyle(c).display !== 'none').map(c => Math.round(c.getBoundingClientRect().top));
-      const rail = [...document.querySelectorAll('.store-rail--compact .market-product')].map(c => c.getBoundingClientRect()).filter(r => r.left < innerWidth);
-      const container = document.querySelector('.store-rail--compact').getBoundingClientRect();
+      const tops = [...document.querySelectorAll('.home-grid .market-product')].filter(c => getComputedStyle(c).display !== 'none').map(c => Math.round(c.getBoundingClientRect().top));
+      const rail = [...document.querySelectorAll('.home-rail .market-product')].map(c => c.getBoundingClientRect()).filter(r => r.left < innerWidth);
+      const container = document.querySelector('.home-rail').getBoundingClientRect();
       return { lines: new Set(tops).size, count: tops.length, railVisible: rail.filter(r => r.right <= container.right + 1).length, railRight: Math.round(Math.max(...rail.map(r => Math.min(r.right, container.right)))), containerRight: Math.round(container.right) };
     });
     if (width > 768) assert.equal(rows.lines, 1, `First row wraps to ${rows.lines} lines at ${width}px (${rows.count} cards)`);
     assert.ok(rows.railRight >= rows.containerRight - 24, `Trending stops short of the right edge at ${width}px: ${JSON.stringify(rows)}`);
+    assert.ok(await page.locator('.home-hero-photo img').isVisible(), `hero photograph is shown at ${width}px`);
+    // The hero keeps its hierarchy: a display headline, a spaced sentence and compact buttons,
+    // leading with what can be bought today.
+    const type = await page.evaluate(() => ({ h1: parseFloat(getComputedStyle(document.querySelector('.home-hero h1')).fontSize),
+      gap: parseFloat(getComputedStyle(document.querySelector('.home-hero-lead')).marginTop),
+      tiles: [...document.querySelectorAll('.home-hero .home-tile')].map(t => [t.querySelector('strong').innerText, t.offsetHeight]) }));
+    assert.ok(type.h1 >= 36 && (width < 1024 || type.h1 >= 56), `headline is only ${type.h1}px at ${width}px`);
+    assert.ok(type.gap >= 12, `sentence sits against the headline at ${width}px`);
+    assert.deepEqual(type.tiles.map(t => t[0]), ['Digital models', 'Printed products']);
+    assert.ok(type.tiles.every(t => t[1] <= 96), `format buttons are too tall at ${width}px: ${JSON.stringify(type.tiles)}`);
+    // Linux renders the same fonts a few percent wider than Windows. Each name must still sit on
+    // one line with that to spare, or the buttons grow a line on some machines only.
+    const widened = await page.addStyleTag({ content: '.home-hero .home-tile { letter-spacing: 0.03em; }' });
+    const lines = await page.locator('.home-hero .home-tile strong').evaluateAll(els => els.map(el => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight))));
+    assert.deepEqual(lines, [1, 1], `a format name wraps at ${width}px with slightly wider text`);
+    await widened.evaluate(el => el.remove());
     assert.match(metrics.font, /space_?grotesk|space grotesk/i);
     assert.ok(metrics.brandLoaded, `brand display font not loaded: ${metrics.font}`);
     await page.screenshot({path:`${out}/fixture-home-${width}.png`, fullPage: width === 375 || width === 1440});
@@ -292,7 +337,7 @@ try {
     assert.notEqual(focus.width, '0px');
     assert.notEqual(focus.style, 'none');
     await settleImages(v.page);
-    await v.page.locator('.storefront .market-product-image img').first().screenshot({path:`${out}/fixture-${scheme}-product.png`});
+    await v.page.locator('.storefront .market-product-image img >> visible=true').first().screenshot({path:`${out}/fixture-${scheme}-product.png`});
     await v.page.screenshot({path:`${out}/fixture-${scheme}.png`});
     checks.push(`${scheme}: primary text contrast ${ratio.toFixed(2)}:1; keyboard focus visible.`);
     await v.context.close();
@@ -469,11 +514,12 @@ try {
   const motion = await visit({ reducedMotion: 'no-preference', viewport: { width: 1280, height: 640 } });
   await visible(motion.page.getByRole('link', { name: 'View Sample bench', exact: true }));
   assert.equal(await motion.page.locator('[data-reveal]').count(), 0);
-  const block = motion.page.locator('.market-product-image').first();
+  const block = motion.page.locator('.market-product--card >> visible=true').first();
   const rest = await block.evaluate(el => getComputedStyle(el).boxShadow);
   assert.notEqual(rest, 'none', 'cards stand on printed layers');
   await block.hover();
-  await motion.page.waitForFunction(before => getComputedStyle(document.querySelector('.market-product-image')).boxShadow !== before, rest);
+  const handle = await block.elementHandle();
+  await motion.page.waitForFunction(([el, before]) => getComputedStyle(el).boxShadow !== before, [handle, rest]);
   await motion.context.close();
   assert.deepEqual(motion.errors, []);
   checks.push('Cards stand on printed layers that lift on hover; nothing is hidden waiting to appear.');

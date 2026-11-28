@@ -136,7 +136,7 @@ function Model({
     return (
       <mesh geometry={geometry}>
         <meshStandardMaterial 
-          color={wireframe ? "#0e5e6f" : "#52666f"} 
+          color={wireframe ? "#0b4f56" : "#52666f"} 
           metalness={0.3} 
           roughness={0.7} 
           wireframe={wireframe} 
@@ -253,7 +253,7 @@ export function Advanced3DViewer({ url }: { url: string }) {
 
       {/* Tells a first-time visitor what their hands can do, then gets out of the way. */}
       {viewer.status === "ready" && !hintSeen && (
-        <p className="absolute top-4 right-4 z-10 max-w-[60%] text-right text-xs px-2 py-1 rounded-md bg-background/80 backdrop-blur border border-border/50 text-muted-foreground pointer-events-none">
+        <p className="absolute top-4 right-4 z-10 max-w-[60%] text-right text-xs px-2 py-1 rounded-md bg-card/80 backdrop-blur border border-border/50 text-muted-foreground pointer-events-none">
           <span className="pointer-coarse:hidden">Drag to rotate · click, then scroll to zoom</span>
           <span className="hidden pointer-coarse:inline">Drag to rotate · pinch to zoom</span>
         </p>
@@ -267,7 +267,7 @@ export function Advanced3DViewer({ url }: { url: string }) {
         className="absolute bottom-3 right-3 z-10 flex flex-col items-end gap-2"
       >
         {settingsOpen && (
-          <div id="viewer-settings" className="w-52 rounded-lg border border-border bg-background p-1">
+          <div id="viewer-settings" className="w-52 rounded-lg border border-border bg-card p-1">
             {([
               ["Spin automatically", "Auto-spin", Orbit, controls.autoRotate, () => controlsDispatch({ type: "TOGGLE_ROTATE" })],
               ["Wireframe", "Wireframe", BoxSelect, wireframe, () => setWireframe(!wireframe)],
@@ -289,7 +289,7 @@ export function Advanced3DViewer({ url }: { url: string }) {
             )}
           </div>
         )}
-        <div className="flex items-center gap-0.5 rounded-full border border-border bg-background p-1">
+        <div className="flex items-center gap-0.5 rounded-full border border-border bg-card p-1">
           <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => zoomBy(0.8)} aria-label="Zoom in" title="Zoom in">
             <ZoomIn size={16} />
           </Button>

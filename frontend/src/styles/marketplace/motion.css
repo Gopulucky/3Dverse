@@ -1,8 +1,8 @@
 /* Hallmark · component: home hero + printed-block cards · design-system: design.md · genre: modern-minimal · signature: printed layers under every card · v2.0.0 */
 
-/* ---- Home hero: type first, product cards on the first screen -------------
-   The right side is left blank on purpose, for the owner's own 3D design. */
-.home-hero { padding-block: clamp(var(--space-lg), 4vw, var(--space-2xl)) var(--space-xl); }
+/* ---- Home hero: headline and the two ways to buy beside the brand photograph
+   (below them on a phone), with product cards still on the first screen. */
+.home-hero { padding-block: clamp(var(--space-md), 2.5vw, var(--space-xl)) var(--space-lg); }
 .home-hero-copy { max-width: 40rem; }
 .home-hero h1 { font-size: clamp(2.25rem, 1.1rem + 4.4vw, 4.75rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1; }
 .home-hero-lead { margin-top: var(--space-md); max-width: 32rem; font-size: 1.125rem; color: var(--color-muted-foreground); text-wrap: pretty; }
@@ -13,44 +13,50 @@
 .home-hero .home-tile small { margin-top: 0; font-size: 0.8125rem; }
 .home-hero-ask { margin-top: var(--space-md); }
 @media (max-width: 35rem) {
+  /* Tight on the smallest phones, so a product still shows on the first screen. */
+  .home-hero { padding-bottom: var(--space-sm); }
+  .home-hero .home-tiles { margin-top: var(--space-lg); }
   .home-hero .home-tile { flex-direction: row; align-items: center; }
   .home-hero .home-tile svg { display: none; }
   .home-hero .home-tile strong { font-size: 0.9375rem; }
+}
+/* At 320-368px each button has little room: trim it so a format name never wraps. */
+@media (max-width: 23rem) {
+  .home-hero .home-tiles { gap: var(--space-sm); }
+  .home-hero .home-tile { padding-inline: var(--space-xs); }
+  .home-hero .home-tile strong { font-size: 0.8125rem; }
+}
+.home-hero-photo { margin-top: var(--space-sm); }
+.home-hero-photo img { display: block; width: 100%; height: auto; border-radius: var(--store-radius); }
+@media (min-width: 64rem) {
+  .home-hero > .store-container { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--space-2xl); align-items: center; }
+  .home-hero-photo { margin-top: 0; }
 }
 
 /* ---- The printed block ------------------------------------------------------
    Alternating hard lines under a face read as stacked print layers, so a card
    or button looks like a solid object. Pointing at it lifts it by one layer
    pair; pressing sets it down. */
-.market-product--compact .market-product-image,
 .market-product--card,
 .home-hero .home-tile {
   --layers: 0 2px 0 var(--layer-gap), 0 3px 0 var(--layer-line), 0 5px 0 var(--layer-gap), 0 6px 0 var(--layer-line), 0 8px 0 var(--layer-gap), 0 9px 0 var(--layer-line);
   box-shadow: var(--layers);
   transition: transform var(--motion-hover) var(--store-ease), box-shadow var(--motion-hover) var(--store-ease);
 }
-.market-product--compact .market-product-image { border: 1px solid var(--layer-line); margin-bottom: 12px; }
 .home-hero .home-tile--printed { --layer-line: var(--color-violet-12); border: 0; }
 .dark .home-hero .home-tile--printed { --layer-line: var(--color-violet-6); }
-.market-product--compact:hover .market-product-image,
-.market-product--compact:focus-within .market-product-image,
 .market-product--card:hover,
 .market-product--card:focus-within,
 .home-hero .home-tile:hover,
 .home-hero .home-tile:focus-visible {
-  --layer-line: var(--color-primary);
   opacity: 1;
   transform: translateY(-2px);
-  box-shadow: var(--layers), 0 11px 0 var(--layer-gap), 0 12px 0 var(--layer-line);
+  box-shadow: var(--layers), 0 11px 0 var(--layer-gap), 0 12.5px 0 var(--color-ember);
 }
 .home-hero .home-tile--printed:hover, .home-hero .home-tile--printed:focus-visible { --layer-line: var(--color-violet-12); }
 .dark .home-hero .home-tile--printed:hover { --layer-line: var(--color-violet-6); }
 .home-hero .home-tile:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--layer-gap), 0 2px 0 var(--layer-line); }
 
-/* ---- Header: frosted once the page has moved ------------------------------ */
-/* The blur sits on a pseudo-element so menus inside the header keep their positioning. */
-.site-header[data-scrolled="true"]::before { content: ""; position: absolute; inset: 0; z-index: -1; background: color-mix(in srgb, var(--color-background) 84%, transparent); backdrop-filter: blur(14px) saturate(1.4); }
-
 @media (prefers-reduced-motion: reduce) {
-  .market-product-image, .market-product--card, .home-hero .home-tile { transition: none !important; }
+  .market-product--card, .home-hero .home-tile { transition: none !important; }
 }

@@ -13,8 +13,7 @@ and recorded below. `src/lib/brand.ts` holds the shared identity and copy.
 - Signature: printed layers. Product cards and the two hero buttons stand on a stack
   of thin lines, like a solid 3D print, and lift when pointed at (`motion.css`).
   It is the one bold detail; keep everything around it quiet.
-- The space right of the hero text is left blank for the owner's own 3D design,
-  to be added later. Do not fill it with stand-in art.
+- Beside the hero text: the owner's brand photograph.
 - No catalogue data: the hero stays; the rows show an honest loading, empty or error state.
 - Keep actual content, links and API wiring. Never invent products or social proof.
 
@@ -23,22 +22,23 @@ and recorded below. `src/lib/brand.ts` holds the shared identity and copy.
 `src/app/globals.css` defines the light brand scales and semantic aliases.
 `src/styles/marketplace/tokens.css` defines the dark scales and storefront scale.
 
-Three brand colours, used 60/30/10. Token names are unchanged (`slate-*`,
-`violet-*`, `ember-*`), only their values; `scripts/machines/brand-palette.test.mjs`
-pins the anchors and WCAG AA pairs.
+"Tactile Studio" palette (owner's choice, 2026-11-28), used 60/30/10. Token names are
+unchanged (`slate-*`, `violet-*`, `ember-*`), only their values;
+`scripts/machines/brand-palette.test.mjs` pins the anchors and WCAG AA pairs.
 
-- 60% white + ink (`slate-*`): page `#FFFFFF`, image wells `#F0F0F0`, text `#12181B`;
-  dark `#0F1315` / `#E4E9EB`. Light fills and hairlines (`slate-2…7`) are hue-less greys:
-  no blue or beige cast, so nothing tints the page behind the teal and the photography. Cards
-  (including the Digital models tile) are white with a border. The palette test enforces it.
-- 30% Deep teal (`violet-*`, `primary`): `#0E5E6F` with white text; dark `#4FC3D4` with dark ink.
-  Trust: primary buttons, Add to cart, links, focus. Customers' accent.
-- 10% Tangerine (`ember-*`): `#FF7A1A`; dark `#FF8A3D`. Always dark ink on it
-  (`text-ember-foreground`). Purchase intent and warmth: Buy now, cart count,
-  Featured badges, applied-filter chips, category-chip hover, the wordmark "3D".
-  Creators' accent.
-- Tangerine is a fill, never text: it is ~2.4:1 on white. Text and solid
-  selected borders use `ember-ink` (`#B04A00`); translucent `ember/NN` tints are decorative.
+- 60% neutrals (`slate-*`): page Warm Alabaster `#F8F7F4`; cards, header, search and
+  dialogs white; render stages and idle chips Soft Slate `#ECEEF2`; text `#121619`,
+  muted `#5A6570`. Dark: page `#0E1214`, cards `#171D21`, text `#E6EAEC`.
+- 30% Deep Petrol Teal (`violet-*`, `primary`): `#0B4F56` with white text; Mist Teal
+  `#E6F0F1` as its tint. Dark: Bright Teal `#2DD4BF` with dark ink.
+- 10% Filament Amber (`ember-*`): `#E86A17`; dark `#FB923C`. Buy now, cart count,
+  notification dot, the wordmark `&`, chip hover and the line under a hovered card.
+  Always dark ink on it (`text-ember-foreground`): white on this amber is only 3.2:1.
+  Soft tint `#FFF1E6` with `#B84D08` text for Featured tags.
+- Format colours (`--format-*`): printed is solid petrol with white text, digital is
+  mist with petrol text. The home tiles and the card tags use the same two.
+- Amber is a fill, never text on white. Text and solid selected borders use
+  `ember-ink` (`#B84D08`); translucent `ember/NN` tints are decorative.
 - Warning amber is a yellow-ochre (`#C99A06`, ink `#7A5600`), held 15° of hue
   away from Tangerine so a warning never reads as the brand. Warning text uses `warning-ink`.
 - Moss (`#059669`) is functional only: success states. Never identity: not in the
@@ -91,7 +91,7 @@ pins the anchors and WCAG AA pairs.
   and the catalogue; the chosen one is solid teal. The row scrolls sideways.
 - Grid: 4 columns from 64rem, 3 from 40rem, 2 below (`.catalogue-grid`), also used for
   creator pages and Similar designs.
-- Card: 4:3 picture shown whole (`object-fit: contain`), format badge, wishlist heart,
+- Card: 4:3 picture, edge to edge, shown whole (`object-fit: contain`), one tag per format, wishlist heart,
   uppercase category, name, creator, one price ("From" when two formats), one "View
   product" button. No rating, Featured label or Add to cart on the card.
 - The printed-layer edge sits under the whole card.
@@ -100,6 +100,9 @@ pins the anchors and WCAG AA pairs.
 
 ## Product page
 
+- Amber buttons only take money (`variant="buy"`: Buy now, Checkout, Pay, Continue
+  payment). Everything else that acts is teal or outline.
+- Gallery frame is 4:3 like the renders (square on phones), with no white behind pictures.
 - Same container as the catalogue. Two columns, about 60/40: viewer (3D model first)
   and thumbnails; beside it the name, creator, price and buttons. On phones: name,
   viewer, then the rest.
@@ -119,17 +122,20 @@ pins the anchors and WCAG AA pairs.
 ## Home layout
 
 Order, top to bottom: header with search, category chips, a short hero, a "New
-arrivals" row of product cards, a "Trending" row, a three-item trust strip. The
-hero holds the headline "Ideas you can hold.", one sentence that promises delivery
-only when printed orders work (`heroSentence` in `src/lib/store-availability.ts`)
-and the Printed products and Digital models buttons. Targets, checked by
-`scripts/marketplace-smoke.mjs`: the first product starts on the first screen at
-320-1920 px, fewer than 80 words come before it, and no product appears twice. Row
-and fallback rules live in `src/lib/home-sections.ts`.
+arrivals" row of product cards, a "Trending" row, a trust strip. The hero holds the
+headline "Ideas you can hold.", one sentence that promises delivery only when printed
+orders work (`heroSentence` in `src/lib/store-availability.ts`) and the Printed
+products and Digital models buttons (Digital first while printing is closed), with the brand photograph (parcel and desk
+organiser, `public/hero/`) beside it on wide screens and below it on phones. It is an
+AI-made scene the owner supplied, shown whole; replace it with a real photograph of
+a real order when there is one. Targets, checked by `scripts/marketplace-smoke.mjs`:
+a product card begins on the first screen at 320-1920 px and fewer than 80 words come
+before it.
 
-- Home cards use `ProductCard compact` (image, title, price caption) with the printed
-  layers under the picture. Catalogue pages use the full card.
-- Product grid: 6 columns, then 5, 4, 3 and 2 on narrow screens.
+- Home uses the same product card as the catalogue; the catalogue adds only the type
+  tabs and sorting.
+- First row: four, three, or two by two. Trending scrolls with its arrows and shows no
+  scrollbar.
 - No creator or print-partner promotion on the home page (see
   `docs/superpowers/specs/2026-11-11-customer-clarity-design.md`).
 
@@ -172,7 +178,7 @@ Styles are in `src/styles/marketplace/motion.css` (cards, hero, header) and `pag
 
 - Nothing animates on scroll or load. The only motion answers a person: a card or
   hero button lifts on hover and focus, buttons press, menus open.
-- All pages: the header turns frosted once scrolled.
+- The header is solid white (carbon at night); nothing shows through it.
 - Animate `transform` and `box-shadow` only here; rail scrolling respects reduced motion.
 - Category links are chips; hovering one outlines it in tangerine.
 - A card names each format once, in its price rows.

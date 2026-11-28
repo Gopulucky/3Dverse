@@ -30,8 +30,13 @@
   /* Printed layers: the lines that make cards and hero buttons look solid. */
   --layer-line: var(--color-slate-7);
   --layer-gap: var(--color-slate-1);
-  --store-action: var(--color-violet-10);
+  --store-action: var(--color-violet-9);
   --store-action-ink: #FFFFFF;
+  /* One look per format, used by the home tiles and the card tags. */
+  --format-physical: var(--color-violet-9);
+  --format-physical-ink: #FFFFFF;
+  --format-digital: var(--color-primary-surface);
+  --format-digital-ink: var(--color-primary-ink);
   --store-image-surface: var(--color-slate-3);
   --glass-fill: color-mix(in srgb, var(--color-card) 95%, transparent);
   --shadow-subtle: 0 2px 8px color-mix(in srgb, var(--color-ink) 6%, transparent);
@@ -39,7 +44,9 @@
 }
 .dark {
   --store-action: var(--color-violet-9);
-  --store-action-ink: #0F1315;
+  --store-action-ink: #0E1214;
+  /* Bright teal glares across a large fill, so the printed look uses the deep step. */
+  --format-physical: var(--color-violet-8); --format-physical-ink: var(--color-slate-12);
 }
 /* ================================================================
    Dark mode — a parallel scale, not a per-component override.
@@ -48,28 +55,28 @@
    downstream needs a `dark:` variant.
    ================================================================ */
 .dark {
-  /* Deep teal (violet-*) */
-  --color-violet-1: #0E1719;  --color-violet-2: #111D20;  --color-violet-3: #13272B;
-  --color-violet-4: #153036;  --color-violet-5: #173A41;  --color-violet-6: #1A454D;
-  --color-violet-7: #1F5560;  --color-violet-8: #276B78;  --color-violet-9: #4FC3D4;
-  --color-violet-10: #67CEDD; --color-violet-11: #8AD9E4; --color-violet-12: #CFF1F5;
+  /* Teal (violet-*) */
+  --color-violet-1: #0D1716;  --color-violet-2: #102120;  --color-violet-3: #12302C;
+  --color-violet-4: #143A35;  --color-violet-5: #16453F;  --color-violet-6: #18524B;
+  --color-violet-7: #1B5D55;  --color-violet-8: #1F6A62;  --color-violet-9: #2DD4BF;
+  --color-violet-10: #4FDDCA; --color-violet-11: #7FE6D7; --color-violet-12: #CFF7F1;
 
-  /* Tangerine (ember-*) */
+  /* Amber (ember-*) */
   --color-ember-1: #1A1410;  --color-ember-2: #211812;  --color-ember-3: #2C1D13;
   --color-ember-4: #362214;  --color-ember-5: #412815;  --color-ember-6: #4E2F17;
-  --color-ember-7: #623A1B;  --color-ember-8: #834C22;  --color-ember-9: #FF8A3D;
-  --color-ember-10: #FF9B57; --color-ember-11: #FFAE73; --color-ember-12: #FFE0C9;
+  --color-ember-7: #623A1B;  --color-ember-8: #834C22;  --color-ember-9: #FB923C;
+  --color-ember-10: #FCA55C; --color-ember-11: #FFA866; --color-ember-12: #FFE0C9;
 
   --color-moss-1: #0A130F;  --color-moss-2: #0E1D16;  --color-moss-3: #0C291D;
   --color-moss-4: #063423;  --color-moss-5: #003E29;  --color-moss-6: #004A32;
   --color-moss-7: #005D3F;  --color-moss-8: #057B55;  --color-moss-9: #21A173;
   --color-moss-10: #38B182; --color-moss-11: #7BC7A4; --color-moss-12: #BFEAD4;
 
-  /* Ink + porcelain (slate-*) */
-  --color-slate-1: #0F1315;  --color-slate-2: #151A1C;  --color-slate-3: #1B2124;
-  --color-slate-4: #21282B;  --color-slate-5: #272F33;  --color-slate-6: #2F383C;
-  --color-slate-7: #3C464B;  --color-slate-8: #606C73;  --color-slate-9: #6E7A82;
-  --color-slate-10: #7D8991; --color-slate-11: #A2ADB3; --color-slate-12: #E4E9EB;
+  /* Obsidian, carbon + porcelain (slate-*) */
+  --color-slate-1: #0E1214;  --color-slate-2: #171D21;  --color-slate-3: #1D2428;
+  --color-slate-4: #232B30;  --color-slate-5: #293237;  --color-slate-6: #313B41;
+  --color-slate-7: #3D484F;  --color-slate-8: #66737C;  --color-slate-9: #74818A;
+  --color-slate-10: #838F97; --color-slate-11: #A4AEB5; --color-slate-12: #E6EAEC;
 
   --color-red-1: #1C0C0A;   --color-red-3: #3F120F;   --color-red-6: #750E0F;
   --color-red-9: #E93632;   --color-red-10: #FB4A42;  --color-red-11: #FF9084; --color-red-12: #FFD2CB;

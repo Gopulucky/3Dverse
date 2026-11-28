@@ -16,12 +16,12 @@ export default function Image() {
           flexDirection: "column",
           justifyContent: "center",
           padding: "80px",
-          background: "#0F1315",
+          background: "#0E1214",
         }}
       >
         <div style={{ display: "flex", fontSize: 76, fontWeight: 700, color: "white", letterSpacing: -2, marginBottom: 40 }}>
           <span>{BRAND.wordmark.before}</span>
-          <span style={{ color: "#FF8A3D" }}>{BRAND.wordmark.accent}</span>
+          <span style={{ color: "#FB923C" }}>{BRAND.wordmark.accent}</span>
           <span>{BRAND.wordmark.after}</span>
         </div>
         <div style={{ display: "flex", fontSize: 54, fontWeight: 700, color: "white", maxWidth: 900, lineHeight: 1.1 }}>

@@ -20,7 +20,7 @@ import { MarketplaceShell } from "@/components/layout/marketplace-shell";
 export default function WishlistPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { ready: isAuthenticated } = useRequireAuth();
+  const { ready: isAuthenticated } = useRequireAuth("/login?next=%2Fwishlist");
 
   const { data: wishlist = [], isLoading } = useQuery({
     queryKey: ["wishlist"],

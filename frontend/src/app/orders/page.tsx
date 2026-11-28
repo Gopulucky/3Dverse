@@ -95,7 +95,7 @@ function OrderCard({ order }: { order: CustomerOrder }) {
 
         <div className="flex flex-col gap-2 sm:w-48 sm:shrink-0">
           {order.status === "pending_payment" && (
-            <Button asChild size="lg" className="min-h-11"><Link href={`/checkout?order_id=${order.id}`}>Continue payment</Link></Button>
+            <Button asChild variant="buy" size="lg" className="min-h-11"><Link href={`/checkout?order_id=${order.id}`}>Continue payment</Link></Button>
           )}
           {order.tracking_url && (
             <Button asChild variant="outline" className="min-h-11"><a href={order.tracking_url} target="_blank" rel="noopener noreferrer"><Truck size={16} aria-hidden="true" />Track package</a></Button>
@@ -121,7 +121,7 @@ function OrdersSkeleton() {
 }
 
 export default function OrdersPage() {
-  const { ready } = useRequireAuth();
+  const { ready } = useRequireAuth("/login?next=%2Forders");
   const [filter, setFilter] = useState<OrderFilter>("all");
   const { data: orders, isPending, isError, refetch } = useQuery({
     queryKey: ["orders"],

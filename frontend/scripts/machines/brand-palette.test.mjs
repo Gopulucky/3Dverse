@@ -1,5 +1,6 @@
-// Brand palette: Deep teal (trust, 30%), Tangerine (action, 10%),
-// cool white + ink neutrals (60%). Token names stay violet / ember / slate so
+// Brand palette ("Tactile Studio", the owner's choice on 2026-11-28): warm alabaster
+// canvas with white cards (60%), deep petrol teal (trust, 30%), filament amber
+// (action, 10%). Token names stay violet / ember / slate so
 // call sites do not change; only their values do. These tests pin the
 // anchors and the WCAG AA pairs the UI actually renders.
 import { test } from 'node:test';
@@ -47,27 +48,38 @@ test('every scale has all 12 steps in light and dark', () => {
   }
 });
 
-test('anchors are Deep teal, Tangerine and cool white/ink', () => {
-  assert.equal(L.violet[9], '#0E5E6F');
-  assert.equal(L.ember[9], '#FF7A1A');
-  assert.equal(L.slate[1], '#FFFFFF');
-  assert.equal(L.slate[12], '#12181B');
-  assert.equal(D.violet[9], '#4FC3D4');
-  assert.equal(D.ember[9], '#FF8A3D');
-  assert.equal(D.slate[1], '#0F1315');
-  assert.equal(D.slate[12], '#E4E9EB');
+test('anchors are petrol teal, filament amber, alabaster and ink', () => {
+  assert.equal(L.violet[9], '#0B4F56');
+  assert.equal(L.violet[3], '#E6F0F1');
+  assert.equal(L.ember[9], '#E86A17');
+  assert.equal(L.ember[3], '#FFF1E6');
+  assert.equal(L.ember[11], '#B84D08');
+  assert.equal(L.slate[1], '#F8F7F4');
+  assert.equal(L.slate[3], '#ECEEF2');
+  assert.equal(L.slate[11], '#5A6570');
+  assert.equal(L.slate[12], '#121619');
+  assert.equal(D.violet[9], '#2DD4BF');
+  assert.equal(D.ember[9], '#FB923C');
+  assert.equal(D.slate[1], '#0E1214');
+  assert.equal(D.slate[2], '#171D21');
+  assert.equal(D.slate[12], '#E6EAEC');
 });
 
 test('brand.ts records the same anchors', () => {
-  assert.equal(BRAND_COLORS.violet.hex, '#0E5E6F');
-  assert.equal(BRAND_COLORS.ember.hex, '#FF7A1A');
-  assert.equal(BRAND_COLORS.slate.hex, '#12181B');
+  assert.equal(BRAND_COLORS.violet.hex, '#0B4F56');
+  assert.equal(BRAND_COLORS.ember.hex, '#E86A17');
+  assert.equal(BRAND_COLORS.slate.hex, '#121619');
 });
 
 test('light mode text and solid fills pass WCAG AA', () => {
   const white = '#FFFFFF';
   atLeast(white, L.violet[9], 4.5, 'primary button');
   atLeast(white, L.violet[10], 4.5, 'store action');
+  atLeast(L.violet[9], L.violet[3], 4.5, 'digital pill: teal on mist');
+  atLeast(white, L.violet[9], 4.5, 'printed pill: white on petrol');
+  atLeast(L.slate[11], white, 4.5, 'muted text on card');
+  atLeast(L.slate[12], white, 7, 'body text on card');
+  atLeast(L.violet[11], white, 4.5, 'primary ink on card');
   atLeast(L.slate[12], L.ember[9], 4.5, 'buy now button (ink on tangerine)');
   atLeast(L.slate[12], L.ember[10], 4.5, 'buy now hover (ink on tangerine)');
   atLeast(L.violet[11], L.slate[1], 4.5, 'primary ink on page');
@@ -177,39 +189,35 @@ test('warning ink passes AA on page and warning surface', () => {
   atLeast(DA[11], DA[3], 4.5, 'dark warning ink on surface');
 });
 
-test('dark printed tile uses the deep teal step, not the bright button fill', () => {
-  const storefront = readFileSync(new URL('../../src/styles/marketplace/storefront.css', import.meta.url), 'utf8');
-  assert.match(storefront, /\.dark \.home-tile--printed\s*\{\s*background:\s*var\(--color-violet-8\);\s*color:\s*var\(--color-slate-12\)/);
+test('dark printed format uses the deep teal step, not the bright button fill', () => {
+  assert.match(darkCss, /--format-physical:\s*var\(--color-violet-8\);\s*--format-physical-ink:\s*var\(--color-slate-12\)/);
 });
 
-// Warm (beige) neutrals clashed with the cool teal and cool product photos.
-test('light neutrals lean cool, never warm', () => {
-  for (let step = 2; step <= 12; step++) {
-    const hex = L.slate[step];
-    const [r, , b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-    assert.ok(b >= r, `slate-${step} ${hex} is warm (red ${r} > blue ${b})`);
+// The owner chose warm paper for the page so white cards lift off it, and a cool
+// slate for the stage behind renders. This replaces the earlier all-neutral rule.
+test('the page is warm alabaster, cards are white, render stages are soft slate', () => {
+  const channels = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const [pageRed, , pageBlue] = channels(L.slate[1]);
+  assert.ok(pageRed > pageBlue, 'canvas leans warm');
+  const [stageRed, , stageBlue] = channels(L.slate[3]);
+  assert.ok(stageBlue > stageRed, 'render stage leans cool');
+  assert.match(lightCss, /--surface-card:\s*#FFFFFF/);
+});
+
+const storefrontCss = () => readFileSync(new URL('../../src/styles/marketplace/storefront.css', import.meta.url), 'utf8');
+const ruleOf = (css, selector) => css.match(new RegExp(`${selector}\\s*\\{([^}]*)\\}`))[1];
+
+test('printed and digital each have one colour treatment, shared by tiles and card tags', () => {
+  const css = storefrontCss();
+  for (const [selector, format] of [['\\.home-tile--printed', 'physical'], ['\\.home-tile--digital', 'digital'], ['\\.market-product-badge--physical', 'physical'], ['\\.market-product-badge--digital', 'digital']]) {
+    const rule = ruleOf(css, selector);
+    assert.match(rule, new RegExp(`background:\\s*var\\(--format-${format}\\)`), selector);
+    assert.match(rule, new RegExp(`color:\\s*var\\(--format-${format}-ink\\)`), selector);
   }
 });
 
-// The blue-grey fill (#F6F8F9 / #EEF2F4) read as a stray tint behind cards,
-// image wells, tabs and badges. Light fills and hairlines are now hue-less.
-test('light fill and hairline neutrals carry no blue tint', () => {
-  for (let step = 2; step <= 7; step++) {
-    const hex = L.slate[step];
-    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-    assert.ok(r === g && g === b, `slate-${step} ${hex} has a colour cast`);
-  }
-});
-
-test('the Digital models tile is a white card, not a tinted fill', () => {
-  const storefront = readFileSync(new URL('../../src/styles/marketplace/storefront.css', import.meta.url), 'utf8');
-  const rule = storefront.match(/\.home-tile--digital\s*\{([^}]*)\}/)[1];
-  assert.match(rule, /background:\s*var\(--color-card\)/);
-});
-
-test('Featured badge carries the Tangerine accent with ink text', () => {
-  const storefront = readFileSync(new URL('../../src/styles/marketplace/storefront.css', import.meta.url), 'utf8');
-  const rule = storefront.match(/\.market-product-featured\s*\{([^}]*)\}/)[1];
-  assert.match(rule, /background:\s*var\(--color-ember\)/);
-  assert.match(rule, /color:\s*var\(--color-ember-foreground\)/);
+test('Featured badge is a soft amber tag with amber ink', () => {
+  const rule = ruleOf(storefrontCss(), '\\.market-product-featured');
+  assert.match(rule, /background:\s*var\(--color-ember-surface\)/);
+  assert.match(rule, /color:\s*var\(--color-ember-ink\)/);
 });

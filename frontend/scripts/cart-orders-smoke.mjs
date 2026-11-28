@@ -62,6 +62,7 @@ try {
   // ---- Cart, desktop ----
   await page.goto(`${base}/cart`, { waitUntil: 'domcontentloaded' });
   await page.locator('[data-line="11"]').waitFor({ timeout: 20000 });
+  assert.equal(await page.getByRole('button', { name: 'Checkout' }).first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(232, 106, 23)', 'checkout is a purchase button');
   assert.equal(counts.cart, 1, `navbar and page share one /api/cart/ request, saw ${counts.cart}`);
   assert.equal(counts.me, 1, `one /api/users/me request, saw ${counts.me}`);
   let text = await page.locator('main').innerText();
@@ -160,5 +161,44 @@ try {
   orders.length = 0;
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.getByRole('heading', { name: 'No orders yet' }).waitFor({ timeout: 20000 });
+  // ---- Signed out: the redirect says why, and the form is easy to use ----
+  {
+    const visitor = await browser.newContext({ bypassCSP: true, viewport: { width: 1280, height: 900 } });
+    await visitor.route('**/api/**', route => route.fulfill({ json: [], headers: { 'access-control-allow-origin': '*' } }));
+    const guest = await visitor.newPage();
+    await guest.goto(`${base}/cart`, { waitUntil: 'domcontentloaded' });
+    await guest.waitForURL('**/login?next=%2Fcart', { timeout: 20000 });
+    await guest.getByRole('status').filter({ hasText: 'Sign in to view your cart and unlocked files.' }).waitFor();
+    assert.equal(await guest.getByRole('button', { name: 'Continue with Google', exact: true }).locator('svg').count(), 1);
+    const password = guest.getByLabel('Password', { exact: true });
+    await guest.locator('[data-flow="customer-auth"][data-ready="true"]').waitFor();
+    await password.fill('not-a-real-one');
+    assert.equal(await password.getAttribute('type'), 'password');
+    await guest.getByRole('button', { name: 'Show password' }).click();
+    assert.equal(await password.getAttribute('type'), 'text');
+    await guest.getByRole('button', { name: 'Hide password' }).click();
+    assert.equal(await password.getAttribute('type'), 'password');
+    await visitor.close();
+  }
+
+  // A session that ends while a private page is open is not a redirect to explain: the next
+  // person to sign in must not be sent back to this one's page.
+  {
+    const ending = await browser.newContext({ bypassCSP: true, viewport: { width: 1280, height: 900 } });
+    await ending.addInitScript(u => { localStorage.setItem('token', 'qa-expired'); localStorage.setItem('user', JSON.stringify(u)); }, user);
+    await ending.route('**/api/**', async route => {
+      const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
+      if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+      if (!route.request().url().endsWith('/users/me')) return route.fulfill({ json: [], headers });
+      await new Promise(resolve => setTimeout(resolve, 1500)); // the page is up and signed in first
+      return route.fulfill({ status: 401, json: { detail: 'expired' }, headers });
+    });
+    const left = await ending.newPage();
+    await left.goto(`${base}/orders`, { waitUntil: 'domcontentloaded' });
+    await left.waitForURL(url => url.pathname === '/login', { timeout: 20000 });
+    assert.equal(new URL(left.url()).search, '', 'signing out of a page must not carry it to the next sign-in');
+    await ending.close();
+  }
+
   console.log('PASS cart and orders: layout, optimistic quantity, coupon, blocked states, filters, single requests and phone width');
 } finally { await context.close(); await browser.close(); }

@@ -49,23 +49,24 @@
    ================================================================ */
 
 @theme inline {
-  /* Brand palette (60/30/10): cool white + ink neutrals (slate-*, 60%),
-     Deep teal (violet-*, 30%: trust, primary actions, links), and
-     Tangerine (ember-*, 10%: Buy now, cart count, creator cues).
+  /* Brand palette "Tactile Studio" (60/30/10): warm alabaster page, white cards and
+     soft slate render stages (slate-*, 60%), deep petrol teal (violet-*, 30%: trust,
+     primary actions, links), and filament amber (ember-*, 10%: Buy now, cart count,
+     hover accent, creator cues).
      Token names are kept so call sites don't change. Contrast pairs are
      pinned by scripts/machines/brand-palette.test.mjs. */
 
   /* ---- Deep teal (violet-*) — primary / customers ---- */
-  --color-violet-1: #FAFCFC;  --color-violet-2: #F4F9F9;  --color-violet-3: #E8F2F3;
-  --color-violet-4: #DCECEE;  --color-violet-5: #CFE4E7;  --color-violet-6: #BFDADF;
-  --color-violet-7: #A8CCD3;  --color-violet-8: #84B6C0;  --color-violet-9: #0E5E6F;
-  --color-violet-10: #0A5060; --color-violet-11: #12687A; --color-violet-12: #08323B;
+  --color-violet-1: #F8FBFB;  --color-violet-2: #F1F7F7;  --color-violet-3: #E6F0F1;
+  --color-violet-4: #D9E9EB;  --color-violet-5: #CBE0E3;  --color-violet-6: #B9D5D9;
+  --color-violet-7: #9FC5CA;  --color-violet-8: #79ABB2;  --color-violet-9: #0B4F56;
+  --color-violet-10: #08434A; --color-violet-11: #0B4F56; --color-violet-12: #062C31;
 
   /* ---- Tangerine (ember-*) — action accent / creators ---- */
-  --color-ember-1: #FFFCFA;  --color-ember-2: #FFF7F1;  --color-ember-3: #FFEFE3;
-  --color-ember-4: #FFE4D1;  --color-ember-5: #FFD8BE;  --color-ember-6: #FFC9A6;
-  --color-ember-7: #FBB487;  --color-ember-8: #F59A5E;  --color-ember-9: #FF7A1A;
-  --color-ember-10: #F26B0A; --color-ember-11: #B04A00; --color-ember-12: #5A2600;
+  --color-ember-1: #FFFCF9;  --color-ember-2: #FFF7F0;  --color-ember-3: #FFF1E6;
+  --color-ember-4: #FFE6D3;  --color-ember-5: #FFDAC0;  --color-ember-6: #FBCBA8;
+  --color-ember-7: #F6B488;  --color-ember-8: #EF9759;  --color-ember-9: #E86A17;
+  --color-ember-10: #D45E0E; --color-ember-11: #B84D08; --color-ember-12: #5A2600;
 
   /* ---- Moss — print partners ---- */
   --color-moss-1: #F9FEFB;  --color-moss-2: #F4FCF8;  --color-moss-3: #E9F9F0;
@@ -73,11 +74,11 @@
   --color-moss-7: #AFDFC7;  --color-moss-8: #8ECEAF;  --color-moss-9: #059669;
   --color-moss-10: #00875E; --color-moss-11: #16805A; --color-moss-12: #0F3F2C;
 
-  /* ---- Cool white + ink (slate-*) — neutral, most of the UI ---- */
-  --color-slate-1: #FFFFFF;  --color-slate-2: #F7F7F7;  --color-slate-3: #F0F0F0;
-  --color-slate-4: #EAEAEA;  --color-slate-5: #E3E3E3;  --color-slate-6: #D9D9D9;
-  --color-slate-7: #C9C9C9;  --color-slate-8: #87949B;  --color-slate-9: #66737A;
-  --color-slate-10: #5A666D; --color-slate-11: #4E5A61; --color-slate-12: #12181B;
+  /* ---- Alabaster, slate + ink (slate-*) — neutral, most of the UI ---- */
+  --color-slate-1: #F8F7F4;  --color-slate-2: #F2F1EE;  --color-slate-3: #ECEEF2;
+  --color-slate-4: #E6E8ED;  --color-slate-5: #E1E3E8;  --color-slate-6: #E1DFDA;
+  --color-slate-7: #CFCCC5;  --color-slate-8: #7F8A93;  --color-slate-9: #6E7983;
+  --color-slate-10: #626D77; --color-slate-11: #5A6570; --color-slate-12: #121619;
 
   /* ---- Status — red / amber / green (status only, never decoration).
      Amber is a yellow-ochre, kept >=15deg of hue away from Tangerine so a
@@ -100,7 +101,7 @@
 
   /* Fixed scrim — deliberately does NOT flip with theme (a modal backdrop
      should stay dark in both light and dark mode). */
-  --color-ink: #12181B;
+  --color-ink: #121619;
 
   /* Semantic surface/ink pairs */
   --color-primary-surface: var(--color-violet-3);
