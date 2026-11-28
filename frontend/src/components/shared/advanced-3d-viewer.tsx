@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { Maximize, Minimize, RotateCcw, BoxSelect, Moon, Orbit, Grid3X3, SunMedium, Loader2, ZoomIn, ZoomOut } from "lucide-react";
+import { Maximize, Minimize, RotateCcw, BoxSelect, Moon, Orbit, Grid3X3, SunMedium, Loader2, Settings2, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -98,7 +98,7 @@ function Model({
         const wrapper = new THREE.Group();
         gltf.scene.rotation.x = -Math.PI / 2;
         wrapper.add(gltf.scene);
-        const slate = new THREE.MeshStandardMaterial({ color: "#94a3b8", metalness: 0.3, roughness: 0.7 });
+        const slate = new THREE.MeshStandardMaterial({ color: "#52666f", metalness: 0.3, roughness: 0.7 });
         wrapper.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) (child as THREE.Mesh).material = slate;
         });
@@ -120,7 +120,7 @@ function Model({
     return (
       <mesh geometry={geometry}>
         <meshStandardMaterial 
-          color={wireframe ? "#3b82f6" : "#94a3b8"} 
+          color={wireframe ? "#0e5e6f" : "#52666f"} 
           metalness={0.3} 
           roughness={0.7} 
           wireframe={wireframe} 
@@ -154,7 +154,9 @@ export function Advanced3DViewer({ url }: { url: string }) {
   const [hintSeen, setHintSeen] = useState(false);
   const [wireframe, setWireframe] = useState(false);
   const [lighting, setLighting] = useState<"studio" | "city" | "warehouse">("studio");
-  const [showGrid, setShowGrid] = useState(true);
+  // Off to begin with, so the object stands on a clean backdrop.
+  const [showGrid, setShowGrid] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const touch = () => {
     controlsDispatch({ type: "TOUCH" });
@@ -212,8 +214,8 @@ export function Advanced3DViewer({ url }: { url: string }) {
       }}
       onDoubleClick={resetView}
       className={cn(
-        "relative rounded-xl overflow-hidden border border-border bg-gradient-to-b from-muted to-background shadow-sm flex flex-col group",
-        isFullscreen ? "h-screen w-screen z-50 rounded-none border-none" : "w-full h-full min-h-[400px] lg:min-h-[500px]"
+        "relative overflow-hidden bg-muted flex flex-col",
+        isFullscreen ? "h-screen w-screen z-50" : "w-full h-full"
       )}
     >
       {viewer.status === "loading" && (
@@ -233,20 +235,6 @@ export function Advanced3DViewer({ url }: { url: string }) {
         </div>
       )}
 
-      {/* HUD Info */}
-      <div className="absolute top-4 left-4 z-10 flex gap-2 pointer-events-none">
-        {stats.polyCount > 0 && (
-          <div className="bg-background/80 backdrop-blur text-xs px-2 py-1 rounded-md border border-border/50 text-muted-foreground font-mono">
-            Polys: {(stats.polyCount / 1000).toFixed(1)}k
-          </div>
-        )}
-        {stats.vertices > 0 && (
-          <div className="bg-background/80 backdrop-blur text-xs px-2 py-1 rounded-md border border-border/50 text-muted-foreground font-mono">
-            Verts: {(stats.vertices / 1000).toFixed(1)}k
-          </div>
-        )}
-      </div>
-
       {/* Tells a first-time visitor what their hands can do, then gets out of the way. */}
       {viewer.status === "ready" && !hintSeen && (
         <p className="absolute top-4 right-4 z-10 max-w-[60%] text-right text-xs px-2 py-1 rounded-md bg-background/80 backdrop-blur border border-border/50 text-muted-foreground pointer-events-none">
@@ -254,76 +242,52 @@ export function Advanced3DViewer({ url }: { url: string }) {
         </p>
       )}
 
-      {/* Floating Toolbar */}
+      {/* Everyday controls stay on show; the technical ones wait behind Settings. */}
       <div
         onPointerDown={(event) => event.stopPropagation()}
         onDoubleClick={(event) => event.stopPropagation()}
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-background/80 backdrop-blur-md p-1.5 rounded-full border border-border/50 shadow-lg opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+        onKeyDown={(event) => { if (event.key === "Escape") setSettingsOpen(false); }}
+        className="absolute bottom-3 right-3 z-10 flex flex-col items-end gap-2"
       >
-        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => zoomBy(0.8)} aria-label="Zoom in" title="Zoom in">
-          <ZoomIn size={16} />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => zoomBy(1.25)} aria-label="Zoom out" title="Zoom out">
-          <ZoomOut size={16} />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={resetView} aria-label="Reset view" title="Reset view (double-click)">
-          <RotateCcw size={16} />
-        </Button>
-        <div className="w-px h-4 bg-border/50 mx-1" />
-        <Button
-          variant={controls.autoRotate ? "secondary" : "ghost"}
-          size="icon"
-          className="h-8 w-8 rounded-full"
-          onClick={() => controlsDispatch({ type: "TOGGLE_ROTATE" })}
-          aria-label="Spin automatically"
-          aria-pressed={controls.autoRotate}
-          title="Spin automatically"
-        >
-          <Orbit size={16} />
-        </Button>
-        <Button
-          variant={wireframe ? "secondary" : "ghost"}
-          size="icon"
-          className="h-8 w-8 rounded-full"
-          onClick={() => setWireframe(!wireframe)}
-          aria-label="Wireframe"
-          aria-pressed={wireframe}
-          title="Wireframe"
-        >
-          <BoxSelect size={16} />
-        </Button>
-        <Button
-          variant={showGrid ? "secondary" : "ghost"}
-          size="icon"
-          className="h-8 w-8 rounded-full"
-          onClick={() => setShowGrid(!showGrid)}
-          aria-label="Grid"
-          aria-pressed={showGrid}
-          title="Grid"
-        >
-          <Grid3X3 size={16} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 rounded-full"
-          onClick={() => setLighting(l => l === "studio" ? "city" : "studio")}
-          aria-label="Change lighting"
-          title="Change lighting"
-        >
-          {lighting === "studio" ? <SunMedium size={16} /> : <Moon size={16} />}
-        </Button>
-        <div className="w-px h-4 bg-border/50 mx-1" />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 rounded-full"
-          onClick={toggleFullscreen}
-          aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-          title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-        >
-          {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-        </Button>
+        {settingsOpen && (
+          <div id="viewer-settings" className="w-52 rounded-lg border border-border bg-background p-1">
+            {([
+              ["Spin automatically", "Auto-spin", Orbit, controls.autoRotate, () => controlsDispatch({ type: "TOGGLE_ROTATE" })],
+              ["Wireframe", "Wireframe", BoxSelect, wireframe, () => setWireframe(!wireframe)],
+              ["Grid", "Grid", Grid3X3, showGrid, () => setShowGrid(!showGrid)],
+              ["Change lighting", lighting === "studio" ? "Lighting: studio" : "Lighting: city", lighting === "studio" ? SunMedium : Moon, undefined, () => setLighting(l => l === "studio" ? "city" : "studio")],
+            ] as const).map(([name, text, Icon, pressed, act]) => (
+              <button key={name} type="button" aria-label={name} aria-pressed={pressed} onClick={act}
+                className="flex min-h-10 w-full items-center gap-2 rounded-md px-2 text-sm hover:bg-muted aria-pressed:text-primary-ink aria-pressed:font-medium">
+                <Icon size={16} aria-hidden="true" />{text}
+              </button>
+            ))}
+            <button type="button" aria-label="Reset view" onClick={resetView} className="flex min-h-10 w-full items-center gap-2 rounded-md px-2 text-sm hover:bg-muted">
+              <RotateCcw size={16} aria-hidden="true" />Reset view
+            </button>
+            {stats.polyCount > 0 && (
+              <p className="border-t border-border px-2 py-2 text-xs text-muted-foreground">
+                Preview mesh: {stats.polyCount.toLocaleString("en-IN")} polygons, {stats.vertices.toLocaleString("en-IN")} vertices
+              </p>
+            )}
+          </div>
+        )}
+        <div className="flex items-center gap-0.5 rounded-full border border-border bg-background p-1">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => zoomBy(0.8)} aria-label="Zoom in" title="Zoom in">
+            <ZoomIn size={16} />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => zoomBy(1.25)} aria-label="Zoom out" title="Zoom out">
+            <ZoomOut size={16} />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleFullscreen}
+            aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"} title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>
+            {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSettingsOpen(open => !open)}
+            aria-label="Viewer settings" title="Viewer settings" aria-expanded={settingsOpen} aria-controls="viewer-settings">
+            <Settings2 size={16} />
+          </Button>
+        </div>
       </div>
 
       <Canvas camera={{ position: [0, 0, 150], fov: 50 }} style={{ touchAction: wheelZoom ? "none" : "pan-y" }}>

@@ -63,7 +63,9 @@ def test_round_trip_through_the_cache_format_is_lossless():
 def test_public_response_never_exposes_the_paid_source_file_path():
     dumped = PublicProduct.model_validate(make_product()).model_dump(mode="json")
     version = dumped["versions"][0]
-    assert "file_url" not in version and "file_size" not in version
+    assert "file_url" not in version and "file_name" not in version
+    # Type and size are shown on purpose, so buyers know what they will download.
+    assert version["file_format"] == "STL" and version["file_size"] == 123
     assert "secret.stl" not in str(dumped), "the gated model file must not leak through the public schema"
 
 

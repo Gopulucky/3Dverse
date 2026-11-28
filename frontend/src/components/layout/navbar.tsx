@@ -18,10 +18,10 @@ import {
   Settings,
   Tag,
   Wand2,
+  Bell,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { RegionPicker } from "@/components/layout/region-picker";
-import { NotificationBell } from "@/components/layout/notification-bell";
+import { NotificationsDialog, useUnreadNotifications } from "@/components/layout/notification-bell";
 
 import { cn } from "@/lib/utils";
 import { useCreatorType } from "@/lib/creator-nav";
@@ -53,7 +53,7 @@ export function Navbar() {
   const { user, isAuthenticated, logout, hydrate } = useAuthStore();
   const { itemCount, setItemCount } = useCartStore();
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchCategory, setSearchCategory] = useState("");
+  const [noticesOpen, setNoticesOpen] = useState(false);
   const [search, dispatchSearch] = useReducer(searchReducer, initialSearchState);
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -63,8 +63,7 @@ export function Navbar() {
     dispatchSearch({ type: "CLOSE" });
     const params = new URLSearchParams();
     if (q) params.set("q", q);
-    const category = overrideCategory ?? searchCategory;
-    if (category) params.set("category", category);
+    if (overrideCategory) params.set("category", overrideCategory);
     setMobileOpen(false);
     router.push(`/marketplace?${params.toString()}`);
   };
@@ -119,6 +118,9 @@ export function Navbar() {
   useEffect(() => {
     if (cartData) setItemCount(cartData.items?.length || 0);
   }, [cartData, setItemCount]);
+
+  // Alerts are reached through the account menu, so the count rides on that button.
+  const unread = useUnreadNotifications(isAuthenticated && isMarketplace);
 
   // Scroll handler
   useEffect(() => {
@@ -296,29 +298,11 @@ export function Navbar() {
             {isMarketplace && (
               <div ref={searchRef} className="hidden md:flex flex-1 max-w-3xl px-4 lg:px-8 relative" data-flow="search-suggestions" data-state={search.status}>
                 <form role="search" onSubmit={(event) => { event.preventDefault(); handleSearch(); }} className="search-pill relative w-full rounded-full flex bg-card border border-input h-11">
-                  <select
-                    aria-label="Search category"
-                    value={searchCategory}
-                    onChange={(e) => setSearchCategory(e.target.value)}
-                    className="hidden lg:block min-w-0 max-w-32 h-full pl-4 pr-2 bg-muted border-r border-border rounded-l-full cursor-pointer text-sm text-foreground"
-                  >
-                    <option value="">All</option>
-                    <option value="Tabletop">Tabletop</option>
-                    <option value="Jewelry">Jewelry</option>
-                    <option value="Cosplay">Cosplay</option>
-                    <option value="Miniatures">Miniatures</option>
-                    <option value="Home Decor">Home Decor</option>
-                    <option value="Gadgets">Gadgets</option>
-                    <option value="Architecture">Architecture</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="Medical">Medical</option>
-                    <option value="Gaming">Gaming</option>
-                  </select>
                   <input
                     type="search"
                     aria-label="Search buy&sell3d"
                     placeholder="Search buy&sell3d"
-                    className="flex-1 min-w-0 h-full px-4 bg-transparent text-base"
+                    className="flex-1 min-w-0 h-full rounded-l-full pl-5 pr-4 bg-transparent text-base"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -340,7 +324,6 @@ export function Navbar() {
                         if (highlighted) {
                           const s = highlighted;
                           if (s.type === "category") {
-                            setSearchCategory(s.label);
                             handleSearch("", s.label);
                           } else {
                             dispatchSearch({ type: "CLOSE" });
@@ -373,7 +356,7 @@ export function Navbar() {
                           return (
                             <button
                               key={cat}
-                              onClick={() => { setSearchCategory(cat); setSearchQuery(""); dispatchSearch({ type: "INPUT", query: "" }); router.push(`/marketplace?category=${encodeURIComponent(cat)}`); }}
+                              onClick={() => { setSearchQuery(""); dispatchSearch({ type: "INPUT", query: "" }); router.push(`/marketplace?category=${encodeURIComponent(cat)}`); }}
                               className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted/60 transition-colors", search.activeIdx === idx && "bg-muted")} 
                             >
                               <Tag size={13} className="text-primary shrink-0" />
@@ -454,22 +437,8 @@ export function Navbar() {
                 </Link>
               )}
 
-              {/* Returns & Orders (Marketplace only) */}
-              {isMarketplace && isAuthenticated && (
-                <Link href="/orders" className="hidden lg:flex flex-col leading-none hover:border-border border border-transparent px-2 py-1 rounded transition-colors cursor-pointer">
-                  <span className="text-sm font-medium text-foreground">Orders</span>
-                </Link>
-              )}
-
-              {/* Country and currency: prices are shown in the shopper's currency */}
-              {/* On a phone these two live in the menu panel instead, so the header still fits at 320px. */}
-              {isMarketplace && <div className="hidden sm:block"><RegionPicker /></div>}
-
-              {/* New-design alerts from followed creators */}
-              {isMarketplace && isAuthenticated && <div className="hidden sm:block"><NotificationBell /></div>}
-
-              {/* Day/night switch (every portal, every breakpoint) */}
-              <ThemeToggle className="max-[22.99rem]:hidden" />
+              {/* Day/night: portals keep it here; shoppers find it in the footer. */}
+              {!isMarketplace && <ThemeToggle className="max-[22.99rem]:hidden" />}
 
               {/* Cart (marketplace only) */}
               {isMarketplace && (
@@ -490,7 +459,8 @@ export function Navbar() {
               {isAuthenticated && user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button type="button" aria-label="Account and portals" className="flex min-h-11 min-w-11 items-center gap-2 hover:bg-muted px-2 py-1 rounded-md transition-colors cursor-pointer">
+                    <button type="button" aria-label={unread ? `Account and portals, ${unread} unread notification${unread === 1 ? "" : "s"}` : "Account and portals"} className="relative flex min-h-11 min-w-11 items-center gap-2 hover:bg-muted px-2 py-1 rounded-md transition-colors cursor-pointer">
+                      {unread > 0 && <span aria-hidden="true" className="absolute right-0.5 top-1.5 h-2 w-2 rounded-full bg-ember" />}
                       <div className="flex flex-col items-start leading-none hidden sm:flex">
                         <span className="text-sm font-medium text-foreground flex items-center gap-1">
                           Account <ChevronDown size={14} className="text-muted-foreground" />
@@ -550,6 +520,15 @@ export function Navbar() {
                       <Package size={16} className="mr-3" />
                       My Orders
                     </DropdownMenuItem>
+
+                    {isMarketplace && (
+                      // Opened a tick later, once the menu has closed and handed focus back.
+                      <DropdownMenuItem aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} onSelect={() => setTimeout(() => setNoticesOpen(true), 0)} className="rounded-lg cursor-pointer py-2">
+                        <Bell size={16} className="mr-3" />
+                        Notifications
+                        {unread > 0 && <span className="ml-auto text-sm text-muted-foreground">{unread}</span>}
+                      </DropdownMenuItem>
+                    )}
 
                     <DropdownMenuItem onClick={() => router.push("/commissions")} className="rounded-lg cursor-pointer py-2">
                       <Wand2 size={16} className="mr-3" />
@@ -613,7 +592,7 @@ export function Navbar() {
             onClick={() => setMobileOpen(false)}
           />
           <div id="mobile-navigation" data-flow="mobile-menu" data-state={mobileOpen ? "open" : "closed"} className="fixed right-0 top-16 bottom-0 w-full max-w-sm bg-card border-l border-border p-6 overflow-y-auto">
-            {isMarketplace && <form role="search" aria-label="Mobile catalogue search" className="flex gap-2 mb-6" onSubmit={(event) => { event.preventDefault(); handleSearch(); }}>
+            {isMarketplace && pathname !== "/marketplace" && <form role="search" aria-label="Mobile catalogue search" className="flex gap-2 mb-6" onSubmit={(event) => { event.preventDefault(); handleSearch(); }}>
               <input type="search" aria-label="Search models" placeholder="Search models" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="w-full min-w-0 h-11 rounded-md border border-input bg-background px-3 text-base" />
               <Button type="submit" variant="outline" className="min-h-11" aria-label="Search catalogue"><Search size={18} aria-hidden="true" /></Button>
             </form>}
@@ -653,17 +632,12 @@ export function Navbar() {
                 );
               })}
               {!isAuthenticated && <Link href="/register" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center px-4 text-sm font-medium">Create an account</Link>}
-              <div className="flex items-center gap-2 px-2 min-[23rem]:hidden"><ThemeToggle /><span className="text-sm font-medium">Day or night</span></div>
-              {isMarketplace && (
-                <div className="mt-2 border-t border-border pt-2 sm:hidden" data-flow="mobile-menu-tools">
-                  <div className="flex items-center gap-2 px-2"><RegionPicker /><span className="text-sm font-medium">Country and currency</span></div>
-                  {isAuthenticated && <div className="flex items-center gap-2 px-2"><NotificationBell /><span className="text-sm font-medium">Notifications</span></div>}
-                </div>
-              )}
+              {!isMarketplace && <div className="flex items-center gap-2 px-2 min-[23rem]:hidden"><ThemeToggle /><span className="text-sm font-medium">Day or night</span></div>}
             </nav>
           </div>
         </div>
       )}
+      {noticesOpen && <NotificationsDialog open={noticesOpen} onOpenChange={setNoticesOpen} unread={unread} />}
     </>
   );
 }

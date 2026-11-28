@@ -75,7 +75,7 @@ try {
     await reachPayment(page);
     assert.equal(seen.scriptRequests, 0, 'Checkout.js is not fetched until someone is about to pay');
     const text = await page.locator('[data-flow="checkout"]').innerText();
-    assert.ok(text.includes('Order #77') && /58\.00/.test(text), 'shows the saved order and the amount to pay');
+    assert.ok(text.includes('Order #77') && /58(?![d.])/.test(text), 'shows the saved order and the amount to pay');
     assert.ok(!/stripe/i.test(await page.content()), 'no Stripe wording or markup remains on the page');
     await page.getByRole('button', { name: /^Pay/ }).click();
     await page.locator('[data-flow="payment"][data-state="confirmed"]').waitFor({ timeout: 10000 });
@@ -217,7 +217,7 @@ try {
     await page.locator('[data-line="12"]').waitFor({ timeout: 20000 });
     assert.equal(await page.locator('[data-line="12"] [data-unavailable]').innerText(), 'Out of stock');
     assert.equal(await page.locator('[data-line="11"] [data-unavailable]').count(), 0);
-    assert.match(await page.locator('[data-total]').innerText(), /58\.00/, 'only the buyable line is in the total');
+    assert.match(await page.locator('[data-total]').innerText(), /58(?![d.])/, 'only the buyable line is in the total');
     assert.equal(await page.getByRole('button', { name: 'Checkout' }).last().isDisabled(), true);
     assert.equal(await page.locator('[data-flow="cart"]').getAttribute('data-state'), 'blocked');
     await context.close();

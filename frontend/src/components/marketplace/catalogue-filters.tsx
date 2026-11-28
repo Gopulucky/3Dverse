@@ -86,7 +86,8 @@ export function CatalogueFilters({ values, categories, anyApplied, onChange, onC
         <p className="pt-1 text-xs text-muted-foreground">Prices are in INR unless you choose USD below.</p>
       </Section>
 
-      <Section title="Currency" defaultOpen={Boolean(values.currency)}>
+      <Section title="Listing currency" defaultOpen={Boolean(values.currency)}>
+        <p className="pb-1 text-xs text-muted-foreground">The currency the seller set the price in. To change what prices are shown in, use the country setting at the bottom of the page.</p>
         <Choice type="radio" name="currency" label="All currencies" checked={!values.currency} onChange={() => onChange({ currency: "" })} />
         <Choice type="radio" name="currency" label="INR" checked={values.currency === "INR"} onChange={() => onChange({ currency: "INR" })} />
         <Choice type="radio" name="currency" label="USD" checked={values.currency === "USD"} onChange={() => onChange({ currency: "USD" })} />

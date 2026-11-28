@@ -72,7 +72,7 @@ try {
     const price = page.locator('[data-flow="product-price"]');
     await page.waitForFunction(() => /≈ A\$/.test(document.querySelector('[data-flow="product-price"]')?.textContent ?? ''));
     assert.match(await price.innerText(), /≈ A\$3\.49/, 'about A$3.49 for ₹199 at the indicative rate');
-    assert.match(await page.locator('[data-flow="charged-note"]').innerText(), /₹199\.00/, 'the rupee amount that is charged is stated');
+    assert.match(await page.locator('[data-flow="charged-note"]').innerText(), /₹199(?![d.])/, 'the rupee amount that is charged is stated');
     if (process.env.SMOKE_SHOTS) await page.screenshot({ path: `${process.env.SMOKE_SHOTS}/product-au.png` });
 
     // Switching country in the header changes the display at once.
@@ -80,7 +80,7 @@ try {
     await page.getByLabel('Country', { exact: true }).selectOption('IN');
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => !document.querySelector('[data-flow="charged-note"]'));
-    assert.match(await price.innerText(), /^₹199\.00/);
+    assert.match(await price.innerText(), /^₹199(?![d.])/);
     assert.equal(await page.evaluate(() => localStorage.getItem('bs3d-country')), 'IN', 'the choice is remembered');
 
     // Image captions show under the picture the shopper opens.
@@ -136,13 +136,15 @@ try {
   {
     const { context, page } = await open({ signedInAs: { id: 99, email: 'fan@example.test', role: 'customer' } });
     await page.goto(`${base}/marketplace`);
-    const bell = page.getByRole('button', { name: 'Notifications, 1 unread' });
-    await bell.waitFor();
-    await bell.click();
-    await page.getByRole('menuitem', { name: /New design from Gopu Hardik/ }).click();
+    // Alerts live in the account menu; the account button says when one is waiting.
+    const account = page.getByRole('button', { name: 'Account and portals, 1 unread notification' });
+    await account.waitFor();
+    await account.click();
+    await page.getByRole('menuitem', { name: 'Notifications, 1 unread' }).click();
+    await page.getByRole('dialog', { name: 'Notifications' }).getByRole('button', { name: /New design from Gopu Hardik/ }).click();
     await page.waitForURL('**/marketplace/9100');
     assert.deepEqual(log.reads, ['/api/notifications/5/read'], 'opening an alert marks it read');
-    await page.getByRole('button', { name: 'Notifications', exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Account and portals', exact: true }).waitFor();
     await context.close();
   }
 
@@ -158,15 +160,14 @@ try {
     await context.close();
   }
 
-  // --- On a phone the header stays inside the screen; country and alerts live in the menu --------------
+  // --- On a phone the header stays inside the screen; country is in the footer, alerts in the account menu ---
   {
     const { context, page } = await open({ signedInAs: { id: 99, email: 'fan@example.test', role: 'customer' } });
     await page.setViewportSize({ width: 320, height: 700 });
     await page.goto(`${base}/marketplace`);
-    await page.getByRole('button', { name: 'Open menu' }).click();
-    const tools = page.locator('[data-flow="mobile-menu-tools"]');
-    await tools.getByRole('button', { name: /Country and currency/ }).waitFor();
-    await tools.getByRole('button', { name: /Notifications/ }).waitFor();
+    await page.locator('footer').getByRole('button', { name: /Country and currency/ }).waitFor();
+    await page.getByRole('button', { name: /^Account and portals/ }).click();
+    await page.getByRole('menuitem', { name: /^Notifications/ }).waitFor();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'no sideways scroll at 320px');
     await context.close();
   }

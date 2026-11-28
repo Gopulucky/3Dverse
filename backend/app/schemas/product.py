@@ -43,8 +43,11 @@ class ProductVersionResponse(ProductVersionBase):
 
 class PublicProductVersion(BaseModel):
     """Marketplace-facing version info. Deliberately omits file_url and
-    file_size -- the source model is only reachable through /api/downloads,
-    and shoppers get the decimated preview mesh instead."""
+    file_name -- the source model is only reachable through /api/downloads,
+    and shoppers get the decimated preview mesh instead. Its type and size are
+    given, so a buyer knows what they are paying to download."""
+    file_format: Optional[str] = None
+    file_size: Optional[int] = None
     id: int
     product_id: int
     version_number: int
@@ -93,6 +96,37 @@ class ProductMedia(ProductMediaBase):
     class Config:
         from_attributes = True
 
+def clean_print_settings(value: Any) -> Optional[dict]:
+    """Keep only the print settings we know, with sensible values. These are shown
+    to buyers, so anything else is dropped rather than stored. Both shapes are
+    accepted: numbers from the creator form, and the strings the catalogue
+    importer writes ("0.2mm")."""
+    if not isinstance(value, dict):
+        return None
+    out: dict = {}
+    height = value.get("layer_height")
+    if isinstance(height, (int, float)) and not isinstance(height, bool) and 0 < height <= 2:
+        out["layer_height"] = height
+    elif isinstance(height, str) and 0 < len(height.strip()) <= 20:
+        out["layer_height"] = height.strip()
+    infill = value.get("infill_percentage")
+    if isinstance(infill, int) and not isinstance(infill, bool) and 0 < infill <= 100:
+        out["infill_percentage"] = infill
+    for key in ("supports_required", "raft_brim_required"):
+        if isinstance(value.get(key), bool):
+            out[key] = value[key]
+    materials = value.get("recommended_materials")
+    if isinstance(materials, list):
+        names = [m.strip() for m in materials if isinstance(m, str) and 0 < len(m.strip()) <= 40][:10]
+        if names:
+            out["recommended_materials"] = names
+    for key, limit in (("supports", 200), ("infill", 20)):
+        text = value.get(key)
+        if isinstance(text, str) and 0 < len(text.strip()) <= limit:
+            out[key] = text.strip()
+    return out
+
+
 # Product Schemas
 class ProductBase(BaseModel):
     title: str
@@ -118,6 +152,13 @@ class ProductBase(BaseModel):
     base_print_price: Optional[float] = 0.0
 
     mode_4_config: Optional[dict] = {}
+
+    print_settings: Optional[Any] = None
+
+    @field_validator("print_settings")
+    @classmethod
+    def known_print_settings(cls, value: Any) -> Optional[dict]:
+        return clean_print_settings(value)
 
 class ProductCreate(ProductBase):
     pass

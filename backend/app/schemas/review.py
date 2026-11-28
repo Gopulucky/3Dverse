@@ -1,7 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
-from app.schemas.user import User
 
 class ReviewBase(BaseModel):
     rating: int
@@ -9,14 +8,16 @@ class ReviewBase(BaseModel):
     images: Optional[List[str]] = []
 
 class ReviewCreate(ReviewBase):
-    product_id: int
+    # The product comes from the address; the page does not repeat it in the body.
+    product_id: Optional[int] = None
+    rating: int = Field(ge=1, le=5)
 
 class ReviewResponse(ReviewBase):
+    """Public: reviews are readable without signing in, so no account details."""
     id: int
-    user_id: int
     product_id: int
     created_at: datetime
-    user: User
+    reviewer_name: str
 
     class Config:
         from_attributes = True

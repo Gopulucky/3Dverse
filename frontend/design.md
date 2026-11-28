@@ -50,7 +50,7 @@ pins the anchors and WCAG AA pairs.
   variation: Studio is a tangerine tint, Seller teal, Designer neutral. Pinned by
   `scripts/machines/brand-palette.test.mjs`.
 - Input borders (`slate-8`) meet 3:1 non-text contrast on page and card.
-- Day/night: `ThemeToggle` in the navbar (sun in day, moon at night, 44px target,
+- Day/night: `ThemeToggle` in the footer (portal headers keep it) (sun in day, moon at night, 44px target,
   `role="switch"` named "Night mode"). Starts from the OS scheme; a click is stored
   by next-themes. `dark:` utilities follow the `.dark` class, not the media query.
 - Logo (`components/shared/wordmark.tsx`): Space Grotesk bold with an Inter `&` in
@@ -67,6 +67,38 @@ pins the anchors and WCAG AA pairs.
 - Column gap below the hero: `--store-gap` (1.5rem).
 - Image radius: `--store-radius` (0.75rem).
 - Surface/text pairs use semantic tokens and switch together in dark mode.
+
+## Header, search and preferences
+
+- The shop header holds the logo, one search field, the cart and the account (or sign
+  in). No category picker or "Orders" link there.
+- Country/currency and day/night live in the footer. Notifications open from the
+  account menu, which shows a dot when one is unread. Portals keep day/night in
+  their header.
+- One search per screen: the header on wide screens; on phones the catalogue's own
+  field, and the menu's field on other pages.
+- Categories come from `src/lib/categories.ts`, in that order, everywhere.
+
+## Product cards and catalogue
+
+- Picture (wishlist heart on it), name, creator (links to their page), rating only
+  when reviews exist, price rows, then exactly one button: "Add to cart" when the
+  chosen format allows it, otherwise "View product".
+- No badge that every listing carries. "Digital model" is the name of the file format.
+- Prices drop empty paise (`₹249`, `₹249.50`).
+- The pager shows only when there is more than one page.
+
+## Product page
+
+- Two columns: pictures (3D model first) beside the buy column; one column on phones.
+- Viewer toolbar: zoom, fullscreen, settings. Wireframe, grid, lighting, auto-spin,
+  reset and mesh counts live in the settings panel. Grid starts off.
+- Buy column order: creator, price and licence, format, "Buy now" (tangerine), "Add to
+  cart" (outline), delivery note, quiet links. Shipping links only for printed items.
+- Below, once each: What's included, Printing it, About this design, Creator, Reviews,
+  Similar designs. Rows come from `src/lib/product-details.ts`; a fact the listing
+  does not have gets no row. Never show a default print setting as the creator's advice.
+- Reviews name the buyer by first name or "Verified buyer", never an email.
 
 ## Home layout
 

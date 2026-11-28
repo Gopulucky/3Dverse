@@ -68,6 +68,7 @@ def create_product(
         tags=product_in.tags,
         price=product_in.price,
         license_type=product_in.license_type,
+        print_settings=product_in.print_settings or {},
         status=product_in.status,
         fulfillment_status=product_in.fulfillment_status,
         creator_id=current_user.id,

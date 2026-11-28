@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CATEGORIES } from "@/lib/categories";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -60,16 +61,8 @@ export default function ProductDetailPage({
       const products = await api.get<any[]>("/api/products/creator");
       const p = products.find((x: any) => x.id === parseInt(productId));
       if (!p) throw new Error("Product not found");
-      // Ensure print_settings exists
-      if (!p.print_settings) {
-        p.print_settings = {
-          supports_required: false,
-          raft_brim_required: false,
-          infill_percentage: 15,
-          layer_height: 0.2,
-          recommended_materials: [],
-        };
-      }
+      // No defaults: whatever is saved here is shown to buyers as the creator's own advice.
+      if (!p.print_settings) p.print_settings = {};
       setProduct(p);
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch product");
@@ -545,12 +538,15 @@ export default function ProductDetailPage({
               <h2 className="text-xs font-bold mb-4 uppercase tracking-wider text-muted-foreground">Product Organization</h2>
               <div>
                 <Label className="mb-1.5 block">Category</Label>
+                {/* Suggests the shared names, so listings group under one spelling. */}
+                <datalist id="product-categories">{CATEGORIES.map((name) => <option key={name} value={name} />)}</datalist>
                 <Input
                   value={product.category || ""}
                   onChange={(e) =>
                     setProduct({ ...product, category: e.target.value })
                   }
                   placeholder="e.g. Tabletop, Gadgets"
+                  list="product-categories"
                 />
               </div>
             </Card>
