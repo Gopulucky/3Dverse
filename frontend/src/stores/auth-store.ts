@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { getQueryClient } from "@/lib/query-client";
@@ -138,14 +138,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 export function useRequireAuth(redirectTo: string = "/login") {
   const router = useRouter();
   const { isAuthenticated, hydrated, user, hydrate } = useAuthStore();
+  const wasSignedIn = useRef(false);
 
   useEffect(() => {
     if (!hydrated) hydrate();
   }, [hydrated, hydrate]);
 
   useEffect(() => {
-    if (hydrated && !isAuthenticated) {
-      router.push(redirectTo);
+    if (isAuthenticated) {
+      wasSignedIn.current = true;
+    } else if (hydrated) {
+      // `redirectTo` is for someone who arrived signed out: it says why and brings them
+      // back. If the session ends while they are here, go to the plain sign-in page, so
+      // the next account is not sent to this one's page.
+      router.push(wasSignedIn.current ? "/login" : redirectTo);
     }
   }, [hydrated, isAuthenticated, router, redirectTo]);
 

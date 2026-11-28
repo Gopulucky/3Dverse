@@ -181,5 +181,24 @@ try {
     await visitor.close();
   }
 
+  // A session that ends while a private page is open is not a redirect to explain: the next
+  // person to sign in must not be sent back to this one's page.
+  {
+    const ending = await browser.newContext({ bypassCSP: true, viewport: { width: 1280, height: 900 } });
+    await ending.addInitScript(u => { localStorage.setItem('token', 'qa-expired'); localStorage.setItem('user', JSON.stringify(u)); }, user);
+    await ending.route('**/api/**', async route => {
+      const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
+      if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+      if (!route.request().url().endsWith('/users/me')) return route.fulfill({ json: [], headers });
+      await new Promise(resolve => setTimeout(resolve, 1500)); // the page is up and signed in first
+      return route.fulfill({ status: 401, json: { detail: 'expired' }, headers });
+    });
+    const left = await ending.newPage();
+    await left.goto(`${base}/orders`, { waitUntil: 'domcontentloaded' });
+    await left.waitForURL(url => url.pathname === '/login', { timeout: 20000 });
+    assert.equal(new URL(left.url()).search, '', 'signing out of a page must not carry it to the next sign-in');
+    await ending.close();
+  }
+
   console.log('PASS cart and orders: layout, optimistic quantity, coupon, blocked states, filters, single requests and phone width');
 } finally { await context.close(); await browser.close(); }
