@@ -50,8 +50,8 @@ pins the anchors and WCAG AA pairs.
   variation: Studio is a tangerine tint, Seller teal, Designer neutral. Pinned by
   `scripts/machines/brand-palette.test.mjs`.
 - Input borders (`slate-8`) meet 3:1 non-text contrast on page and card.
-- Day/night: `ThemeToggle` in the footer (portal headers keep it) (sun in day, moon at night, 44px target,
-  `role="switch"` named "Night mode"). Starts from the OS scheme; a click is stored
+- Day/night: `ThemeToggle` in every header (sun in day, moon at night, 44px target,
+  `role="switch"` named "Night mode"). Below 23rem it moves into the phone menu. Starts from the OS scheme; a click is stored
   by next-themes. `dark:` utilities follow the `.dark` class, not the media query.
 - Logo (`components/shared/wordmark.tsx`): Space Grotesk bold with an Inter `&` in
   tangerine; layered `&` only at large size (the footer). Never smaller than 20px type.
@@ -71,11 +71,11 @@ pins the anchors and WCAG AA pairs.
 
 ## Header, search and preferences
 
-- The shop header holds the logo, one search field, the cart and the account (or sign
-  in). No category picker or "Orders" link there.
-- Country/currency and day/night live in the footer. Notifications open from the
-  account menu, which shows a dot when one is unread. Portals keep day/night in
-  their header.
+- The shop header holds the logo, one search field, day/night, the cart and the account
+  (or sign in). No category picker or "Orders" link there.
+- Country/currency and notifications open from the account menu, which shows a dot when
+  an alert is unread. Signed-out visitors have no account menu, so for them country
+  stays in the footer.
 - One search per screen: the header on wide screens; on phones the catalogue's own
   field, and the menu's field on other pages.
 - Categories come from `src/lib/categories.ts`, in that order, everywhere.

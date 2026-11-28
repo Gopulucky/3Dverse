@@ -75,7 +75,7 @@ try {
     assert.match(await page.locator('[data-flow="charged-note"]').innerText(), /₹199(?![d.])/, 'the rupee amount that is charged is stated');
     if (process.env.SMOKE_SHOTS) await page.screenshot({ path: `${process.env.SMOKE_SHOTS}/product-au.png` });
 
-    // Switching country in the header changes the display at once.
+    // Signed out, switching country in the footer changes the display at once.
     await page.getByRole('button', { name: /Country and currency/ }).click();
     await page.getByLabel('Country', { exact: true }).selectOption('IN');
     await page.keyboard.press('Escape');
@@ -160,14 +160,15 @@ try {
     await context.close();
   }
 
-  // --- On a phone the header stays inside the screen; country is in the footer, alerts in the account menu ---
+  // --- On a phone the header stays inside the screen; country and alerts are in the account menu ---
   {
     const { context, page } = await open({ signedInAs: { id: 99, email: 'fan@example.test', role: 'customer' } });
     await page.setViewportSize({ width: 320, height: 700 });
     await page.goto(`${base}/marketplace`);
-    await page.locator('footer').getByRole('button', { name: /Country and currency/ }).waitFor();
     await page.getByRole('button', { name: /^Account and portals/ }).click();
     await page.getByRole('menuitem', { name: /^Notifications/ }).waitFor();
+    await page.getByRole('menuitem', { name: /^Country and currency/ }).waitFor();
+    assert.equal(await page.locator('footer').getByRole('button', { name: /Country and currency/ }).count(), 0);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'no sideways scroll at 320px');
     await context.close();
   }
